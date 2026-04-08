@@ -32,6 +32,15 @@ yarn-error.log*
 dist/
 build/
 
+# Next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Vercel
+.vercel
+
 # Coverage
 coverage/
 

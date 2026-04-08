@@ -62,21 +62,21 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: Next.js 프로젝트 생성, TypeScript·ESLint·Prettier 설정, 필수 패키지 설치
 **예상 소요**: 1시간
 **의존성**:
-- [ ] 없음
+- [x] 없음
 
 **작업 내용**:
-- [ ] `npx create-next-app@latest` (App Router, TypeScript 선택)
-- [ ] `tsconfig.json` strict 모드 확인
-- [ ] `npm install pg bcryptjs jsonwebtoken` 설치
-- [ ] `npm install -D @types/pg @types/bcryptjs @types/jsonwebtoken` 설치
-- [ ] `.env.local` 파일 생성 (DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, JWT_ACCESS_EXPIRES_IN=15m, JWT_REFRESH_EXPIRES_IN=7d)
-- [ ] `.env.example` 파일 생성 (키 목록만, 값 없음)
-- [ ] `.gitignore`에 `.env.local` 추가
+- [x] `npx create-next-app@latest` (App Router, TypeScript 선택)
+- [x] `tsconfig.json` strict 모드 확인
+- [x] `npm install pg bcryptjs jsonwebtoken` 설치
+- [x] `npm install -D @types/pg @types/bcryptjs @types/jsonwebtoken` 설치
+- [x] `.env.local` 파일 생성 (DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, JWT_ACCESS_EXPIRES_IN=15m, JWT_REFRESH_EXPIRES_IN=7d)
+- [x] `.env.example` 파일 생성 (키 목록만, 값 없음)
+- [x] `.gitignore`에 `.env.local` 추가
 
 **완료 조건**:
-- [ ] `npm run dev` 정상 실행
-- [ ] TypeScript 컴파일 오류 없음
-- [ ] `.env.local` 생성 완료, git에 미포함 확인
+- [x] `npm run dev` 정상 실행
+- [x] TypeScript 컴파일 오류 없음
+- [x] `.env.local` 생성 완료, git에 미포함 확인
 
 ---
 
@@ -84,18 +84,18 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: Vercel Serverless 환경을 고려한 pg 연결 풀 구현
 **예상 소요**: 30분
 **의존성**:
-- [ ] DB-01
+- [x] DB-01
 
 **작업 내용**:
-- [ ] `lib/db/pool.ts` 생성
-- [ ] 글로벌 싱글턴 패턴 구현 (`global as unknown as { pgPool: Pool }`)
-- [ ] Pool 설정: `max: 5, idleTimeoutMillis: 10000, connectionTimeoutMillis: 5000`
-- [ ] 개발 환경 전역 캐싱 분기 처리 (`process.env.NODE_ENV !== 'production'`)
-- [ ] Vercel Serverless 경고 주석 추가
+- [x] `lib/db/pool.ts` 생성
+- [x] 글로벌 싱글턴 패턴 구현 (`global as unknown as { pgPool: Pool }`)
+- [x] Pool 설정: `max: 5, idleTimeoutMillis: 10000, connectionTimeoutMillis: 5000`
+- [x] 개발 환경 전역 캐싱 분기 처리 (`process.env.NODE_ENV !== 'production'`)
+- [x] Vercel Serverless 경고 주석 추가
 
 **완료 조건**:
-- [ ] PostgreSQL 연결 테스트 성공 (`pool.query('SELECT 1')`)
-- [ ] TypeScript 컴파일 성공
+- [x] PostgreSQL 연결 테스트 성공 (`pool.query('SELECT 1')`)
+- [x] TypeScript 컴파일 성공
 
 ---
 
@@ -103,23 +103,23 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 6개 테이블 + 인덱스 + 제약조건 DDL 작성 후 DB에 적용
 **예상 소요**: 1.5시간
 **의존성**:
-- [ ] DB-02
+- [x] DB-02
 
 **작업 내용**:
-- [ ] `db/schema.sql` 생성
-- [ ] `users` 테이블: id(UUID PK), email(UNIQUE), name(VARCHAR 50), password_hash, created_at
-- [ ] `teams` 테이블: id(UUID PK), name(VARCHAR 100), leader_id(FK→users), created_at
-- [ ] `team_members` 테이블: (team_id, user_id) 복합 PK, role ENUM('LEADER','MEMBER'), created_at
-- [ ] `team_join_requests` 테이블: id(UUID PK), team_id(FK), requester_id(FK→users), status ENUM('PENDING','APPROVED','REJECTED'), requested_at, responded_at
-- [ ] `schedules` 테이블: id(UUID PK), team_id(FK), title(VARCHAR 200), description, start_at, end_at, CHECK(end_at > start_at), created_by(FK→users), created_at, updated_at
-- [ ] `chat_messages` 테이블: id(UUID PK), team_id(FK), sender_id(FK→users), type ENUM('NORMAL','SCHEDULE_REQUEST'), content(TEXT 2000자), sent_at, created_at
-- [ ] 인덱스: `users(email)`, `team_members(user_id)`, `team_join_requests(team_id, status)`, `team_join_requests(requester_id)`, `schedules(team_id, start_at, end_at)`, `chat_messages(team_id, sent_at DESC)`
-- [ ] PostgreSQL에 실행 (`psql -f db/schema.sql`)
+- [x] `db/schema.sql` 생성
+- [x] `users` 테이블: id(UUID PK), email(UNIQUE), name(VARCHAR 50), password_hash, created_at
+- [x] `teams` 테이블: id(UUID PK), name(VARCHAR 100), leader_id(FK→users), created_at
+- [x] `team_members` 테이블: (team_id, user_id) 복합 PK, role ENUM('LEADER','MEMBER'), created_at
+- [x] `team_join_requests` 테이블: id(UUID PK), team_id(FK), requester_id(FK→users), status ENUM('PENDING','APPROVED','REJECTED'), requested_at, responded_at
+- [x] `schedules` 테이블: id(UUID PK), team_id(FK), title(VARCHAR 200), description, start_at, end_at, CHECK(end_at > start_at), created_by(FK→users), created_at, updated_at
+- [x] `chat_messages` 테이블: id(UUID PK), team_id(FK), sender_id(FK→users), type ENUM('NORMAL','SCHEDULE_REQUEST'), content(TEXT 2000자), sent_at, created_at
+- [x] 인덱스: `users(email)`, `team_members(user_id)`, `team_join_requests(team_id, status)`, `team_join_requests(requester_id)`, `schedules(team_id, start_at, end_at)`, `chat_messages(team_id, sent_at DESC)`
+- [x] PostgreSQL에 실행 (`psql -f db/schema.sql`)
 
 **완료 조건**:
-- [ ] 모든 테이블 생성 확인 (`\dt`)
-- [ ] 인덱스 생성 확인 (`\di`)
-- [ ] CHECK 제약 조건 동작 확인 (end_at < start_at 삽입 시 오류)
+- [x] 모든 테이블 생성 확인 (`\dt`)
+- [x] 인덱스 생성 확인 (`\di`)
+- [x] CHECK 제약 조건 동작 확인 (end_at < start_at 삽입 시 오류)
 
 ---
 
@@ -127,21 +127,21 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 5개 도메인 쿼리 파일 구현
 **예상 소요**: 각 1~1.5시간 (합계 6시간, 병렬 시 단축 불가)
 **의존성**:
-- [ ] DB-03
+- [x] DB-03
 
-| Task | 파일 | 핵심 함수 |
-|------|------|-----------|
-| DB-04 | `lib/db/queries/userQueries.ts` | createUser, getUserByEmail, getUserById |
-| DB-05 | `lib/db/queries/teamQueries.ts` | createTeam, getTeamById, getUserTeams, addTeamMember, getUserTeamRole |
-| DB-06 | `lib/db/queries/joinRequestQueries.ts` | createJoinRequest, getJoinRequestById, getPendingJoinRequestsByTeam, getPendingJoinRequestsByLeader, updateJoinRequestStatus |
-| DB-07 | `lib/db/queries/scheduleQueries.ts` | createSchedule, getSchedulesByDateRange, getScheduleById, updateSchedule, deleteSchedule |
-| DB-08 | `lib/db/queries/chatQueries.ts` | createChatMessage, getMessagesByDate (KST 기준), getMessagesByTeam |
+| Task | 파일 | 핵심 함수 | 상태 |
+|------|------|-----------|------|
+| DB-04 | `lib/db/queries/userQueries.ts` | createUser, getUserByEmail, getUserById | ✅ 완료 |
+| DB-05 | `lib/db/queries/teamQueries.ts` | createTeam, getTeamById, getUserTeams, addTeamMember, getUserTeamRole | ✅ 완료 |
+| DB-06 | `lib/db/queries/joinRequestQueries.ts` | createJoinRequest, getJoinRequestById, getPendingJoinRequestsByTeam, getPendingJoinRequestsByLeader, updateJoinRequestStatus | ✅ 완료 |
+| DB-07 | `lib/db/queries/scheduleQueries.ts` | createSchedule, getSchedulesByDateRange, getScheduleById, updateSchedule, deleteSchedule | ✅ 완료 |
+| DB-08 | `lib/db/queries/chatQueries.ts` | createChatMessage, getMessagesByDate (KST 기준), getMessagesByTeam | ✅ 완료 |
 
 **완료 조건 (공통)**:
-- [ ] 모든 함수 TypeScript 타입 정의
-- [ ] 모든 SELECT 쿼리에 `teamId` WHERE 조건 포함 (팀 격리)
-- [ ] try-catch 에러 처리 추가
-- [ ] `chatQueries.ts`: KST 날짜 기준 UTC 범위 변환 로직 포함
+- [x] 모든 함수 TypeScript 타입 정의
+- [x] 모든 SELECT 쿼리에 `teamId` WHERE 조건 포함 (팀 격리)
+- [x] try-catch 에러 처리 추가
+- [x] `chatQueries.ts`: KST 날짜 기준 UTC 범위 변환 로직 포함
 
 ---
 
