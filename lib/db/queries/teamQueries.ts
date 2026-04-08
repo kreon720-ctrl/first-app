@@ -18,6 +18,19 @@ export interface TeamWithRole extends Team {
   role: 'LEADER' | 'MEMBER'
 }
 
+export interface PublicTeam extends Team {
+  leader_name: string
+  member_count: number
+}
+
+export interface TeamMemberDetail {
+  user_id: string
+  name: string
+  email: string
+  role: 'LEADER' | 'MEMBER'
+  joined_at: Date
+}
+
 export async function createTeam(name: string, leaderId: string): Promise<Team> {
   try {
     const result = await pool.query<Team>(
@@ -46,16 +59,39 @@ export async function getTeamById(teamId: string): Promise<Team | null> {
   }
 }
 
-export async function getPublicTeams(): Promise<Team[]> {
+// GET /api/teams/public 용 — leaderName, memberCount 포함
+export async function getPublicTeams(): Promise<PublicTeam[]> {
   try {
-    const result = await pool.query<Team>(
-      `SELECT id, name, leader_id, created_at
-       FROM teams
-       ORDER BY created_at DESC`
+    const result = await pool.query<PublicTeam>(
+      `SELECT t.id, t.name, t.leader_id, t.created_at,
+              u.name AS leader_name,
+              COUNT(tm.user_id)::int AS member_count
+       FROM teams t
+       JOIN users u ON u.id = t.leader_id
+       LEFT JOIN team_members tm ON tm.team_id = t.id
+       GROUP BY t.id, t.name, t.leader_id, t.created_at, u.name
+       ORDER BY t.created_at DESC`
     )
     return result.rows
   } catch (err) {
     throw new Error(`getPublicTeams 실패: ${(err as Error).message}`)
+  }
+}
+
+// GET /api/teams/:teamId 용 — 팀 구성원 상세 목록
+export async function getTeamMembers(teamId: string): Promise<TeamMemberDetail[]> {
+  try {
+    const result = await pool.query<TeamMemberDetail>(
+      `SELECT u.id AS user_id, u.name, u.email, tm.role, tm.created_at AS joined_at
+       FROM team_members tm
+       JOIN users u ON u.id = tm.user_id
+       WHERE tm.team_id = $1
+       ORDER BY tm.created_at ASC`,
+      [teamId]
+    )
+    return result.rows
+  } catch (err) {
+    throw new Error(`getTeamMembers 실패: ${(err as Error).message}`)
   }
 }
 

@@ -6,6 +6,7 @@ export interface ChatMessage {
   id: string
   team_id: string
   sender_id: string
+  sender_name: string
   type: MessageType
   content: string
   sent_at: Date
@@ -48,7 +49,7 @@ export async function createChatMessage(
   }
 }
 
-// KST 날짜(YYYY-MM-DD) 기준으로 해당 날의 메시지 조회
+// KST 날짜(YYYY-MM-DD) 기준으로 해당 날의 메시지 조회 (senderName JOIN 포함)
 export async function getMessagesByDate(
   teamId: string,
   kstDate: string
@@ -56,12 +57,14 @@ export async function getMessagesByDate(
   const { start, end } = kstDateToUtcRange(kstDate)
   try {
     const result = await pool.query<ChatMessage>(
-      `SELECT id, team_id, sender_id, type, content, sent_at, created_at
-       FROM chat_messages
-       WHERE team_id = $1
-         AND sent_at >= $2
-         AND sent_at < $3
-       ORDER BY sent_at ASC`,
+      `SELECT cm.id, cm.team_id, cm.sender_id, u.name AS sender_name,
+              cm.type, cm.content, cm.sent_at, cm.created_at
+       FROM chat_messages cm
+       JOIN users u ON u.id = cm.sender_id
+       WHERE cm.team_id = $1
+         AND cm.sent_at >= $2
+         AND cm.sent_at < $3
+       ORDER BY cm.sent_at ASC`,
       [teamId, start, end]
     )
     return result.rows
@@ -70,7 +73,7 @@ export async function getMessagesByDate(
   }
 }
 
-// 팀 메시지 최신순 조회 (폴링용, limit/cursor 기반)
+// 팀 메시지 최신순 조회 (폴링용, limit/cursor 기반, senderName JOIN 포함)
 export async function getMessagesByTeam(
   teamId: string,
   limit = 50,
@@ -79,18 +82,22 @@ export async function getMessagesByTeam(
   try {
     const result = before
       ? await pool.query<ChatMessage>(
-          `SELECT id, team_id, sender_id, type, content, sent_at, created_at
-           FROM chat_messages
-           WHERE team_id = $1 AND sent_at < $2
-           ORDER BY sent_at DESC
+          `SELECT cm.id, cm.team_id, cm.sender_id, u.name AS sender_name,
+                  cm.type, cm.content, cm.sent_at, cm.created_at
+           FROM chat_messages cm
+           JOIN users u ON u.id = cm.sender_id
+           WHERE cm.team_id = $1 AND cm.sent_at < $2
+           ORDER BY cm.sent_at DESC
            LIMIT $3`,
           [teamId, before, limit]
         )
       : await pool.query<ChatMessage>(
-          `SELECT id, team_id, sender_id, type, content, sent_at, created_at
-           FROM chat_messages
-           WHERE team_id = $1
-           ORDER BY sent_at DESC
+          `SELECT cm.id, cm.team_id, cm.sender_id, u.name AS sender_name,
+                  cm.type, cm.content, cm.sent_at, cm.created_at
+           FROM chat_messages cm
+           JOIN users u ON u.id = cm.sender_id
+           WHERE cm.team_id = $1
+           ORDER BY cm.sent_at DESC
            LIMIT $2`,
           [teamId, limit]
         )
