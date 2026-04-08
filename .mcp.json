@@ -1,0 +1,11 @@
+{
+ "mcpServers": {
+  "postgresql-mcp": {
+   "command": "cmd",
+   "args": ["/c", "npx", "-y", "@henkey/postgres-mcp-server"],
+   "env": {
+    "POSTGRES_CONNECTION_STRING": "postgresql://postgres:postgres@localhost:5432/postgres"
+   }
+  }
+ }
+}
