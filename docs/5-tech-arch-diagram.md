@@ -128,7 +128,7 @@ graph TB
     end
 
     Pool["pg Pool\n글로벌 싱글턴\n(backend/lib/db/pool.ts, max: 5)"]
-    DB["PostgreSQL\n(DB/schema.sql)"]
+    DB["PostgreSQL\n(database/schema.sql)"]
 
     Routes --> WithAuth --> WithRole
     WithRole --> Queries

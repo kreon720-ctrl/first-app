@@ -8,6 +8,7 @@
 | 1.1 | 2026-04-08 | TeamInvitation → TeamJoinRequest 전면 반영: DB 스키마, 쿼리 파일, API 엔드포인트, 프론트엔드 화면·훅, E2E 시나리오 전수 갱신 |
 | 1.2 | 2026-04-08 | BE-11 일정 API에 GET /api/teams/:teamId/schedules/:id (일정 상세 조회) 추가 |
 | 1.3 | 2026-04-09 | 디렉토리 구조 개편 반영: 모든 파일 경로를 backend/ · frontend/ · DB/ 기준으로 갱신 |
+| 1.4 | 2026-04-09 | DB/ → database/ 디렉토리명 변경 반영 |
 
 ---
 
@@ -107,7 +108,7 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 - [x] DB-02
 
 **작업 내용**:
-- [x] `DB/schema.sql` 생성
+- [x] `database/schema.sql` 생성
 - [x] `users` 테이블: id(UUID PK), email(UNIQUE), name(VARCHAR 50), password_hash, created_at
 - [x] `teams` 테이블: id(UUID PK), name(VARCHAR 100), leader_id(FK→users), created_at
 - [x] `team_members` 테이블: (team_id, user_id) 복합 PK, role ENUM('LEADER','MEMBER'), created_at
@@ -115,7 +116,7 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 - [x] `schedules` 테이블: id(UUID PK), team_id(FK), title(VARCHAR 200), description, start_at, end_at, CHECK(end_at > start_at), created_by(FK→users), created_at, updated_at
 - [x] `chat_messages` 테이블: id(UUID PK), team_id(FK), sender_id(FK→users), type ENUM('NORMAL','SCHEDULE_REQUEST'), content(TEXT 2000자), sent_at, created_at
 - [x] 인덱스: `users(email)`, `team_members(user_id)`, `team_join_requests(team_id, status)`, `team_join_requests(requester_id)`, `schedules(team_id, start_at, end_at)`, `chat_messages(team_id, sent_at DESC)`
-- [x] PostgreSQL에 실행 (`psql -f DB/schema.sql`)
+- [x] PostgreSQL에 실행 (`psql -f database/schema.sql`)
 
 **완료 조건**:
 - [x] 모든 테이블 생성 확인 (`\dt`)

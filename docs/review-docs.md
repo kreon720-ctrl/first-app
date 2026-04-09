@@ -71,7 +71,7 @@
 - **디렉토리 구조**: 
   - backend/app/api/ ✅
   - frontend/app/ (pages/components/hooks/store) ✅
-  - DB/schema.sql ✅
+  - database/schema.sql ✅
 - **라우팅 예시 (5절 프론트엔드)**:
   - `/api/teams/public` 경로명 명시 ✅
   - `frontend/hooks/query/useJoinRequests.ts` ✅
@@ -206,7 +206,7 @@
 Team CalTalk 설계 문서는 다음 항목에 대해 완전한 일관성을 유지하고 있습니다:
 
 1. **용어 일관성**: TeamJoinRequest / team_join_requests / 가입 신청 용어 통일
-2. **파일 경로 일관성**: backend/, frontend/, DB/ 3-tier 구조 정확히 반영
+2. **파일 경로 일관성**: backend/, frontend/, database/ 3-tier 구조 정확히 반영
 3. **API 엔드포인트 일관성**: 모든 문서의 엔드포인트가 docs/7-api-spec.md 및 swagger.json과 정확히 일치
 4. **데이터 모델 일관성**: ERD의 테이블명/컬럼명이 API 스키마 및 실행계획과 일치
 5. **화면-API 연결 일관성**: 와이어프레임의 화면이 시나리오 및 실행계획의 기능과 완벽히 매핑

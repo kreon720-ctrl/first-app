@@ -7,8 +7,9 @@
 | 1.0 | 2026-04-07 | 최초 작성 |
 | 1.1 | 2026-04-08 | TeamInvitation → TeamJoinRequest 반영: invitations 관련 디렉토리·엔드포인트 제거, join-requests·teams/public·me/tasks 라우트 추가, ERD/API 명세 경로 수정 |
 | 1.2 | 2026-04-08 | 컴포넌트명 예시의 TeamInviteModal → JoinRequestActions 로 수정 |
-| 1.3 | 2026-04-09 | 디렉토리 구조 개편: backend/ · frontend/ · DB/ 3-tier 분리 |
+| 1.3 | 2026-04-09 | 디렉토리 구조 개편: backend/ · frontend/ · database/ 3-tier 분리 |
 | 1.4 | 2026-04-09 | Vercel 단독 배포 적합성 검토 반영: backend/·frontend/ 각각에 next.config.ts·package.json·tsconfig.json 위치 명시, swagger/ 를 backend/ 내로 이동·Swagger UI route 추가, 환경변수를 서비스별 루트에 분리 명시, NEXT_PUBLIC_API_URL 구조 추가, frontend/lib/apiClient.ts 에 API URL 환경변수 참조 명시 |
+| 1.5 | 2026-04-09 | DB/ 디렉토리명을 database/ 로 변경 |
 
 ---
 
@@ -44,7 +45,7 @@
     ↓ SQL
 [DB Layer]
   pg 쿼리 함수 (backend/lib/db/queries/)
-  PostgreSQL (DB/schema.sql)
+  PostgreSQL (database/schema.sql)
 ```
 
 ### 의존 방향 규칙
@@ -233,7 +234,7 @@ if (process.env.NODE_ENV !== 'production') {
 │   ├── tsconfig.json    # ← frontend/ 전용 TypeScript 경로 매핑
 │   ├── package.json     # ← frontend/ 전용 의존성 (React, TanStack Query, Zustand 등)
 │   └── .env.example     # ← frontend/ 전용 환경변수 키 목록 (NEXT_PUBLIC_API_URL 등)
-├── DB/              # 데이터베이스: DDL 스키마
+├── database/              # 데이터베이스: DDL 스키마
 └── docs/            # 설계 문서
 ```
 
@@ -414,7 +415,7 @@ backend/
 ## 9. DB 디렉토리 구조
 
 ```
-DB/
+database/
 └── schema.sql                     # 테이블 DDL (초기 마이그레이션)
 ```
 
