@@ -134,7 +134,7 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 | Task | 파일 | 핵심 함수 | 상태 |
 |------|------|-----------|------|
 | DB-04 | `backend/lib/db/queries/userQueries.ts` | createUser, getUserByEmail, getUserById | ✅ 완료 · 테스트 통과 |
-| DB-05 | `backend/lib/db/queries/teamQueries.ts` | createTeam, getTeamById, getUserTeams, addTeamMember, getUserTeamRole | ✅ 완료 |
+| DB-05 | `backend/lib/db/queries/teamQueries.ts` | createTeam, getTeamById, getUserTeams, addTeamMember, getUserTeamRole | ✅ 완료 · 테스트 통과 |
 | DB-06 | `backend/lib/db/queries/joinRequestQueries.ts` | createJoinRequest, getJoinRequestById, getPendingJoinRequestsByTeam, getPendingJoinRequestsByLeader, updateJoinRequestStatus | ✅ 완료 |
 | DB-07 | `backend/lib/db/queries/scheduleQueries.ts` | createSchedule, getSchedulesByDateRange, getScheduleById, updateSchedule, deleteSchedule | ✅ 완료 |
 | DB-08 | `backend/lib/db/queries/chatQueries.ts` | createChatMessage, getMessagesByDate (KST 기준), getMessagesByTeam | ✅ 완료 |
@@ -150,6 +150,15 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 - [x] getUserByEmail → 이메일로 정확히 조회
 - [x] getUserById → ID로 정확히 조회
 - [x] getUserById(없는 ID) → null 반환 확인
+- [x] TypeScript 컴파일 오류 0건 (`npx tsc --noEmit`)
+
+**DB-05 테스트 결과** (`backend/scripts/test-db05.ts`):
+- [x] createTeam → UUID 생성, name·leader_id 반환 확인
+- [x] addTeamMember(LEADER) → role=LEADER 등록 확인
+- [x] addTeamMember(MEMBER) → role=MEMBER 등록 확인
+- [x] getTeamById → ID로 조회, 없는 ID → null 반환
+- [x] getUserTeams → 팀 격리 확인 (leader/member 각 1개 팀, role 정확)
+- [x] getUserTeamRole → LEADER/MEMBER/비소속(null) 구분 확인
 - [x] TypeScript 컴파일 오류 0건 (`npx tsc --noEmit`)
 
 ---
