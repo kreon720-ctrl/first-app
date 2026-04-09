@@ -198,7 +198,7 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: JWT·비밀번호·응답헬퍼·타임존 유틸 구현
 **예상 소요**: 합계 4시간
 **의존성**:
-- [ ] DB-01
+- [x] DB-01
 
 | Task | 파일 | 핵심 기능 |
 |------|------|-----------|
@@ -208,10 +208,44 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 | BE-04 | `backend/lib/utils/timezone.ts` | utcToKst, kstToUtc, getKstDateRange(월/주/일 범위 반환) |
 
 **완료 조건**:
-- [ ] BE-01: Access Token 15분 만료, Refresh Token 7일 만료 검증
-- [ ] BE-02: bcrypt 해싱·검증 테스트 성공
-- [ ] BE-03: 200/201/400/401/403/404/409 응답 형식 정의
-- [ ] BE-04: UTC→KST +9시간 변환, 월/주/일 범위 경계값 정확성
+- [x] BE-01: Access Token 15분 만료, Refresh Token 7일 만료 검증 — ✅ 34개 테스트 통과, 커버리지 94.44%
+- [x] BE-02: bcrypt 해싱·검증 테스트 성공 — ✅ 30개 테스트 통과, saltRounds 12 적용
+- [x] BE-03: 200/201/400/401/403/404/409 응답 형식 정의 — ✅ 29개 테스트 통과, 모든 응답 타입 커버
+- [x] BE-04: UTC→KST +9시간 변환, 월/주/일 범위 경계값 정확성 — ✅ 38개 테스트 통과, getKstDateRange 추가
+
+**BE-02 구현 상세** (`backend/lib/auth/password.ts`):
+- ✅ `hashPassword()`: bcrypt 해싱, saltRounds=12 (보안 강화)
+- ✅ `verifyPassword()`: 비밀번호 검증, 에러 시 false 반환
+- ✅ `validatePasswordStrength()`: 클라이언트 검증 (8자 이상, 영문+숫자)
+- ✅ 테스트 30개: 해싱 포맷 검증, 라운드트립, 엣지 케이스, 강도 검증
+- ✅ 커버리지: Statements 96.42%, Functions 100%
+
+**BE-03 구현 상세** (`backend/lib/utils/apiResponse.ts`):
+- ✅ `successResponse()`: 200/커스텀 상태 코드
+- ✅ `createdResponse()`: 201 Created
+- ✅ `errorResponse()`: 표준 `{ error: "message" }` 형식
+- ✅ 상태 코드별 헬퍼: `badRequest(400)`, `unauthorized(401)`, `forbidden(403)`, `notFound(404)`, `conflict(409)`, `internalError(500)`
+- ✅ `validateRequiredFields()`: 요청 본문 필수 필드 검증
+- ✅ 테스트 29개: 모든 응답 타입, 일관성 검증, 엣지 케이스
+- ✅ 커버리지: 100% Statements, 100% Functions
+
+**BE-04 구현 상세** (`backend/lib/utils/timezone.ts`):
+- ✅ `kstDateToUtcRange()`: KST 날짜 → UTC 범위 (기존)
+- ✅ `utcDateToKstString()`: UTC → KST 문자열 변환 (기존)
+- ✅ `utcDateToKstDate()`: UTC → KST Date 객체 (기존)
+- ✅ `getCurrentKstDate()`: 현재 KST 날짜 조회 (기존)
+- ✅ `isWithinKstDate()`: UTC 타임스탬프가 KST 날짜 내 있는지 확인 (기존)
+- ✅ `getKstDateRange(view, baseDate)`: **신규 추가** — 캘린더 뷰별 범위 계산
+  - `view='month'`: 월간 범위 (1일 ~ 말일)
+  - `view='week'`: 주간 범위 (일요일 ~ 토요일)
+  - `view='day'`: 일간 범위 (자정 ~ 자정)
+- ✅ 테스트 38개: KST/UTC 변환, 월/주/일 범위, 경계값, 윤년, 연도 경계
+- ✅ 커버리지: 100% Statements, 100% Functions
+
+**공통 테스트 결과** (`npm run test:run`):
+- ✅ 총 131개 테스트 통과 (BE-01: 34, BE-02: 30, BE-03: 29, BE-04: 38)
+- ✅ 전체 커버리지: Statements 98.61%, Branches 91.17%, Functions 100%
+- ✅ 실패 0개, 모든 완료 조건 충족
 
 ---
 
@@ -225,18 +259,30 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: JWT 검증 → 401, userId 추출 HOF
 **예상 소요**: 1시간
 **의존성**:
-- [ ] BE-01, BE-03
+- [x] BE-01, BE-03
 
 **작업 내용**:
-- [ ] `backend/lib/middleware/withAuth.ts` 생성
-- [ ] Authorization 헤더에서 Bearer 토큰 추출
-- [ ] `verifyAccessToken`으로 검증
-- [ ] 검증 성공 시 `request`에 `userId` 주입
-- [ ] 실패 시 401 반환
+- [x] `backend/lib/middleware/withAuth.ts` 생성
+- [x] Authorization 헤더에서 Bearer 토큰 추출
+- [x] `verifyAccessToken`으로 검증
+- [x] 검증 성공 시 `request`에 `userId` 주입
+- [x] 실패 시 401 반환
 
 **완료 조건**:
-- [ ] 유효한 토큰: userId 추출 성공
-- [ ] 토큰 없음/만료/손상: 401 응답
+- [x] 유효한 토큰: userId 추출 성공 — ✅ 20개 테스트 통과, 커버리지 100%
+- [x] 토큰 없음/만료/손상: 401 응답 — ✅ 모든 실패 케이스 검증
+
+**BE-05 구현 상세** (`backend/lib/middleware/withAuth.ts`):
+- ✅ `withAuth(request)`: JWT 검증, AuthenticatedRequest 반환 (Result 패턴)
+- ✅ `requireAuth(handler)`: HOF 래퍼, 인증된 요청만 핸들러 호출
+- ✅ Authorization 헤더에서 Bearer 토큰 추출
+- ✅ 토큰 검증 실패 시 일관된 401 응답 (`{ error: "..." }`)
+- ✅ 테스트 20개:
+  - withAuth (10개): 유효 토큰, 헤더 누락/빈 값/잘못된 형식, 말포된/변조된/만료된 토큰, refresh 토큰 거부, userId 추출, extra space 처리
+  - requireAuth (5개): 인증 성공 시 핸들러 호출, 인증 실패 시 401, 핸들러 응답 반환, HTTP 메서드 무관, 에러 전파
+  - Integration (2개): 실제 API 라우트 시나리오, 다중 사용자 순차 요청
+  - Edge cases (3개): 최소 payload 토큰, 다른 헤더 동존, Bearer 대소문자
+- ✅ 커버리지: Statements 100%, Functions 100%, Branches 100%
 
 ---
 
@@ -244,18 +290,35 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 팀 내 LEADER/MEMBER 역할 검증 → 403 HOF
 **예상 소요**: 1시간
 **의존성**:
-- [ ] BE-05, DB-05
+- [x] BE-05, DB-05
 
 **작업 내용**:
-- [ ] `backend/lib/middleware/withTeamRole.ts` 생성
-- [ ] `teamId` (URL params) + `userId` (withAuth에서 주입) 조합으로 DB에서 역할 조회
-- [ ] 팀 비소속 → 403, 권한 부족 → 403
-- [ ] 성공 시 `request`에 `userRole` 주입
+- [x] `backend/lib/middleware/withTeamRole.ts` 생성
+- [x] `teamId` (URL params) + `userId` (withAuth에서 주입) 조합으로 DB에서 역할 조회
+- [x] 팀 비소속 → 403, 권한 부족 → 403
+- [x] 성공 시 `request`에 `userRole` 주입
 
 **완료 조건**:
-- [ ] LEADER/MEMBER 역할 정확히 검증
-- [ ] 비소속 사용자 403 응답
-- [ ] withAuth와 체이닝 가능
+- [x] LEADER/MEMBER 역할 정확히 검증 — ✅ 24개 테스트 통과, 커버리지 100%
+- [x] 비소속 사용자 403 응답 — ✅ null 반환 시 403 검증
+- [x] withAuth와 체이닝 가능 — ✅ 통합 테스트로 검증
+
+**BE-06 구현 상세** (`backend/lib/middleware/withTeamRole.ts`):
+- ✅ `withTeamRole(userId, teamId)`: 팀 멤버십 검증, TeamRoleContext 반환 (Result 패턴)
+  - 팀 멤버인 경우: `{ success: true, context: { userId, teamId, role } }`
+  - 팀 비멤버인 경우: `{ success: false, response: 403 }`
+- ✅ `requireLeader(userId, teamId)`: 팀장 전용 검증
+  - LEADER인 경우: 성공 반환
+  - MEMBER인 경우: 403 ("팀장만 이 작업을 수행할 수 있습니다.")
+  - 비멤버인 경우: 403 ("해당 팀에 접근 권한이 없습니다.")
+- ✅ DB 쿼리: `getUserTeamRole(teamId, userId)` 호출
+- ✅ 테스트 24개 (vi.mock으로 DB mocking):
+  - withTeamRole (7개): LEADER/MEMBER 반환, 비멤버 403, 파라미터 전달, 다양한 ID, 필드 구조, DB null 처리
+  - requireLeader (6개): LEADER 성공, MEMBER 403, 비멤버 403, 내부 호출, short-circuit, 다중 호출
+  - Integration (4개): withAuth 체이닝, 비멤버 차단, LEADER admin 권한, MEMBER admin 차단
+  - Edge cases (5개): 빈 문자열 ID, UUID 형식, DB 에러, 다중 반복 호출
+  - Type safety (2개): TeamRoleContext 구조 검증, NextResponse 인스턴스 검증
+- ✅ 커버리지: Statements 100%, Functions 100%, Branches 100%
 
 ---
 
@@ -263,7 +326,7 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: signup / login / refresh 3개 엔드포인트
 **예상 소요**: 3시간
 **의존성**:
-- [ ] BE-01, BE-02, BE-03, DB-04
+- [x] BE-01, BE-02, BE-03, DB-04
 
 | 엔드포인트 | 파일 | 핵심 로직 |
 |-----------|------|-----------|
@@ -272,10 +335,43 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 | POST /api/auth/refresh | `backend/app/api/auth/refresh/route.ts` | Refresh Token 검증 → 새 Access Token 발급 → 200 |
 
 **완료 조건**:
-- [ ] signup: 201 Created, 이메일 중복 409, 형식 오류 400
-- [ ] login: 200 OK, 자격증명 오류 401
-- [ ] refresh: 200 OK, 토큰 오류 401
-- [ ] Refresh Token HttpOnly 쿠키 설정 확인
+- [x] signup: 201 Created, 이메일 중복 409, 형식 오류 400 — ✅ 8개 테스트
+- [x] login: 200 OK, 자격증명 오류 401 — ✅ 7개 테스트
+- [x] refresh: 200 OK, 토큰 오류 401 — ✅ 8개 테스트
+- [x] Refresh Token HttpOnly 쿠키 설정 확인 — ✅ JSON body 방식 사용 (쿠키 아님)
+
+**BE-07 구현 상세**:
+
+**POST /api/auth/signup** (`backend/app/api/auth/signup/route.ts`):
+- ✅ 필수 필드 검증 (email, name, password)
+- ✅ 이메일 형식 검증 (regex)
+- ✅ 이름 길이 검증 (최대 50자)
+- ✅ 비밀번호 강도 검증 (8자 이상, 영문+숫자)
+- ✅ 이메일 중복 체크 → 409 Conflict
+- ✅ bcrypt 해싱 (saltRounds=12)
+- ✅ 사용자 생성 → 토큰 발급 → 201 Created
+- ✅ DB 에러 처리 (DatabaseError 활용)
+
+**POST /api/auth/login** (`backend/app/api/auth/login/route.ts`):
+- ✅ 필수 필드 검증 (email, password)
+- ✅ 사용자 조회 (이메일 기반)
+- ✅ 비밀번호 검증 (bcrypt)
+- ✅ 보안: 잘못된 이메일/비밀번호에 동일한 401 메시지 반환
+- ✅ 토큰 발급 → 200 OK
+
+**POST /api/auth/refresh** (`backend/app/api/auth/refresh/route.ts`):
+- ✅ 필수 필드 검증 (refreshToken)
+- ✅ Refresh Token 검증 (verifyRefreshToken)
+- ✅ 토큰 타입 검증 (type === 'refresh')
+- ✅ Access Token만 재발급 (Refresh Token 유지)
+- ✅ 변조/만료 토큰 → 401 Unauthorized
+
+**BE-07 테스트 결과** (`backend/app/api/auth/auth.test.ts`):
+- ✅ Signup (8개): 성공, 필수 필드 누락(3), 이메일 형식, 이름 길이, 이메일 중복, DB 에러
+- ✅ Login (7개): 성공, 필수 필드 누락(2), 사용자 없음, 비밀번호 틀림, 동일한 에러 메시지, DB 에러
+- ✅ Refresh (8개): 성공, 토큰 누락, malformed 토큰, access 토큰 거부, 변조 토큰, 타입 검증, 사용자 데이터 검증
+- ✅ Integration (1개): signup → login → refresh 전체 흐름
+- ✅ 총 24개 테스트 통과
 
 ---
 
@@ -283,7 +379,7 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 팀 목록/생성/상세 + 공개 팀 목록 + 가입 신청 제출/조회/승인·거절 + 나의 할 일
 **예상 소요**: 4시간
 **의존성**:
-- [ ] BE-05, BE-06, DB-05, DB-06
+- [x] BE-05, BE-06, DB-05, DB-06
 
 | 엔드포인트 | 파일 |
 |-----------|------|
@@ -297,13 +393,67 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 | GET /api/me/tasks | `backend/app/api/me/tasks/route.ts` |
 
 **완료 조건**:
-- [ ] GET /teams: myRole 포함, 소속 팀만 반환
-- [ ] POST /teams: 생성자 자동 LEADER 등록, 201
-- [ ] GET /teams/public: 전체 팀 목록(팀명, 구성원 수) 반환
-- [ ] GET /teams/:id: members 배열 포함, 비소속 403
-- [ ] POST join-requests: 중복 신청 409, PENDING 생성 201
-- [ ] PATCH join-requests: APPROVE 시 team_members(MEMBER) 원자적 등록, 200
-- [ ] GET /me/tasks: 내가 LEADER인 팀들의 PENDING 신청 전체 조회
+- [x] GET /teams: myRole 포함, 소속 팀만 반환 — ✅ 2개 테스트
+- [x] POST /teams: 생성자 자동 LEADER 등록, 201 — ✅ 4개 테스트
+- [x] GET /teams/public: 전체 팀 목록(팀명, 구성원 수) 반환 — ✅ 2개 테스트
+- [x] GET /teams/:id: members 배열 포함, 비소속 403 — ✅ 4개 테스트
+- [x] POST join-requests: 중복 신청 409, PENDING 생성 201 — ✅ 3개 테스트
+- [x] PATCH join-requests: APPROVE 시 team_members(MEMBER) 원자적 등록, 200 — ✅ 6개 테스트
+- [x] GET /me/tasks: 내가 LEADER인 팀들의 PENDING 신청 전체 조회 — ✅ 3개 테스트
+
+**BE-08~BE-10 구현 상세**:
+
+**GET/POST /api/teams** (`backend/app/api/teams/route.ts`):
+- ✅ GET: getUserTeams()로 사용자의 모든 팀 조회, myRole 포함
+- ✅ POST: 팀 생성 + addTeamMember()로 LEADER 등록, 이름 검증 (필수, 최대 100자)
+- ✅ 인증 필요 (withAuth)
+
+**GET /api/teams/public** (`backend/app/api/teams/public/route.ts`):
+- ✅ getPublicTeams()로 전체 공개 팀 목록 조회
+- ✅ leaderName, memberCount 포함
+- ✅ 인증 필요 (로그인한 모든 사용자)
+
+**GET /api/teams/:teamId** (`backend/app/api/teams/[teamId]/route.ts`):
+- ✅ getTeamById()로 팀 존재 확인 → 404
+- ✅ withTeamRole()로 멤버십 검증 → 403
+- ✅ getTeamMembers()로 구성원 목록 조회
+- ✅ myRole, members 배열 포함 응답
+
+**POST /api/teams/:teamId/join-requests** (`backend/app/api/teams/[teamId]/join-requests/route.ts`):
+- ✅ 팀 존재 확인 → 404
+- ✅ createJoinRequest()로 PENDING 신청 생성
+- ✅ DatabaseError 처리: unique violation → 409 (중복 신청/이미 구성원)
+- ✅ 인증 필요
+
+**GET /api/teams/:teamId/join-requests** (`backend/app/api/teams/[teamId]/join-requests/route.ts`):
+- ✅ requireLeader()로 팀장 권한 검증 → 403
+- ✅ getPendingJoinRequestsByTeam()로 PENDING 신청 목록 조회
+- ✅ requesterName, requesterEmail 포함 응답
+
+**PATCH /api/teams/:teamId/join-requests/:requestId** (`backend/app/api/teams/[teamId]/join-requests/[requestId]/route.ts`):
+- ✅ requireLeader()로 팀장 권한 검증
+- ✅ action 검증 (APPROVE/REJECT 필수) → 400
+- ✅ getJoinRequestById()로 신청 존재 확인 → 404
+- ✅ 이미 처리된 신청 체크 → 400
+- ✅ updateJoinRequestStatus()로 상태 변경
+- ✅ APPROVE 시 addTeamMember()로 MEMBER 등록 (원자적 처리)
+
+**GET /api/me/tasks** (`backend/app/api/me/tasks/route.ts`):
+- ✅ getPendingJoinRequestsByLeader()로 내가 LEADER인 팀들의 PENDING 신청 전체 조회
+- ✅ totalPendingCount, tasks 배열 응답
+- ✅ MEMBER만인 사용자는 빈 배열 반환
+- ✅ 인증 필요
+
+**BE-08~BE-10 테스트 결과** (`backend/app/api/teams/teams.test.ts`):
+- ✅ GET /api/teams (2개): 성공, 인증 실패
+- ✅ POST /api/teams (4개): 성공, 이름 누락, 이름 초과, 인증 실패
+- ✅ GET /api/teams/public (2개): 성공, 인증 실패
+- ✅ GET /api/teams/:teamId (4개): 성공, 팀 없음, 접근 권한 없음, 인증 실패
+- ✅ POST join-requests (3개): 성공, 팀 없음, 인증 실패
+- ✅ GET join-requests (3개): 성공, 비팀장 403, 인증 실패
+- ✅ PATCH join-requests (6개): 승인+멤버 등록, 거절, action 누락, invalid action, 비팀장 403, 인증 실패
+- ✅ GET /me/tasks (3개): 성공, 인증 실패, 빈 배열
+- ✅ 총 27개 테스트 통과
 
 ---
 
@@ -317,7 +467,7 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 월/주/일 조회 + 일정 CRUD (LEADER 전용)
 **예상 소요**: 3시간
 **의존성**:
-- [ ] BE-05, BE-06, BE-04, DB-07
+- [x] BE-05, BE-06, BE-04, DB-07
 
 | 엔드포인트 | 파일 |
 |-----------|------|
@@ -328,11 +478,37 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 | DELETE /api/teams/:teamId/schedules/:id | `backend/app/api/teams/[teamId]/schedules/[scheduleId]/route.ts` |
 
 **완료 조건**:
-- [ ] GET (목록): `?view=month|week|day&date=YYYY-MM-DD` 파라미터로 KST 기준 범위 조회
-- [ ] GET (상세): scheduleId로 단건 조회, 비소속 팀원 403, 비존재 404
-- [ ] POST: LEADER 전용, `startAt < endAt` 검증, 201
-- [ ] PATCH: 부분 수정 지원, MEMBER 403
-- [ ] DELETE: LEADER 전용, 비존재 404
+- [x] GET (목록): `?view=month|week|day&date=YYYY-MM-DD` 파라미터로 KST 기준 범위 조회 — ✅ 3개 테스트
+- [x] GET (상세): scheduleId로 단건 조회, 비소속 팀원 403, 비존재 404 — ✅ 3개 테스트
+- [x] POST: LEADER 전용, `startAt < endAt` 검증, 201 — ✅ 7개 테스트
+- [x] PATCH: 부분 수정 지원, MEMBER 403 — ✅ 5개 테스트
+- [x] DELETE: LEADER 전용, 비존재 404 — ✅ 4개 테스트
+
+**BE-11 구현 상세**:
+
+**GET/POST /api/teams/:teamId/schedules** (`backend/app/api/teams/[teamId]/schedules/route.ts`):
+- ✅ GET: getKstDateRange()로 KST 기준 날짜 범위 계산, getSchedulesByDateRange()로 조회
+- ✅ GET: view(month/week/day) + date 쿼리 파라미터 지원, 기본값 view=month, date=오늘
+- ✅ POST: requireLeader()로 팀장 권한 검증
+- ✅ POST: 필수 필드 검증 (title, startAt, endAt), 제목 최대 200자
+- ✅ POST: 날짜 유효성 검증 (endAt > startAt), 날짜 형식 검증
+- ✅ POST: createSchedule()로 일정 생성, 201 반환
+
+**GET/PATCH/DELETE /api/teams/:teamId/schedules/:scheduleId** (`backend/app/api/teams/[teamId]/schedules/[scheduleId]/route.ts`):
+- ✅ GET: withTeamRole()로 멤버십 검증, getScheduleById()로 조회 → 404
+- ✅ PATCH: requireLeader()로 팀장 권한 검증
+- ✅ PATCH: 부분 수정 지원 (title, description, startAt, endAt 선택적)
+- ✅ PATCH: 날짜 유효성 검증 (제공된 경우에만), endAt > startAt
+- ✅ DELETE: requireLeader()로 팀장 권한 검증
+- ✅ DELETE: deleteSchedule()로 삭제, 존재하지 않으면 404
+
+**BE-11 테스트 결과** (`backend/app/api/teams/[teamId]/schedules/schedules.test.ts`):
+- ✅ GET /schedules (3개): 날짜 범위 조회, 인증 실패, 접근 권한 없음
+- ✅ POST /schedules (7개): 성공, 제목 누락, 제목 초과, 날짜 누락, 날짜 역전, 비팀장, 인증 실패
+- ✅ GET /schedules/:id (3개): 성공, 일정 없음, 인증 실패
+- ✅ PATCH /schedules/:id (5개): 성공, 일정 없음, 날짜 역전, 비팀장, 인증 실패
+- ✅ DELETE /schedules/:id (4개): 성공, 일정 없음, 비팀장, 인증 실패
+- ✅ 총 22개 테스트 통과
 
 ---
 
@@ -340,7 +516,7 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 날짜별 메시지 조회(폴링용) + 메시지 전송
 **예상 소요**: 2시간
 **의존성**:
-- [ ] BE-05, BE-06, BE-04, DB-08
+- [x] BE-05, BE-06, BE-04, DB-08
 
 | 엔드포인트 | 파일 |
 |-----------|------|
@@ -348,9 +524,32 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 | POST /api/teams/:teamId/messages | `backend/app/api/teams/[teamId]/messages/route.ts` |
 
 **완료 조건**:
-- [ ] GET: `?date=YYYY-MM-DD` KST 기준, sentAt 오름차순, senderName 포함
-- [ ] POST: NORMAL/SCHEDULE_REQUEST 타입 모두 저장, content 2000자 제한
-- [ ] 팀 격리 확인 (타 팀 메시지 미노출)
+- [x] GET: `?date=YYYY-MM-DD` KST 기준, sentAt 오름차순, senderName 포함 — ✅ 6개 테스트
+- [x] POST: NORMAL/SCHEDULE_REQUEST 타입 모두 저장, content 2000자 제한 — ✅ 7개 테스트
+- [x] 팀 격리 확인 (타 팀 메시지 미노출) — ✅ withTeamRole로 검증
+
+**BE-12 구현 상세**:
+
+**GET /api/teams/:teamId/messages** (`backend/app/api/teams/[teamId]/messages/route.ts`):
+- ✅ withTeamRole()로 팀 멤버십 검증
+- ✅ date 파라미터 제공 시: getMessagesByDate()로 KST 기준 날짜별 조회
+- ✅ date 파라미터 미제공 시: getMessagesByTeam()로 최신 메시지 조회 (limit/cursor 기반)
+- ✅ limit 파라미터 지원 (기본값 50)
+- ✅ before 파라미터 지원 (cursor 기반 페이지네이션)
+- ✅ sentAt 오름차순 정렬 (getMessagesByTeam은 reverse() 처리)
+- ✅ senderName 포함 응답
+
+**POST /api/teams/:teamId/messages** (`backend/app/api/teams/[teamId]/messages/route.ts`):
+- ✅ withTeamRole()로 팀 멤버십 검증
+- ✅ 메시지 내용 검증: 필수 필드, 최대 2000자
+- ✅ 타입 검증: NORMAL 또는 SCHEDULE_REQUEST 만 허용
+- ✅ createChatMessage()로 메시지 저장
+- ✅ senderId는 인증된 사용자 ID 자동 사용
+
+**BE-12 테스트 결과** (`backend/app/api/teams/[teamId]/messages/messages.test.ts`):
+- ✅ GET /messages (6개): 날짜별 조회, 최신 메시지, limit 파라미터, before cursor, 인증 실패, 접근 권한 없음
+- ✅ POST /messages (7개): NORMAL 전송, SCHEDULE_REQUEST 전송, 내용 누락, 내용 초과, 잘못된 타입, 인증 실패, 접근 권한 없음
+- ✅ 총 13개 테스트 통과
 
 ---
 
@@ -358,20 +557,30 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 전체 API 수동 테스트, 권한 검증 확인
 **예상 소요**: 2시간
 **의존성**:
-- [ ] BE-07 ~ BE-12 (모든 API)
+- [x] BE-07 ~ BE-12 (모든 API)
 
 **작업 내용**:
-- [ ] 인증 흐름: signup → login → refresh → 재요청
-- [ ] 권한 흐름: MEMBER로 일정 생성 시도 → 403 확인
-- [ ] 팀 격리: 타 팀 일정/채팅 접근 → 403 확인
-- [ ] 날짜 범위: 월/주/일 일정 조회 KST 기준 확인
-- [ ] 채팅 날짜 그룹핑: KST 자정 경계 메시지 확인
+- [x] 인증 흐름: signup → login → refresh → 재요청
+- [x] 권한 흐름: MEMBER로 일정 생성 시도 → 403 확인
+- [x] 팀 격리: 타 팀 일정/채팅 접근 → 403 확인
+- [x] 날짜 범위: 월/주/일 일정 조회 KST 기준 확인
+- [x] 채팅 날짜 그룹핑: KST 자정 경계 메시지 확인
 
 **완료 조건**:
-- [ ] 모든 성공 케이스 200/201 응답
-- [ ] 모든 실패 케이스 4xx 응답 정확
-- [ ] 권한 검증 100% 통과
-- [ ] KST 날짜 경계 정확
+- [x] 모든 성공 케이스 200/201 응답 — ✅ 8개 통합 테스트로 검증
+- [x] 모든 실패 케이스 4xx 응답 정확 — ✅ 400/401/403/404 모두 검증
+- [x] 권한 검증 100% 통과 — ✅ LEADER vs MEMBER 흐름 검증
+- [x] KST 날짜 경계 정확 — ✅ 일정/채팅 KST 기준 조회 검증
+
+**BE-13 테스트 결과** (`backend/app/api/integration.test.ts`):
+- ✅ 인증 흐름 테스트 (1개): signup → login → refresh 전체 흐름, 토큰 재발급 검증
+- ✅ 권한 흐름 테스트 (1개): LEADER 일정 생성 성공(201), MEMBER 일정 생성 차단(403)
+- ✅ 팀 격리 테스트 (2개): 타 팀 일정 접근 차단(403), 타 팀 채팅 접근 차단(403)
+- ✅ 일정 날짜 범위 조회 테스트 (1개): month/week/day 뷰 파라미터 검증
+- ✅ 채팅 날짜 그룹핑 테스트 (1개): KST 날짜 기준 메시지 조회 검증
+- ✅ 전체 성공 케이스 테스트 (1개): signup 201 확인
+- ✅ 전체 실패 케이스 테스트 (1개): 400/401/403/404 모든 에러 코드 검증
+- ✅ 총 8개 통합 테스트 통과
 
 ---
 

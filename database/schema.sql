@@ -100,6 +100,10 @@ CREATE INDEX IF NOT EXISTS idx_team_join_requests_team_id_status
     ON team_join_requests(team_id, status);
 CREATE INDEX IF NOT EXISTS idx_team_join_requests_requester_id
     ON team_join_requests(requester_id);
+-- PENDING 중복 신청 방지 (동일 사용자가 동일 팀에 PENDING 상태 요청 중복 불가)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_team_join_requests_pending_unique
+    ON team_join_requests(team_id, requester_id)
+    WHERE status = 'PENDING';
 
 -- schedules
 CREATE INDEX IF NOT EXISTS idx_schedules_team_id_start_at

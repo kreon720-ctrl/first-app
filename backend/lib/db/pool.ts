@@ -2,7 +2,7 @@
 // 글로벌 싱글턴 패턴으로 동일 인스턴스 내 재사용. PgBouncer 또는 Neon serverless driver 사용 권장.
 import { Pool } from 'pg'
 
-const globalForPg = global as unknown as { pgPool: Pool }
+const globalForPg = global as unknown as { pgPool: Pool | undefined }
 
 export const pool =
   globalForPg.pgPool ??
@@ -13,6 +13,9 @@ export const pool =
     connectionTimeoutMillis: 5000,
   })
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPg.pgPool = pool
+// Development 환경에서 HMR 시 재사용을 위해 글로벌에 저장
+if (process.env.NODE_ENV === 'development') {
+  if (!globalForPg.pgPool) {
+    globalForPg.pgPool = pool
+  }
 }

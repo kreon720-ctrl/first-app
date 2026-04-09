@@ -91,13 +91,21 @@ export async function updateSchedule(
     const result = await pool.query<Schedule>(
       `UPDATE schedules
        SET title       = COALESCE($3, title),
-           description = COALESCE($4, description),
-           start_at    = COALESCE($5, start_at),
-           end_at      = COALESCE($6, end_at),
+           description = CASE WHEN $4::boolean THEN $5 ELSE description END,
+           start_at    = COALESCE($6, start_at),
+           end_at      = COALESCE($7, end_at),
            updated_at  = now()
        WHERE team_id = $1 AND id = $2
        RETURNING id, team_id, created_by, title, description, start_at, end_at, created_at, updated_at`,
-      [teamId, id, title ?? null, description ?? null, startAt ?? null, endAt ?? null]
+      [
+        teamId,
+        id,
+        title ?? null,
+        'description' in params,
+        description ?? null,
+        startAt ?? null,
+        endAt ?? null,
+      ]
     )
     return result.rows[0] ?? null
   } catch (err) {
