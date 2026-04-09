@@ -7,6 +7,7 @@ import {
   JoinRequest,
 } from '@/lib/db/queries/joinRequestQueries'
 import { getTeamById } from '@/lib/db/queries/teamQueries'
+import { getUserById } from '@/lib/db/queries/userQueries'
 import { pool } from '@/lib/db/pool'
 
 interface PatchJoinRequestBody {
@@ -108,11 +109,15 @@ export async function PATCH(
       updatedRequest = await updateJoinRequestStatus(requestId, 'REJECTED')
     }
 
+    // 7. 신청자 정보 조회 (requesterName 응답에 포함 — API 설계 명세 준수)
+    const requester = await getUserById(joinRequest.requester_id)
+
     return NextResponse.json({
       id: updatedRequest!.id,
       teamId: updatedRequest!.team_id,
       teamName: team.name,
       requesterId: updatedRequest!.requester_id,
+      requesterName: requester?.name ?? '',
       status: updatedRequest!.status,
       requestedAt: updatedRequest!.requested_at,
       respondedAt: updatedRequest!.responded_at,

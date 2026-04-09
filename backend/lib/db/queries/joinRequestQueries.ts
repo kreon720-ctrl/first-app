@@ -1,4 +1,5 @@
 import { pool } from '@/lib/db/pool'
+import { DatabaseError } from '@/lib/errors/databaseError'
 
 export type JoinRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
@@ -30,7 +31,14 @@ export async function createJoinRequest(
     )
     return result.rows[0]
   } catch (err) {
-    throw new Error(`createJoinRequest 실패: ${(err as Error).message}`)
+    // PG 에러 코드를 보존하여 DatabaseError로 래핑 (unique constraint 감지 등)
+    const pgError = err as { code?: string; constraint?: string; detail?: string; message: string }
+    throw new DatabaseError(
+      pgError.message,
+      pgError.code,
+      pgError.constraint,
+      pgError.detail
+    )
   }
 }
 

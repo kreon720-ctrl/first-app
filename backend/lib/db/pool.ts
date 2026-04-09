@@ -13,9 +13,7 @@ export const pool =
     connectionTimeoutMillis: 5000,
   })
 
-// Development 환경에서 HMR 시 재사용을 위해 글로벌에 저장
-if (process.env.NODE_ENV === 'development') {
-  if (!globalForPg.pgPool) {
-    globalForPg.pgPool = pool
-  }
+// Non-production 환경에서 HMR 시 재사용을 위해 글로벌에 저장 (development + test 포함)
+if (process.env.NODE_ENV !== 'production') {
+  globalForPg.pgPool = pool
 }

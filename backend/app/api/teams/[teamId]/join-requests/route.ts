@@ -5,7 +5,7 @@ import {
   createJoinRequest,
   getPendingJoinRequestsByTeam,
 } from '@/lib/db/queries/joinRequestQueries'
-import { getTeamById } from '@/lib/db/queries/teamQueries'
+import { getTeamById, getUserTeamRole } from '@/lib/db/queries/teamQueries'
 import { DatabaseError } from '@/lib/errors/databaseError'
 
 /**
@@ -34,7 +34,16 @@ export async function POST(
       )
     }
 
-    // 2. 가입 신청 생성
+    // 2. 이미 팀 구성원인지 확인 (FR-02-4)
+    const existingRole = await getUserTeamRole(teamId, authResult.user.userId)
+    if (existingRole) {
+      return NextResponse.json(
+        { error: '이미 해당 팀의 구성원입니다.' },
+        { status: 409 }
+      )
+    }
+
+    // 3. 가입 신청 생성 (PENDING 중복은 DB unique index로 감지)
     try {
       const joinRequest = await createJoinRequest(teamId, authResult.user.userId)
 
@@ -53,19 +62,11 @@ export async function POST(
     } catch (err) {
       if (err instanceof DatabaseError) {
         if (err.isUniqueViolation()) {
-          // 중복 신청 또는 이미 구성원
-          if (err.constraint?.includes('pending_unique')) {
-            return NextResponse.json(
-              { error: '이미 가입 신청이 진행 중입니다.' },
-              { status: 409 }
-            )
-          }
-          if (err.constraint?.includes('team_members')) {
-            return NextResponse.json(
-              { error: '이미 해당 팀의 구성원입니다.' },
-              { status: 409 }
-            )
-          }
+          // PENDING 중복 신청 방지 (idx_team_join_requests_pending_unique)
+          return NextResponse.json(
+            { error: '이미 가입 신청이 진행 중입니다.' },
+            { status: 409 }
+          )
         }
       }
       throw err

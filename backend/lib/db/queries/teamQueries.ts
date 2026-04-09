@@ -70,7 +70,8 @@ export async function getPublicTeams(): Promise<PublicTeam[]> {
        JOIN users u ON u.id = t.leader_id
        LEFT JOIN team_members tm ON tm.team_id = t.id
        GROUP BY t.id, t.name, t.leader_id, t.created_at, u.name
-       ORDER BY t.created_at DESC`
+       ORDER BY t.name ASC
+       LIMIT 100`
     )
     return result.rows
   } catch (err) {

@@ -337,7 +337,7 @@
       },
       "Message": {
         "type": "object",
-        "required": ["id", "teamId", "type", "senderId", "senderName", "content", "sentAt"],
+        "required": ["id", "teamId", "type", "senderId", "senderName", "content", "sentAt", "createdAt"],
         "properties": {
           "id": {
             "type": "string",
@@ -368,6 +368,11 @@
             "example": "오늘 미팅 시간 변경합니다. 오후 3시로 조정해주세요."
           },
           "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-04-07T01:30:00.000Z"
+          },
+          "createdAt": {
             "type": "string",
             "format": "date-time",
             "example": "2026-04-07T01:30:00.000Z"
@@ -1100,22 +1105,23 @@
           {
             "name": "view",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string",
-              "enum": ["month", "week", "day"]
+              "enum": ["month", "week", "day"],
+              "default": "month"
             },
-            "description": "조회 단위: month(월), week(주), day(일)"
+            "description": "조회 단위: month(월), week(주), day(일). 기본값: month"
           },
           {
             "name": "date",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
             },
-            "description": "기준 날짜 (YYYY-MM-DD, KST 기준)",
+            "description": "기준 날짜 (YYYY-MM-DD, KST 기준). 기본값: 오늘",
             "example": "2026-04-07"
           }
         ],
@@ -1126,13 +1132,22 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["schedules"],
+                  "required": ["schedules", "view", "date"],
                   "properties": {
                     "schedules": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/Schedule"
                       }
+                    },
+                    "view": {
+                      "type": "string",
+                      "enum": ["month", "week", "day"],
+                      "description": "적용된 조회 단위"
+                    },
+                    "date": {
+                      "type": "string",
+                      "description": "적용된 기준 날짜 (YYYY-MM-DD, KST)"
                     }
                   }
                 }
@@ -1146,13 +1161,7 @@
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "examples": {
                   "invalid_view": {
-                    "value": { "error": "view 파라미터는 month, week, day 중 하나이어야 합니다." }
-                  },
-                  "invalid_date": {
-                    "value": { "error": "date 파라미터는 YYYY-MM-DD 형식이어야 합니다." }
-                  },
-                  "missing_params": {
-                    "value": { "error": "view와 date는 필수 파라미터입니다." }
+                    "value": { "error": "view는 month, week, day 중 하나여야 합니다." }
                   }
                 }
               }
@@ -1261,13 +1270,13 @@
                     "value": { "error": "제목은 최대 200자까지 입력 가능합니다." }
                   },
                   "missing_dates": {
-                    "value": { "error": "startAt과 endAt은 필수입니다." }
+                    "value": { "error": "시작일과 종료일은 필수입니다." }
                   },
                   "invalid_date_range": {
-                    "value": { "error": "종료 일시는 시작 일시보다 이후여야 합니다." }
+                    "value": { "error": "종료일은 시작일보다 늦어야 합니다." }
                   },
                   "invalid_date_format": {
-                    "value": { "error": "날짜 형식이 올바르지 않습니다. ISO 8601 UTC 형식을 사용하세요." }
+                    "value": { "error": "날짜 형식이 올바르지 않습니다." }
                   }
                 }
               }
@@ -1449,10 +1458,10 @@
                     "value": { "error": "제목은 최대 200자까지 입력 가능합니다." }
                   },
                   "invalid_date_range": {
-                    "value": { "error": "종료 일시는 시작 일시보다 이후여야 합니다." }
+                    "value": { "error": "종료일은 시작일보다 늦어야 합니다." }
                   },
                   "invalid_date_format": {
-                    "value": { "error": "날짜 형식이 올바르지 않습니다. ISO 8601 UTC 형식을 사용하세요." }
+                    "value": { "error": "날짜 형식이 올바르지 않습니다." }
                   }
                 }
               }
@@ -1596,13 +1605,34 @@
           {
             "name": "date",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
             },
-            "description": "KST 기준 날짜 (YYYY-MM-DD)",
+            "description": "KST 기준 날짜 (YYYY-MM-DD). 미제공 시 최신 메시지를 limit/before 커서 기반으로 반환",
             "example": "2026-04-07"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1
+            },
+            "description": "date 미제공 시 반환할 최대 메시지 수 (기본값: 50)"
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "date 미제공 시 이 시각 이전 메시지만 반환하는 커서"
           }
         ],
         "responses": {
@@ -1612,13 +1642,8 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["date", "messages"],
+                  "required": ["messages"],
                   "properties": {
-                    "date": {
-                      "type": "string",
-                      "example": "2026-04-07",
-                      "description": "조회 기준 날짜 (KST, YYYY-MM-DD)"
-                    },
                     "messages": {
                       "type": "array",
                       "items": {
@@ -1741,7 +1766,7 @@
                     "value": { "error": "메시지는 최대 2000자까지 입력 가능합니다." }
                   },
                   "invalid_type": {
-                    "value": { "error": "type은 NORMAL 또는 SCHEDULE_REQUEST이어야 합니다." }
+                    "value": { "error": "잘못된 메시지 타입입니다." }
                   }
                 }
               }

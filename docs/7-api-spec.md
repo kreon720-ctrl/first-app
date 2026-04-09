@@ -765,8 +765,8 @@ Authorization: Bearer <accessToken>
 
 | 파라미터 | 타입 | 필수 | 기본값 | 설명 |
 |----------|------|------|--------|------|
-| view | string | O | - | 조회 단위: `month`, `week`, `day` |
-| date | string | O | - | 기준 날짜 (YYYY-MM-DD, KST 기준). `month`는 해당 월 전체, `week`는 해당 주 전체(월~일), `day`는 해당 하루 |
+| view | string | X | `month` | 조회 단위: `month`, `week`, `day`. 기본값: `month` |
+| date | string | X | 오늘 | 기준 날짜 (YYYY-MM-DD, KST 기준). 기본값: 오늘. `month`는 해당 월 전체, `week`는 해당 주 전체(일~토), `day`는 해당 하루 |
 
 - 요청 예시:
   ```

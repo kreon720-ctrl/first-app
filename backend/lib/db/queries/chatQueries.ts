@@ -40,7 +40,13 @@ export async function createChatMessage(
        RETURNING id, team_id, sender_id, type, content, sent_at, created_at`,
       [teamId, senderId, type, content, sentAt ?? new Date()]
     )
-    return result.rows[0]
+    const row = result.rows[0]
+    // sender_name is not available from INSERT RETURNING — fetch via JOIN
+    const senderResult = await pool.query<{ name: string }>(
+      `SELECT name FROM users WHERE id = $1`,
+      [senderId]
+    )
+    return { ...row, sender_name: senderResult.rows[0]?.name ?? '' }
   } catch (err) {
     throw new Error(`createChatMessage 실패: ${(err as Error).message}`)
   }
