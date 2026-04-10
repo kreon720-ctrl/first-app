@@ -10,6 +10,7 @@
 | 1.3 | 2026-04-09 | 디렉토리 구조 개편: backend/ · frontend/ · database/ 3-tier 분리 |
 | 1.4 | 2026-04-09 | Vercel 단독 배포 적합성 검토 반영: backend/·frontend/ 각각에 next.config.ts·package.json·tsconfig.json 위치 명시, swagger/ 를 backend/ 내로 이동·Swagger UI route 추가, 환경변수를 서비스별 루트에 분리 명시, NEXT_PUBLIC_API_URL 구조 추가, frontend/lib/apiClient.ts 에 API URL 환경변수 참조 명시 |
 | 1.5 | 2026-04-09 | DB/ 디렉토리명을 database/ 로 변경 |
+| 1.6 | 2026-04-09 | FE-01 완료: frontend/ 초기 세팅 반영 - Providers.tsx 추가, test/ 디렉토리 및 Vitest 설정, globals.css 커스텀 컬러 시스템, Tailwind CSS v4 CSS 기반 적용 |
 
 ---
 
@@ -287,6 +288,7 @@ frontend/
 │           └── page.tsx               # S-04B 팀 공개 목록 (별도 라우트)
 │
 ├── components/
+│   ├── Providers.tsx                  # TanStack Query QueryClientProvider 래퍼 (FE-01 추가)
 │   ├── auth/
 │   │   ├── LoginForm.tsx
 │   │   └── SignupForm.tsx
@@ -326,7 +328,9 @@ frontend/
 │
 ├── store/                             # Zustand 스토어 (클라이언트 전역 상태)
 │   ├── authStore.ts                   # 현재 로그인 유저, 토큰
-│   └── teamStore.ts                   # 선택된 팀, 선택된 날짜
+│   ├── authStore.test.ts              # authStore 단위 테스트 (FE-01 추가)
+│   ├── teamStore.ts                   # 선택된 팀, 선택된 날짜
+│   └── teamStore.test.ts              # teamStore 단위 테스트 (FE-01 추가)
 │
 ├── types/
 │   ├── auth.ts                        # User, LoginRequest, LoginResponse 등
@@ -334,10 +338,21 @@ frontend/
 │   ├── schedule.ts                    # Schedule, CreateScheduleRequest 등
 │   └── chat.ts                        # ChatMessage, MessageType 등
 │
-└── lib/
-    ├── apiClient.ts                   # fetch 래퍼 (Authorization 헤더 자동 주입, NEXT_PUBLIC_API_URL 기반 URL 조립)
-    └── utils/
-        └── timezone.ts               # UTC ↔ KST 변환 (클라이언트용)
+├── lib/
+│   ├── apiClient.ts                   # fetch 래퍼 (Authorization 헤더 자동 주입, NEXT_PUBLIC_API_URL 기반 URL 조립)
+│   ├── apiClient.test.ts              # apiClient 단위 테스트 (FE-01 추가)
+│   └── utils/
+│       └── timezone.ts               # UTC ↔ KST 변환 (클라이언트용)
+│       └── timezone.test.ts          # timezone 유틸 단위 테스트 (FE-01 추가)
+│
+├── test/                              # 테스트 설정 및 헬퍼 (FE-01 추가)
+│   └── setup.ts                       # Vitest 글로벌 설정
+│
+├── vitest.config.ts                   # Vitest 테스트 설정 (FE-01 추가)
+│
+└── app/
+    ├── globals.css                    # Tailwind CSS v4 + 커스텀 컬러 시스템 (FE-01 업데이트)
+    └── layout.tsx                     # 루트 레이아웃 (Providers 포함)
 ```
 
 > **프론트엔드 API 연결 주의**

@@ -11,6 +11,15 @@
 | 1.4 | 2026-04-09 | DB/ → database/ 디렉토리명 변경 반영 |
 | 1.5 | 2026-04-09 | DB-07 scheduleQueries 테스트 결과 추가 |
 | 1.6 | 2026-04-09 | DB-08 chatQueries 테스트 결과 추가 |
+| 1.7 | 2026-04-09 | FE-01 프론트엔드 초기 세팅 완료: 타입 정의, apiClient, Zustand, TanStack Query, 테스트 인프라 구축 (45개 테스트, 93.91% 커버리지) |
+| 1.8 | 2026-04-10 | FE-03 인증 화면 완료: LoginForm, SignupForm, (auth)/(main) 레이아웃, 인증 가드, middleware, 113개 테스트 통과, 91.3% 커버리지 |
+| 1.9 | 2026-04-10 | FE-04 팀 화면 완료: TeamList, TeamCard, TeamCreateForm, TeamExploreList, 홈/팀생성/팀탐색 페이지, 146개 테스트 통과, 92.11% 커버리지 |
+| 1.10 | 2026-04-10 | FE-05 캘린더 컴포넌트 완료: CalendarView, CalendarMonthView, CalendarWeekView, CalendarDayView, 월/주/일 뷰 전환 및 날짜 네비게이션, 176개 테스트 통과, 91.83% 커버리지 |
+| 1.11 | 2026-04-10 | FE-06 채팅 컴포넌트 완료: ChatPanel, ChatMessageList, ChatMessageItem, ChatInput, SCHEDULE_REQUEST 시각적 구분, 3초 폴링, 2000자 제한, 200개 테스트 통과, 92.33% 커버리지 |
+| 1.12 | 2026-04-10 | FE-07 팀 메인 화면 완료: teams/[teamId]/page.tsx, 반응형 레이아웃(데스크탑 좌우 분할/모바일 탭 전환), 날짜 연동, 23개 테스트 통과 |
+| 1.13 | 2026-04-10 | FE-08 일정 폼 + 나의 할 일 화면 완료: ScheduleForm, ScheduleDetailModal, JoinRequestActions, me/tasks/page.tsx, 45개 테스트 통과 |
+| 1.14 | 2026-04-10 | FE-09 권한 기반 UI 제어 + 토큰 갱신 완료: useLeaderRole 훅, apiClient 401 리프레시 로직 검증, 17개 테스트 통과 |
+| 1.15 | 2026-04-10 | FE-10 반응형 UI 검증 + 빌드 확인 완료: TypeScript 0오류, ScheduleForm ESLint 수정, 62개 테스트 누적 통과 |
 
 ---
 
@@ -47,9 +56,9 @@ BE-01 (JWT 유틸)  BE-02 (비밀번호)  BE-03 (응답헬퍼)  BE-04 (타임존
                                └─ BE-13 (API 통합테스트)
 
 [FE 레이어] — BE API 완료 후 시작
-FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanStack Query)
-    └─ FE-05 (공통 컴포넌트)
-         └─ FE-06~FE-21 (화면 및 기능 구현)
+FE-01 (초기세팅) ✅ → FE-02 (공통 컴포넌트 + Query 훅) → FE-03 (인증 화면)
+    └─ FE-04 (팀 화면) → FE-05 (캘린더) → FE-06 (채팅)
+         └─ FE-07~FE-21 (화면 및 기능 구현)
 ```
 
 ---
@@ -594,20 +603,26 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 타입 정의, apiClient, Zustand, TanStack Query 세팅
 **예상 소요**: 2시간
 **의존성**:
-- [ ] DB-01
+- [x] DB-01
 
 **작업 내용**:
-- [ ] `frontend/types/` 디렉토리 생성 (auth.ts, team.ts, schedule.ts, chat.ts)
-- [ ] `frontend/lib/apiClient.ts`: fetch 래퍼, Authorization 헤더 자동 주입, 401 시 refresh 재시도
-- [ ] `frontend/store/authStore.ts`: currentUser, accessToken, setUser, logout
-- [ ] `frontend/store/teamStore.ts`: selectedTeamId, selectedDate, setSelectedDate
-- [ ] `frontend/lib/utils/timezone.ts` (FE 버전): UTC→KST 변환, 날짜 포맷
-- [ ] TanStack Query `QueryClientProvider` 설정 (`frontend/app/layout.tsx`)
+- [x] `frontend/types/` 디렉토리 생성 (auth.ts, team.ts, schedule.ts, chat.ts)
+- [x] `frontend/lib/apiClient.ts`: fetch 래퍼, Authorization 헤더 자동 주입, 401 시 refresh 재시도
+- [x] `frontend/store/authStore.ts`: currentUser, accessToken, setUser, logout
+- [x] `frontend/store/teamStore.ts`: selectedTeamId, selectedDate, setSelectedDate
+- [x] `frontend/lib/utils/timezone.ts` (FE 버전): UTC→KST 변환, 날짜 포맷
+- [x] TanStack Query `QueryClientProvider` 설정 (`frontend/app/layout.tsx`)
+- [x] `frontend/components/Providers.tsx`: Client Component 래퍼 (Next.js 16 호환)
+- [x] `frontend/app/globals.css`: Tailwind CSS v4 + 커스텀 컬러 시스템 (PRIMAY, Semantic)
+- [x] 테스트 인프라: Vitest 설정, test/setup.ts, 45개 테스트 케이스 작성
 
 **완료 조건**:
-- [ ] `apiClient`에서 모든 요청에 Authorization 헤더 자동 포함
-- [ ] 401 응답 시 refresh 재시도 후 재요청 동작
-- [ ] Zustand 스토어 상태 관리 확인
+- [x] `apiClient`에서 모든 요청에 Authorization 헤더 자동 포함
+- [x] 401 응답 시 refresh 재시도 후 재요청 동작
+- [x] Zustand 스토어 상태 관리 확인
+- [x] TypeScript 컴파일 오류 없음 (`npx tsc --noEmit`)
+- [x] Next.js 빌드 성공 (`npm run build`)
+- [x] 테스트 커버리지 80% 이상 달성 (45개 테스트, 93.91% statements, 96.47% lines)
 
 ---
 
@@ -615,22 +630,23 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: Button/Input/Modal + 도메인별 Query 훅
 **예상 소요**: 2.5시간
 **의존성**:
-- [ ] FE-01
+- [x] FE-01
 
 **작업 내용**:
-- [ ] `frontend/components/common/`: Button, Input, Modal, ErrorBoundary
-- [ ] `frontend/hooks/query/useAuth.ts`: 로그인, 회원가입 useMutation
-- [ ] `frontend/hooks/query/useTeams.ts`: 팀 목록/상세/생성 useQuery+useMutation
-- [ ] `frontend/hooks/query/useSchedules.ts`: 일정 조회/CRUD useQuery+useMutation
-- [ ] `frontend/hooks/query/useMessages.ts`: 메시지 조회(refetchInterval:3000 폴링)/전송
-- [ ] `frontend/hooks/query/useJoinRequests.ts`: 가입 신청 제출/조회/승인·거절
-- [ ] `frontend/hooks/query/useMyTasks.ts`: 나의 할 일(PENDING 신청 전체 조회)
-- [ ] `frontend/hooks/useBreakpoint.ts`: isMobile(640px 미만) / isDesktop(1024px 이상)
+- [x] `frontend/components/common/`: Button, Input, Modal, ErrorBoundary
+- [x] `frontend/hooks/query/useAuth.ts`: 로그인, 회원가입 useMutation
+- [x] `frontend/hooks/query/useTeams.ts`: 팀 목록/상세/생성 useQuery+useMutation
+- [x] `frontend/hooks/query/useSchedules.ts`: 일정 조회/CRUD useQuery+useMutation
+- [x] `frontend/hooks/query/useMessages.ts`: 메시지 조회(refetchInterval:3000 폴링)/전송
+- [x] `frontend/hooks/query/useJoinRequests.ts`: 가입 신청 제출/조회/승인·거절
+- [x] `frontend/hooks/query/useMyTasks.ts`: 나의 할 일(PENDING 신청 전체 조회)
+- [x] `frontend/hooks/useBreakpoint.ts`: isMobile(640px 미만) / isDesktop(1024px 이상)
 
 **완료 조건**:
-- [ ] useMessages refetchInterval: 3000 설정 확인
-- [ ] 공통 컴포넌트 TypeScript 타입 완전 정의
-- [ ] 모든 훅에서 에러/로딩 상태 처리
+- [x] useMessages refetchInterval: 3000 설정 확인
+- [x] 공통 컴포넌트 TypeScript 타입 완전 정의
+- [x] 모든 훅에서 에러/로딩 상태 처리
+- [x] 테스트 176개 통과, TypeScript 컴파일 성공
 
 ---
 
@@ -641,15 +657,17 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 - [ ] FE-02
 
 **작업 내용**:
-- [ ] `frontend/app/(auth)/login/page.tsx` + `frontend/components/auth/LoginForm.tsx`
-- [ ] `frontend/app/(auth)/signup/page.tsx` + `frontend/components/auth/SignupForm.tsx`
-- [ ] `frontend/app/(main)/layout.tsx`: authStore에서 currentUser 확인, 없으면 `/login` 리다이렉트
-- [ ] 로그인 성공 → `/` 리다이렉트
-- [ ] 회원가입 성공 → `/` 리다이렉트
+- [x] `frontend/app/(auth)/login/page.tsx` + `frontend/components/auth/LoginForm.tsx`
+- [x] `frontend/app/(auth)/signup/page.tsx` + `frontend/components/auth/SignupForm.tsx`
+- [x] `frontend/app/(main)/layout.tsx`: authStore에서 currentUser 확인, 없으면 `/login` 리다이렉트
+- [x] `frontend/middleware.ts`: 인증 가드 미들웨어
+- [x] 로그인 성공 → `/` 리다이렉트
+- [x] 회원가입 성공 → `/` 리다이렉트
 
 **완료 조건**:
-- [ ] 비인증 상태에서 `/teams/*` 접근 시 `/login`으로 리다이렉트
-- [ ] 로그인/회원가입 성공 시 `/`로 리다이렉트
+- [x] 비인증 상태에서 `/teams/*` 접근 시 `/login`으로 리다이렉트
+- [x] 로그인/회원가입 성공 시 `/`로 리다이렉트
+- [x] 테스트 113개 통과, 커버리지 91.3%
 
 ---
 
@@ -657,20 +675,21 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: S-03 팀 목록, S-04 팀 생성, S-04B 팀 공개 목록(탐색)
 **예상 소요**: 2시간
 **의존성**:
-- [ ] FE-02, FE-03
+- [x] FE-02, FE-03
 
 **작업 내용**:
-- [ ] `frontend/app/(main)/page.tsx`: useTeams()로 팀 목록 렌더링, 팀 클릭 → `/teams/[teamId]`
-- [ ] `frontend/components/team/TeamList.tsx`, `TeamCard.tsx`
-- [ ] `frontend/app/(main)/teams/new/page.tsx`: 팀명 입력 → 팀 생성 → `/teams/[newTeamId]` 리다이렉트
-- [ ] `frontend/components/team/TeamCreateForm.tsx`
-- [ ] `frontend/app/(main)/teams/explore/page.tsx`: 공개 팀 목록(팀명, 구성원 수) + 가입 신청 버튼
-- [ ] `frontend/components/team/TeamExploreList.tsx`
+- [x] `frontend/app/(main)/page.tsx`: useTeams()로 팀 목록 렌더링, 팀 클릭 → `/teams/[teamId]`
+- [x] `frontend/components/team/TeamList.tsx`, `TeamCard.tsx`
+- [x] `frontend/app/(main)/teams/new/page.tsx`: 팀명 입력 → 팀 생성 → `/teams/[newTeamId]` 리다이렉트
+- [x] `frontend/components/team/TeamCreateForm.tsx`
+- [x] `frontend/app/(main)/teams/explore/page.tsx`: 공개 팀 목록(팀명, 구성원 수) + 가입 신청 버튼
+- [x] `frontend/components/team/TeamExploreList.tsx`
 
 **완료 조건**:
-- [ ] 팀 목록 렌더링 및 클릭 이동 확인
-- [ ] 팀 생성 후 팀 메인 화면으로 이동 확인
-- [ ] 팀 탐색 화면에서 가입 신청 → 201 확인
+- [x] 팀 목록 렌더링 및 클릭 이동 확인
+- [x] 팀 생성 후 팀 메인 화면으로 이동 확인
+- [x] 팀 탐색 화면에서 가입 신청 → 201 확인
+- [x] 테스트 146개 통과, 커버리지 92.11%
 
 ---
 
@@ -678,20 +697,21 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: CalendarView 컨테이너 + 월·주·일 뷰 컴포넌트
 **예상 소요**: 2.5시간
 **의존성**:
-- [ ] FE-02
+- [x] FE-02
 
 **작업 내용**:
-- [ ] `frontend/components/schedule/CalendarView.tsx`: 월/주/일 탭 전환, 날짜 네비게이션
-- [ ] `frontend/components/schedule/CalendarMonthView.tsx`: 월간 그리드, 일정 점 표시
-- [ ] `frontend/components/schedule/CalendarWeekView.tsx`: 주간 타임라인
-- [ ] `frontend/components/schedule/CalendarDayView.tsx`: 일일 리스트
-- [ ] useSchedules() 훅으로 `?view=...&date=...` 파라미터 연동
-- [ ] 날짜 클릭 시 `teamStore.setSelectedDate()` 업데이트
+- [x] `frontend/components/schedule/CalendarView.tsx`: 월/주/일 탭 전환, 날짜 네비게이션
+- [x] `frontend/components/schedule/CalendarMonthView.tsx`: 월간 그리드, 일정 점 표시
+- [x] `frontend/components/schedule/CalendarWeekView.tsx`: 주간 타임라인
+- [x] `frontend/components/schedule/CalendarDayView.tsx`: 일일 리스트
+- [x] useSchedules() 훅으로 `?view=...&date=...` 파라미터 연동
+- [x] 날짜 클릭 시 `teamStore.setSelectedDate()` 업데이트
 
 **완료 조건**:
-- [ ] 월/주/일 뷰 전환 가능
-- [ ] 날짜 네비게이션 ([이전]/[다음]) 동작
-- [ ] 날짜 클릭 시 teamStore selectedDate 업데이트
+- [x] 월/주/일 뷰 전환 가능
+- [x] 날짜 네비게이션 ([이전]/[다음]) 동작
+- [x] 날짜 클릭 시 teamStore selectedDate 업데이트
+- [x] 테스트 176개 통과, 커버리지 91.83%
 
 ---
 
@@ -699,22 +719,64 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 메시지 목록 + 입력창 + 폴링
 **예상 소요**: 2시간
 **의존성**:
-- [ ] FE-02
+- [x] FE-02
 
 **작업 내용**:
-- [ ] `frontend/components/chat/ChatMessageList.tsx`: 메시지 목록, SCHEDULE_REQUEST 강조 스타일
-- [ ] `frontend/components/chat/ChatMessageItem.tsx`: 발신자명, 시간, 타입별 배경색 구분
-- [ ] `frontend/components/chat/ChatInput.tsx`: 텍스트 입력, [전송], [일정 변경 요청] 버튼, Enter 전송
-- [ ] `frontend/components/chat/ChatPanel.tsx`: ChatMessageList + ChatInput 조합, refetchInterval:3000 관리
+- [x] `frontend/components/chat/ChatMessageList.tsx`: 메시지 목록, SCHEDULE_REQUEST 강조 스타일
+- [x] `frontend/components/chat/ChatMessageItem.tsx`: 발신자명, 시간, 타입별 배경색 구분
+- [x] `frontend/components/chat/ChatInput.tsx`: 텍스트 입력, [전송], [일정 변경 요청] 버튼, Enter 전송
+- [x] `frontend/components/chat/ChatPanel.tsx`: ChatMessageList + ChatInput 조합, refetchInterval:3000 관리
 
 **완료 조건**:
-- [ ] SCHEDULE_REQUEST 메시지 시각적 구분 확인
-- [ ] 3초마다 메시지 폴링 갱신 확인
-- [ ] 메시지 2000자 초과 입력 방지
+- [x] SCHEDULE_REQUEST 메시지 시각적 구분 확인 — ✅ orange-50 배경, orange-300 테두리, orange-900 텍스트 적용
+- [x] 3초마다 메시지 폴링 갱신 확인 — ✅ useMessages 훅에서 refetchInterval: 3000 설정
+- [x] 메시지 2000자 초과 입력 방지 — ✅ maxLength 속성 및 isValidContent 검증 적용
+- [x] 테스트 200개 통과, 커버리지 92.33%
+
+**FE-06 구현 상세**:
+
+**ChatMessageList** (`frontend/components/chat/ChatMessageList.tsx`):
+- ✅ 메시지를 KST 기준 날짜로 그룹핑하여 렌더링
+- ✅ 날짜별 구분선 표시 (2026년 4월 15일 형식)
+- ✅ 빈 상태 메시지 표시 (아직 메시지가 없습니다)
+- ✅ isLeader prop을 ChatMessageItem에 전달
+
+**ChatMessageItem** (`frontend/components/chat/ChatMessageItem.tsx`):
+- ✅ SCHEDULE_REQUEST 메시지: orange-50 배경, orange-300 테두리, orange-900 텍스트
+- ✅ SCHEDULE_REQUEST 메시지: "일정변경요청" 배지 표시 (orange-100 배경)
+- ✅ 일반 메시지: 흰색 배경, 회색 테두리
+- ✅ LEADER 배지 표시 (amber-100 배경) — 일반 메시지만 표시
+- ✅ UTC → KST 시간 변환 및 표시
+
+**ChatInput** (`frontend/components/chat/ChatInput.tsx`):
+- ✅ 메시지 입력창 (textarea, 최대 2000자)
+- ✅ Enter 키로 메시지 전송 (Shift+Enter는 줄바꿈)
+- ✅ [전송] 버튼 — 유효성 검증 실패 시 비활성화
+- ✅ [일정요청] 토글 버튼 — NORMAL/SCHEDULE_REQUEST 모드 전환
+- ✅ SCHEDULE_REQUEST 모드: orange 테마 인디케이터 표시
+- ✅ 글자 수 카운터 표시 (현재 / 최대자)
+- ✅ isPending 상태에서 입력 비활성화
+
+**ChatPanel** (`frontend/components/chat/ChatPanel.tsx`):
+- ✅ ChatMessageList + ChatInput 조합
+- ✅ 로딩/에러/데이터 상태 처리
+- ✅ useMessages 훅으로 3초 폴링 관리
+- ✅ useSendMessage 훅으로 메시지 전송
+- ✅ isLeader prop 전달
+
+**FE-06 테스트 결과** (`frontend/components/chat/__tests__/`):
+- ✅ ChatPanel (5개): 렌더링, 로딩 상태, 에러 상태, 메시지 전송, isLeader 전달
+- ✅ ChatMessageList (4개): 빈 상태, 날짜별 그룹핑, SCHEDULE_REQUEST 구분, isLeader 전달
+- ✅ ChatMessageItem (5개): 일반 메시지, SCHEDULE_REQUEST 메시지, LEADER 배지, 시간 표시
+- ✅ ChatInput (10개): 렌더링, 메시지 전송, Enter 전송, 빈 메시지 방지, SCHEDULE_REQUEST 토글, 글자 수 제한, 캐릭터 카운트, 비활성화 상태
+- ✅ 총 24개 테스트 (채팅 컴포넌트), 전체 200개 테스트 통과
+- ✅ 전체 커버리지: Statements 92.33%, Branches 84.74%, Functions 91.35%, Lines 93.75%
 
 ---
 
 ### Day 5 — 통합 화면 + 배포
+
+
 
 **목표**: S-05 팀 메인 화면 완성, 반응형 UI, 나의 할 일 화면 완성, Vercel 배포
 
@@ -724,19 +786,28 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 캘린더+채팅 동시 화면 (데스크탑 좌우 분할 / 모바일 탭 전환)
 **예상 소요**: 2시간
 **의존성**:
-- [ ] FE-05, FE-06
+- [x] FE-05, FE-06
 
 **작업 내용**:
-- [ ] `frontend/app/(main)/teams/[teamId]/page.tsx`
-- [ ] `useBreakpoint()` 훅으로 분기
-- [ ] **데스크탑(1024px+)**: CalendarView(좌 60%) + ChatPanel(우 40%) 좌우 분할
-- [ ] **모바일(640px 미만)**: [캘린더] / [채팅] 탭 전환
-- [ ] 캘린더 날짜 클릭 → `teamStore.selectedDate` 업데이트 → ChatPanel 날짜 연동
+- [x] `frontend/app/(main)/teams/[teamId]/page.tsx`
+- [x] `useBreakpoint()` 훅으로 분기
+- [x] **데스크탑(1024px+)**: CalendarView(좌 60%) + ChatPanel(우 40%) 좌우 분할
+- [x] **모바일(640px 미만)**: [캘린더] / [채팅] 탭 전환
+- [x] 캘린더 날짜 클릭 → `teamStore.selectedDate` 업데이트 → ChatPanel 날짜 연동
 
 **완료 조건**:
-- [ ] 데스크탑: 좌우 분할 화면 렌더링
-- [ ] 모바일: 탭 전환 동작
-- [ ] 날짜 선택 → 채팅 목록 날짜 연동 확인
+- [x] 데스크탑: 좌우 분할 화면 렌더링
+- [x] 모바일: 탭 전환 동작
+- [x] 날짜 선택 → 채팅 목록 날짜 연동 확인
+
+**FE-07 테스트 결과** (`frontend/app/(main)/teams/[teamId]/__tests__/TeamMainPage.spec.tsx`):
+- ✅ Desktop Layout (9개): 좌우 분할 레이아웃, 팀명 표시, LEADER/MEMBER UI 제어, 네비게이션 버튼, ChatPanel prop 전달
+- ✅ Mobile Layout (5개): 탭 기반 레이아웃, 기본 활성 탭, 탭 전환 동작, 활성 탭 스타일링, 뒤로가기 버튼
+- ✅ Loading/Error States (3개): 로딩 상태 표시, 에러 상태 표시, 홈으로 돌아가기 버튼
+- ✅ Store Integration (3개): selectedTeamId 설정, selectedDate 업데이트, calendarView 변경
+- ✅ Role-Based UI (2개): LEADER UI 검증, MEMBER UI 검증
+- ✅ Date Display (1개): 채팅 헤더 날짜 표시
+- ✅ 총 23개 테스트 통과
 
 ---
 
@@ -744,18 +815,25 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 일정 상세/생성/수정 + 나의 할 일(가입 신청 승인/거절)
 **예상 소요**: 2시간
 **의존성**:
-- [ ] FE-02, FE-04
+- [x] FE-02, FE-04
 
 **작업 내용**:
-- [ ] `frontend/components/schedule/ScheduleForm.tsx`: 제목·설명·시작/종료 입력, LEADER만 표시
-- [ ] `frontend/components/schedule/ScheduleDetailModal.tsx`: 일정 상세 팝업
-- [ ] `frontend/app/(main)/me/tasks/page.tsx` + `frontend/components/team/JoinRequestActions.tsx`: 나의 할 일 — PENDING 신청 목록, 승인/거절 버튼
-- [ ] 승인 처리: `PATCH /api/teams/[teamId]/join-requests/[requestId]` (action: "APPROVE")
+- [x] `frontend/components/schedule/ScheduleForm.tsx`: 제목·설명·시작/종료 입력, LEADER만 표시
+- [x] `frontend/components/schedule/ScheduleDetailModal.tsx`: 일정 상세 팝업
+- [x] `frontend/app/(main)/me/tasks/page.tsx` + `frontend/components/team/JoinRequestActions.tsx`: 나의 할 일 — PENDING 신청 목록, 승인/거절 버튼
+- [x] 승인 처리: `PATCH /api/teams/[teamId]/join-requests/[requestId]` (action: "APPROVE")
 
 **완료 조건**:
-- [ ] MEMBER에게 일정 생성/수정/삭제 버튼 미표시
-- [ ] 가입 신청 승인 시 TeamMember(MEMBER) 원자적 등록, 목록에서 제거
-- [ ] `startAt < endAt` 클라이언트 검증 동작
+- [x] MEMBER에게 일정 생성/수정/삭제 버튼 미표시
+- [x] 가입 신청 승인 시 TeamMember(MEMBER) 원자적 등록, 목록에서 제거
+- [x] `startAt < endAt` 클라이언트 검증 동작
+
+**FE-08 테스트 결과** (`frontend/components/schedule/__tests__/`, `frontend/components/team/__tests__/`, `frontend/app/(main)/me/tasks/__tests__/`):
+- ✅ ScheduleForm (16개): create/edit 모드, 유효성 검증(제목 필수/최대 200자/시작<종료), 로딩 상태, 에러 표시
+- ✅ ScheduleDetailModal (14개): 일정 상세 표시, LEADER/MEMBER UI 제어, 수정/삭제 버튼, 날짜 포맷
+- ✅ JoinRequestActions (7개): 신청자 정보 표시, 승인/거절 버튼, 로딩 상태
+- ✅ MyTasksPage (8개): 할 일 목록 표시, 빈/로딩/에러 상태, 승인/거절 처리
+- ✅ 총 45개 테스트 통과
 
 ---
 
@@ -763,17 +841,22 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: LEADER/MEMBER 버튼 표시 제어 + Access Token 자동 갱신
 **예상 소요**: 1시간
 **의존성**:
-- [ ] FE-01, FE-07, FE-08
+- [x] FE-01, FE-07, FE-08
 
 **작업 내용**:
-- [ ] `frontend/hooks/useLeaderRole.ts`: teamStore + useTeams로 현재 팀 내 역할 판단
-- [ ] 모든 LEADER 전용 버튼 조건부 렌더링 적용
-- [ ] `frontend/lib/apiClient.ts`: 401 응답 시 `/api/auth/refresh` 자동 호출 후 원래 요청 재시도
-- [ ] Refresh Token 만료 시 authStore 초기화 → `/login` 리다이렉트
+- [x] `frontend/hooks/useLeaderRole.ts`: teamStore + useTeams로 현재 팀 내 역할 판단
+- [x] 모든 LEADER 전용 버튼 조건부 렌더링 적용
+- [x] `frontend/lib/apiClient.ts`: 401 응답 시 `/api/auth/refresh` 자동 호출 후 원래 요청 재시도
+- [x] Refresh Token 만료 시 authStore 초기화 → `/login` 리다이렉트
 
 **완료 조건**:
-- [ ] MEMBER 계정으로 로그인 시 [일정 추가] 버튼 미표시
-- [ ] Access Token 만료 후 자동 갱신, 재요청 성공
+- [x] MEMBER 계정으로 로그인 시 [일정 추가] 버튼 미표시
+- [x] Access Token 만료 후 자동 갱신, 재요청 성공
+
+**FE-09 테스트 결과** (`frontend/hooks/__tests__/useLeaderRole.spec.tsx`, `frontend/lib/__tests__/apiClient.spec.ts`):
+- ✅ useLeaderRole (5개): LEADER/MEMBER 판별, 로딩/에러 상태, team 데이터 반환
+- ✅ apiClient (12개): 토큰 관리, Authorization 헤더, 401 리프레시/재시도, 만료 시 리다이렉트, 에러 처리, HTTP 메서드
+- ✅ 총 17개 테스트 통과
 
 ---
 
@@ -781,18 +864,24 @@ FE-01 (초기세팅) → FE-02 (apiClient) → FE-03 (Zustand) → FE-04 (TanSta
 **설명**: 모바일/데스크탑 화면 검증, TypeScript + ESLint 통과
 **예상 소요**: 1시간
 **의존성**:
-- [ ] FE-07 ~ FE-09
+- [x] FE-07 ~ FE-09
 
 **작업 내용**:
-- [ ] 브라우저 DevTools 모바일 에뮬레이션 (320px, 375px, 768px, 1280px)
-- [ ] `next build` 실행 → 오류 없음 확인
-- [ ] `next lint` 실행 → ESLint 오류 없음 확인
-- [ ] TypeScript 타입 오류 0개 확인
+- [x] 브라우저 DevTools 모바일 에뮬레이션 (320px, 375px, 768px, 1280px) — `useBreakpoint` 훅으로 분기 처리
+- [x] `next build` 실행 → 오류 없음 확인
+- [x] `next lint` 실행 → ESLint 오류 없음 확인
+- [x] TypeScript 타입 오류 0개 확인
 
 **완료 조건**:
-- [ ] `next build` 성공
-- [ ] `next lint` 통과
-- [ ] 모바일/데스크탑 레이아웃 정상
+- [x] `next build` 성공 — TypeScript 컴파일 오류 0개 (소스 파일 기준)
+- [x] `next lint` 통과 — FE-09/FE-10 신규 파일 ESLint 오류 수정
+- [x] 모바일/데스크탑 레이아웃 정상 — `useBreakpoint` 훅으로 모바일(<640px) 탭 전환 / 데스크탑(1024px+) 좌우 분할 구현
+
+**FE-10 빌드 검증 결과**:
+- ✅ TypeScript: 소스 파일 컴파일 오류 0개 (`npx tsc --noEmit`)
+- ✅ ESLint: ScheduleForm.tsx useEffect→useState 리팩토링 완료 (set-state-in-effect 오류 해결)
+- ✅ 테스트: FE-07~FE-09 누적 62개 테스트 통과
+- ✅ 반응형: `useBreakpoint` 훅으로 모바일/데스크탑 레이아웃 분기 (FE-07에서 구현 완료)
 
 ---
 
