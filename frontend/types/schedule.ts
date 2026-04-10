@@ -28,8 +28,7 @@ export interface ScheduleQueryParams {
   date?: string; // YYYY-MM-DD
 }
 
+// API 명세 GET /api/teams/:teamId/schedules 응답
 export interface ScheduleListResponse {
   schedules: Schedule[];
-  view: CalendarView;
-  date: string;
 }

@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import TeamMainPage from '../page';
+
+// Helper: render with act to resolve React.use(Promise)
+async function renderPage(ui: React.ReactElement) {
+  let result!: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(ui);
+  });
+  return result;
+}
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useTeamStore } from '@/store/teamStore';
 import { useAuthStore } from '@/store/authStore';
@@ -133,39 +142,39 @@ describe('TeamMainPage', () => {
   });
 
   describe('Loading and Error States', () => {
-    it('shows loading state when team data is loading', () => {
+    it('shows loading state when team data is loading', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: undefined,
         isLoading: true,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByText('로딩 중...')).toBeTruthy();
     });
 
-    it('shows error state when team data fails to load', () => {
+    it('shows error state when team data fails to load', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: undefined,
         isLoading: false,
         isError: true,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByText('팀 정보를 불러오는 중 오류가 발생했습니다.')).toBeTruthy();
       expect(screen.getByText('홈으로 돌아가기')).toBeTruthy();
     });
 
-    it('navigates home when "홈으로 돌아가기" button is clicked', () => {
+    it('navigates home when "홈으로 돌아가기" button is clicked', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: undefined,
         isLoading: false,
         isError: true,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       fireEvent.click(screen.getByText('홈으로 돌아가기'));
       expect(mockRouter.push).toHaveBeenCalledWith('/');
@@ -182,118 +191,118 @@ describe('TeamMainPage', () => {
       });
     });
 
-    it('renders side-by-side layout with calendar and chat', () => {
+    it('renders side-by-side layout with calendar and chat', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByTestId('calendar-view')).toBeTruthy();
       expect(screen.getByTestId('chat-panel')).toBeTruthy();
     });
 
-    it('displays team name in header', () => {
+    it('displays team name in header', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByText('개발팀')).toBeTruthy();
     });
 
-    it('shows "나의 할 일" button for LEADER', () => {
+    it('shows "나의 할 일" button for LEADER', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByText('나의 할 일')).toBeTruthy();
     });
 
-    it('hides "나의 할 일" button for MEMBER', () => {
+    it('hides "나의 할 일" button for MEMBER', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockMemberTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.queryByText('나의 할 일')).toBeNull();
     });
 
-    it('navigates to tasks page when "나의 할 일" button is clicked', () => {
+    it('navigates to tasks page when "나의 할 일" button is clicked', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       fireEvent.click(screen.getByText('나의 할 일'));
       expect(mockRouter.push).toHaveBeenCalledWith('/me/tasks');
     });
 
-    it('navigates home when home button is clicked', () => {
+    it('navigates home when home button is clicked', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       const homeButton = screen.getByLabelText('홈');
       fireEvent.click(homeButton);
       expect(mockRouter.push).toHaveBeenCalledWith('/');
     });
 
-    it('logs out when logout button is clicked', () => {
+    it('logs out when logout button is clicked', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       fireEvent.click(screen.getByText('로그아웃'));
       expect(mockLogout).toHaveBeenCalled();
       expect(mockRouter.push).toHaveBeenCalledWith('/login');
     });
 
-    it('passes correct props to ChatPanel', () => {
+    it('passes correct props to ChatPanel', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByTestId('chat-team-id').textContent).toBe('team-123');
       expect(screen.getByTestId('chat-date').textContent).toBe('2026-04-10');
       expect(screen.getByTestId('chat-is-leader').textContent).toBe('true');
     });
 
-    it('passes isLeader=false to ChatPanel for MEMBER', () => {
+    it('passes isLeader=false to ChatPanel for MEMBER', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockMemberTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByTestId('chat-is-leader').textContent).toBe('false');
     });
@@ -309,68 +318,68 @@ describe('TeamMainPage', () => {
       });
     });
 
-    it('renders tab-based layout', () => {
+    it('renders tab-based layout', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByText('캘린더')).toBeTruthy();
       expect(screen.getByText('채팅')).toBeTruthy();
     });
 
-    it('shows calendar tab active by default', () => {
+    it('shows calendar tab active by default', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       const calendarTab = screen.getByText('캘린더');
       expect(calendarTab).toBeTruthy();
       expect(screen.getByTestId('calendar-view')).toBeTruthy();
     });
 
-    it('switches to chat tab when clicked', () => {
+    it('switches to chat tab when clicked', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       fireEvent.click(screen.getByText('채팅'));
       expect(screen.getByTestId('chat-panel')).toBeTruthy();
     });
 
-    it('applies active styling to selected tab', () => {
+    it('applies active styling to selected tab', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       const calendarTab = screen.getByText('캘린더');
       expect(calendarTab.className).toContain('text-primary-600');
       expect(calendarTab.className).toContain('border-primary-500');
     });
 
-    it('navigates home when back button is clicked', () => {
+    it('navigates home when back button is clicked', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       const backButton = screen.getByLabelText('홈');
       fireEvent.click(backButton);
@@ -379,26 +388,26 @@ describe('TeamMainPage', () => {
   });
 
   describe('Store Integration', () => {
-    it('sets selected team ID on mount', () => {
+    it('sets selected team ID on mount', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(mockSetSelectedTeamId).toHaveBeenCalledWith('team-123');
     });
 
-    it('updates selected date when date is clicked', () => {
+    it('updates selected date when date is clicked', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       const clickDateButton = screen.getByText('Click Date');
       fireEvent.click(clickDateButton);
@@ -406,14 +415,14 @@ describe('TeamMainPage', () => {
       expect(mockSetSelectedDate).toHaveBeenCalledWith('2026-04-15');
     });
 
-    it('updates calendar view when view is changed', () => {
+    it('updates calendar view when view is changed', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       const changeViewButton = screen.getByText('Change to Week');
       fireEvent.click(changeViewButton);
@@ -423,27 +432,27 @@ describe('TeamMainPage', () => {
   });
 
   describe('Role-Based UI Control', () => {
-    it('renders LEADER-specific UI for LEADER role', () => {
+    it('renders LEADER-specific UI for LEADER role', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.getByText('나의 할 일')).toBeTruthy();
       expect(screen.getByTestId('chat-is-leader').textContent).toBe('true');
     });
 
-    it('hides LEADER-specific UI for MEMBER role', () => {
+    it('hides LEADER-specific UI for MEMBER role', async () => {
       vi.mocked(useTeamDetail).mockReturnValue({
         data: mockMemberTeam,
         isLoading: false,
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       expect(screen.queryByText('나의 할 일')).toBeNull();
       expect(screen.getByTestId('chat-is-leader').textContent).toBe('false');
@@ -451,7 +460,7 @@ describe('TeamMainPage', () => {
   });
 
   describe('Date Display', () => {
-    it('displays current selected date in chat header for desktop', () => {
+    it('displays current selected date in chat header for desktop', async () => {
       vi.mocked(useBreakpoint).mockReturnValue({
         isMobile: false,
         isTablet: false,
@@ -464,7 +473,7 @@ describe('TeamMainPage', () => {
         isError: false,
       } as unknown as ReturnType<typeof useTeamDetail>);
 
-      render(<TeamMainPage teamId="team-123" />);
+      await renderPage(<TeamMainPage params={Promise.resolve({ teamId: "team-123" })} />);
 
       // The date should be displayed in the chat header
       expect(screen.getByText(/2026년 4월 10일/)).toBeTruthy();

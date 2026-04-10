@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useTeamStore } from '@/store/teamStore';
@@ -11,10 +11,11 @@ import { ChatPanel } from '@/components/chat/ChatPanel';
 import { Button } from '@/components/common/Button';
 
 interface TeamMainPageProps {
-  teamId: string;
+  params: Promise<{ teamId: string }>;
 }
 
-export default function TeamMainPage({ teamId }: TeamMainPageProps) {
+export default function TeamMainPage({ params }: TeamMainPageProps) {
+  const { teamId } = use(params);
   const router = useRouter();
   const { isDesktop } = useBreakpoint();
   const { data: team, isLoading, isError } = useTeamDetail(teamId);

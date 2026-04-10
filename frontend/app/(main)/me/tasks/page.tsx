@@ -16,7 +16,7 @@ export default function MyTasksPage() {
   };
 
   const handleApprove = (requestId: string) => {
-    const task = data?.tasks?.find((t) => t.joinRequest.id === requestId);
+    const task = data?.tasks?.find((t) => t.id === requestId);
     if (task) {
       updateJoinRequest.mutate({
         teamId: task.teamId,
@@ -27,7 +27,7 @@ export default function MyTasksPage() {
   };
 
   const handleReject = (requestId: string) => {
-    const task = data?.tasks?.find((t) => t.joinRequest.id === requestId);
+    const task = data?.tasks?.find((t) => t.id === requestId);
     if (task) {
       updateJoinRequest.mutate({
         teamId: task.teamId,
@@ -110,8 +110,18 @@ export default function MyTasksPage() {
           <div className="flex flex-col gap-4">
             {tasks.map((task) => (
               <JoinRequestActions
-                key={task.joinRequest.id}
-                request={task.joinRequest}
+                key={task.id}
+                request={{
+                  id: task.id,
+                  teamId: task.teamId,
+                  teamName: task.teamName,
+                  requesterId: task.requesterId,
+                  requesterName: task.requesterName,
+                  requesterEmail: task.requesterEmail,
+                  status: task.status,
+                  requestedAt: task.requestedAt,
+                  respondedAt: task.respondedAt,
+                }}
                 onApprove={handleApprove}
                 onReject={handleReject}
                 isPending={updateJoinRequest.isPending}

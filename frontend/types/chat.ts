@@ -22,8 +22,7 @@ export interface ChatMessageListResponse {
   date: string;
 }
 
+// API 명세 GET /api/teams/:teamId/messages 쿼리 파라미터
 export interface ChatQueryParams {
   date?: string; // YYYY-MM-DD (KST)
-  limit?: number;
-  offset?: number;
 }
