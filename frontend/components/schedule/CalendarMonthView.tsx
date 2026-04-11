@@ -82,6 +82,21 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
 
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
+  // Format date range for multi-day schedules: "4.16.~18." or "4.16.~5.2."
+  const formatDateRange = (schedule: Schedule): string => {
+    const start = utcToKST(new Date(schedule.startAt));
+    const end = utcToKST(new Date(schedule.endAt));
+    const startMonth = start.getUTCMonth() + 1;
+    const startDay = start.getUTCDate();
+    const endMonth = end.getUTCMonth() + 1;
+    const endDay = end.getUTCDate();
+    
+    if (startMonth === endMonth) {
+      return `${startMonth}.${startDay}.~${endDay}.`;
+    }
+    return `${startMonth}.${startDay}.~${endMonth}.${endDay}.`;
+  };
+
   // For a given week, assign schedules to rows based on overlap
   // Returns { schedule, row, colStart, colEnd }[]
   const getSchedulesForWeek = (weekDays: Date[]): {
@@ -169,9 +184,26 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
 
   const SCHEDULE_ROW_HEIGHT = 20;
   const SCHEDULE_ROW_GAP = 4;
+  const SCHEDULE_MIN_HEIGHT = 20;
 
-  const rowTop = (row: number): number => 32 + row * (SCHEDULE_ROW_HEIGHT + SCHEDULE_ROW_GAP);
-  const weekHeight = (maxRows: number): string => `calc(80px + ${maxRows * SCHEDULE_ROW_HEIGHT + Math.max(0, maxRows - 1) * SCHEDULE_ROW_GAP}px)`;
+  const rowTop = (row: number, rowHeights: number[]): number => {
+    let top = 32;
+    for (let i = 0; i < row; i++) {
+      top += rowHeights[i] + SCHEDULE_ROW_GAP;
+    }
+    return top;
+  };
+
+  const weekHeight = (rowHeights: number[]): string => {
+    const totalScheduleHeight = rowHeights.reduce((sum, h) => sum + h, 0) + Math.max(0, rowHeights.length - 1) * SCHEDULE_ROW_GAP;
+    return `calc(80px + ${totalScheduleHeight}px)`;
+  };
+
+  // Estimate the number of lines a text will wrap to
+  const estimateTextLines = (text: string, maxCharsPerLine: number = 20): number => {
+    if (!text) return 1;
+    return Math.max(1, Math.ceil(text.length / maxCharsPerLine));
+  };
 
   return (
     <div className="w-full">
@@ -193,8 +225,43 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
       <div className="flex flex-col gap-1.5">
         {weeks.map((week, weekIndex) => {
           const weekScheduleRows = getSchedulesForWeek(week);
-          const maxRows = weekScheduleRows.length > 0 ? Math.max(...weekScheduleRows.map(r => r.row)) + 1 : 0;
-          const cellHeight = weekHeight(maxRows);
+          
+          // Calculate dynamic row heights based on text content
+          const rowHeights: number[] = [];
+          const rowMaxChars: number[] = [];
+          
+          weekScheduleRows.forEach(({ schedule, row, colStart, colEnd }) => {
+            const span = colEnd - colStart + 1;
+            // Estimate available width: each cell is ~1/7 of container, roughly 20 chars per cell at minimum
+            const estimatedCharsPerLine = Math.max(8, span * 18);
+            
+            let textContent: string;
+            if (isSameDaySchedule(schedule)) {
+              // Same-day: "HH:MM title"
+              textContent = `${formatTime(new Date(schedule.startAt))} ${schedule.title}`;
+            } else {
+              // Multi-day: "title (MM/DD~MM/DD)"
+              textContent = `${schedule.title} (${formatDateRange(schedule)})`;
+            }
+            
+            const lines = estimateTextLines(textContent, estimatedCharsPerLine);
+            const neededHeight = Math.max(SCHEDULE_MIN_HEIGHT, lines * 16 + 4); // 16px per line + padding
+            
+            if (!rowHeights[row]) {
+              rowHeights[row] = neededHeight;
+              rowMaxChars[row] = estimatedCharsPerLine;
+            } else {
+              rowHeights[row] = Math.max(rowHeights[row], neededHeight);
+            }
+          });
+          
+          // Fill empty rows with min height
+          const maxRow = weekScheduleRows.length > 0 ? Math.max(...weekScheduleRows.map(r => r.row)) : 0;
+          for (let i = 0; i <= maxRow; i++) {
+            if (!rowHeights[i]) rowHeights[i] = SCHEDULE_MIN_HEIGHT;
+          }
+          
+          const cellHeight = weekHeight(rowHeights);
 
           return (
             <div key={weekIndex} className="relative">
@@ -255,6 +322,7 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
                     // Percentage-based positioning: each cell is 1/7 ≈ 14.285%
                     const leftPct = `${(colStart - 1) * (100 / 7)}%`;
                     const widthPct = `${span * (100 / 7)}%`;
+                    const barHeight = rowHeights[row] || SCHEDULE_MIN_HEIGHT;
 
                     return (
                       <div
@@ -263,21 +331,30 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
                         style={{
                           left: leftPct,
                           width: widthPct,
-                          top: `${rowTop(row)}px`,
+                          top: `${rowTop(row, rowHeights)}px`,
+                          height: `${barHeight}px`,
                           pointerEvents: 'auto',
                         }}
                       >
                         <div
                           className={`
-                            text-xs px-1 py-0.5 truncate text-center cursor-pointer hover:opacity-75 transition-opacity bg-primary-100 text-primary-800 rounded
+                            text-xs px-1 py-0.5 break-words text-center cursor-pointer hover:opacity-75 transition-opacity bg-primary-100 text-primary-800 rounded h-full flex flex-col justify-center
                           `}
-                          title={schedule.title}
+                          title={isSameDaySchedule(schedule) ? schedule.title : `${schedule.title} (${formatDateRange(schedule)})`}
                           onClick={(e) => { e.stopPropagation(); onScheduleClick?.(schedule); }}
                         >
-                          {isSameDaySchedule(schedule) && (
-                            <span className="font-medium opacity-75">{formatTime(new Date(schedule.startAt))} </span>
+                          {isSameDaySchedule(schedule) ? (
+                            <>
+                              <span className="break-words">
+                                <span className="font-medium opacity-75">{formatTime(new Date(schedule.startAt))} </span>
+                                {schedule.title}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="break-words">
+                              {schedule.title} ({formatDateRange(schedule)})
+                            </span>
                           )}
-                          {schedule.title}
                         </div>
                       </div>
                     );

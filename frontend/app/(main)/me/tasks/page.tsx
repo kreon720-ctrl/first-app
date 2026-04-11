@@ -4,15 +4,24 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useMyTasks } from '@/hooks/query/useMyTasks';
 import { useUpdateJoinRequestFromTasks } from '@/hooks/query/useUpdateJoinRequestFromTasks';
+import { useAuthStore } from '@/store/authStore';
 import { JoinRequestActions } from '@/components/team/JoinRequestActions';
+import { Button } from '@/components/common/Button';
 
 export default function MyTasksPage() {
   const router = useRouter();
   const { data, isLoading, isError } = useMyTasks();
   const updateJoinRequest = useUpdateJoinRequestFromTasks();
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const logout = useAuthStore((state) => state.logout);
 
   const handleNavigateHome = () => {
     router.push('/');
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
   };
 
   const handleApprove = (requestId: string) => {
@@ -54,6 +63,18 @@ export default function MyTasksPage() {
           </svg>
         </button>
         <h1 className="text-lg font-semibold text-gray-900">나의 할 일</h1>
+        <div className="flex-1" />
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-normal text-gray-600">{currentUser?.name || '사용자'}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+          >
+            로그아웃
+          </Button>
+        </div>
       </header>
 
       {/* Main Content */}

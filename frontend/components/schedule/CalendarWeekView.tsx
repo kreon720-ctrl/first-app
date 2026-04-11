@@ -193,43 +193,86 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
         style={{ maxHeight: 'calc(100vh - 280px)' }}
       >
         {/* Hour rows */}
-        {Array.from({ length: 24 }, (_, hour) => (
-          <div key={hour} className="flex border-b border-gray-100 min-h-[56px]">
-            {/* Time label */}
-            <div className={`${TIME_COL_WIDTH} flex-shrink-0 border-r border-gray-200 px-1 pt-1 text-xs text-gray-400`}>
-              {String(hour).padStart(2, '0')}:00
-            </div>
+        {Array.from({ length: 24 }, (_, hour) => {
+          // Collect all schedules that start at this hour across all days
+          const hourData = weekDays.map((date) => {
+            const daySchedules = getSchedulesForDate(date)
+              .filter(s => !isMultiDay(s) && getKSTHour(new Date(s.startAt)) === hour)
+              .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
-            {/* One column per day — only single-day schedules */}
-            {weekDays.map((date) => {
-              const daySchedules = getSchedulesForDate(date).filter(s =>
-                !isMultiDay(s) && getKSTHour(new Date(s.startAt)) === hour
-              );
+            return { date, daySchedules };
+          });
 
-              return (
+          // Calculate max schedule count and estimate needed height based on text content
+          const estimateBarHeight = (schedule: Schedule): number => {
+            const start = new Date(schedule.startAt);
+            const end = new Date(schedule.endAt);
+            const isSameDay = scheduleToDay(start).getTime() === scheduleToDay(end).getTime();
+            // Base: title (2 lines max) + time + description if applicable
+            const title = schedule.title;
+            const desc = isSameDay && schedule.description ? schedule.description : '';
+            // Estimate: ~25 chars per line in narrow column
+            const titleLines = Math.min(2, Math.max(1, Math.ceil(title.length / 25)));
+            const descLines = desc ? Math.max(1, Math.ceil(desc.length / 30)) : 0;
+            return 16 * titleLines + 16 + (descLines > 0 ? 14 * descLines + 4 : 0) + 8; // padding
+          };
+
+          // For each day, calculate total height needed
+          const maxNeededHeight = Math.max(
+            56,
+            ...hourData.map(({ daySchedules }) =>
+              daySchedules.reduce((sum, s) => sum + estimateBarHeight(s), 0) + Math.max(0, daySchedules.length - 1) * 2 // gap
+            )
+          );
+          const rowHeight = maxNeededHeight;
+
+          return (
+            <div key={hour} className="flex border-b border-gray-100" style={{ minHeight: `${rowHeight}px` }}>
+              {/* Time label */}
+              <div className={`${TIME_COL_WIDTH} flex-shrink-0 border-r border-gray-200 px-1 pt-1 text-xs text-gray-400`}>
+                {String(hour).padStart(2, '0')}:00
+              </div>
+
+              {/* One column per day */}
+              {hourData.map(({ date, daySchedules }) => (
                 <div
                   key={date.toISOString()}
-                  className={`flex-1 relative border-l border-gray-100 ${isToday(date) ? 'bg-primary-50/30' : ''}`}
+                  className={`flex-1 relative border-l border-gray-100 p-0.5 ${isToday(date) ? 'bg-primary-50/30' : ''}`}
                 >
-                  {daySchedules.map((schedule, idx) => (
-                    <div
-                      key={`${schedule.id}-${idx}`}
-                      onClick={() => onScheduleClick?.(schedule)}
-                      className="absolute inset-x-0.5 top-0.5 bg-primary-100 text-primary-800 text-xs px-1 py-0.5 rounded cursor-pointer hover:bg-primary-200 transition-colors duration-150 z-10 overflow-hidden"
-                      style={{ minHeight: '52px' }}
-                      title={schedule.title}
-                    >
-                      <div className="font-medium truncate">{schedule.title}</div>
-                      <div className="text-primary-600 text-[10px]">
-                        {formatTime(new Date(schedule.startAt))} ~ {formatTime(new Date(schedule.endAt))}
-                      </div>
+                  {daySchedules.length === 0 ? null : (
+                    <div className="flex flex-col gap-0.5">
+                      {daySchedules.map((schedule) => {
+                        const start = new Date(schedule.startAt);
+                        const end = new Date(schedule.endAt);
+                        const isSameDay = scheduleToDay(start).getTime() === scheduleToDay(end).getTime();
+                        const showDescription = isSameDay && schedule.description;
+
+                        return (
+                          <div
+                            key={schedule.id}
+                            onClick={() => onScheduleClick?.(schedule)}
+                            className="bg-primary-100 text-primary-800 px-2 py-1 rounded cursor-pointer hover:bg-primary-200 transition-colors duration-150 break-words"
+                            title={schedule.title}
+                          >
+                            <div className="font-medium text-xs break-words">{schedule.title}</div>
+                            <div className="text-primary-600 text-[10px]">
+                              {formatTime(start)} ~ {formatTime(end)}
+                            </div>
+                            {showDescription && (
+                              <div className="text-primary-700 text-[10px] mt-0.5 break-words" title={schedule.description}>
+                                {schedule.description}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        ))}
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

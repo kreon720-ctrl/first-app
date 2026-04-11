@@ -161,9 +161,18 @@ export function CalendarDayView({
             >
               {layoutItems.map(({ schedule, column, totalColumns, startMin, endMin }) => {
                 const top = (startMin / 60) * HOUR_PX;
-                const height = Math.max(((endMin - startMin) / 60) * HOUR_PX, 22);
+                const durationHeight = Math.max(((endMin - startMin) / 60) * HOUR_PX, 22);
+                
+                // Calculate height needed for text content
                 const colWidthPct =
                   totalColumns > MAX_INLINE_COLS ? MIN_COL_WIDTH_PCT : 100 / totalColumns;
+                // Estimate chars per line based on column width percentage
+                const estimatedCharsPerLine = Math.max(10, Math.floor((colWidthPct / 100) * 60));
+                const titleLines = Math.ceil(schedule.title.length / estimatedCharsPerLine);
+                const descLines = schedule.description ? Math.ceil(schedule.description.length / estimatedCharsPerLine) : 0;
+                const textHeight = 16 * titleLines + 16 + (descLines > 0 ? 14 * descLines + 4 : 0) + 8; // padding
+                
+                const height = Math.max(durationHeight, textHeight);
                 const leftPct = column * colWidthPct;
 
                 return (
@@ -179,15 +188,15 @@ export function CalendarDayView({
                   >
                     <div
                       onClick={() => onScheduleClick?.(schedule)}
-                      className="w-full h-full bg-primary-100 text-primary-800 text-xs px-1.5 py-0.5 rounded cursor-pointer hover:bg-primary-200 transition-colors duration-150 overflow-hidden border-l-2 border-primary-400"
+                      className="w-full h-full bg-primary-100 text-primary-800 text-xs px-1.5 py-0.5 rounded cursor-pointer hover:bg-primary-200 transition-colors duration-150 break-words border-l-2 border-primary-400"
                       title={schedule.title}
                     >
-                      <div className="font-semibold truncate leading-tight">{schedule.title}</div>
+                      <div className="font-semibold break-words leading-tight">{schedule.title}</div>
                       <div className="text-primary-600 text-[10px]">
                         {formatTime(new Date(schedule.startAt))} ~ {formatTime(new Date(schedule.endAt))}
                       </div>
-                      {schedule.description && height >= 56 && (
-                        <div className="text-gray-600 text-[10px] line-clamp-1 mt-0.5">
+                      {schedule.description && (
+                        <div className="text-gray-600 text-[10px] break-words mt-0.5">
                           {schedule.description}
                         </div>
                       )}
