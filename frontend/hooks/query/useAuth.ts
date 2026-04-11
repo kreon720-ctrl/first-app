@@ -11,7 +11,7 @@ export function useSignup() {
       return apiClient.post<AuthResponse>('/api/auth/signup', data);
     },
     onSuccess: (data) => {
-      setUser(data.user, data.accessToken);
+      setUser(data.user, data.accessToken, data.refreshToken);
     },
   });
 }
@@ -24,7 +24,7 @@ export function useLogin() {
       return apiClient.post<AuthResponse>('/api/auth/login', data);
     },
     onSuccess: (data) => {
-      setUser(data.user, data.accessToken);
+      setUser(data.user, data.accessToken, data.refreshToken);
     },
   });
 }

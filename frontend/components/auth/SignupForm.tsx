@@ -209,6 +209,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
         fullWidth
         disabled={!isFormValid || signup.isPending}
         loading={signup.isPending}
+        className="!bg-gray-900 hover:!bg-gray-800 active:!bg-black disabled:!bg-gray-200 disabled:!text-gray-400"
       >
         {signup.isPending ? '회원가입 중...' : '회원가입'}
       </Button>
