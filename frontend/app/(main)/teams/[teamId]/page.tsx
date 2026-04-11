@@ -6,9 +6,13 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useTeamStore } from '@/store/teamStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTeamDetail } from '@/hooks/query/useTeams';
+import { useSchedules, useCreateSchedule, useUpdateSchedule, useDeleteSchedule } from '@/hooks/query/useSchedules';
 import { CalendarView } from '@/components/schedule/CalendarView';
+import { ScheduleForm } from '@/components/schedule/ScheduleForm';
+import { ScheduleDetailModal } from '@/components/schedule/ScheduleDetailModal';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { Button } from '@/components/common/Button';
+import type { Schedule, ScheduleCreateInput, ScheduleUpdateInput } from '@/types/schedule';
 
 interface TeamMainPageProps {
   params: Promise<{ teamId: string }>;
@@ -31,11 +35,59 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
   } = useTeamStore();
 
   const [activeTab, setActiveTab] = useState<'calendar' | 'chat'>('calendar');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [scheduleDefaultDate, setScheduleDefaultDate] = useState<string>('');
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+
+  const { data: schedulesData } = useSchedules(teamId, {
+    view: calendarView,
+    date: selectedDate,
+  });
+  const createSchedule = useCreateSchedule(teamId);
+  const updateSchedule = useUpdateSchedule(teamId, selectedSchedule?.id ?? '');
+  const deleteSchedule = useDeleteSchedule(teamId);
+  const schedules = schedulesData?.schedules ?? [];
 
   // Update selected team ID when component mounts
   useEffect(() => {
     setSelectedTeamId(teamId);
   }, [teamId, setSelectedTeamId]);
+
+  const handleCreateSchedule = (defaultDate?: string) => {
+    setScheduleDefaultDate(defaultDate || selectedDate);
+    setShowCreateModal(true);
+  };
+
+  const handleScheduleClick = (schedule: Schedule) => {
+    setSelectedSchedule(schedule);
+    setShowDetailModal(true);
+  };
+
+  const handleCreateSubmit = async (data: ScheduleCreateInput | ScheduleUpdateInput) => {
+    try {
+      await createSchedule.mutateAsync(data as ScheduleCreateInput);
+      setShowCreateModal(false);
+    } catch { /* ScheduleForm에서 error prop으로 표시 */ }
+  };
+
+  const handleEditSubmit = async (data: ScheduleCreateInput | ScheduleUpdateInput) => {
+    try {
+      await updateSchedule.mutateAsync(data as ScheduleUpdateInput);
+      setShowEditModal(false);
+      setSelectedSchedule(null);
+    } catch { /* ScheduleForm에서 error prop으로 표시 */ }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedSchedule) return;
+    try {
+      await deleteSchedule.mutateAsync(selectedSchedule.id);
+      setShowDetailModal(false);
+      setSelectedSchedule(null);
+    } catch { /* 삭제 실패 */ }
+  };
 
   const handleLogout = () => {
     logout();
@@ -147,13 +199,16 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
             <CalendarView
               currentDate={currentDate}
               view={calendarView}
-              schedules={[]}
+              schedules={schedules}
+              isLeader={isLeader}
               onViewChange={handleViewChange}
               onDateChange={(date) => {
                 const dateString = date.toISOString().split('T')[0];
                 setSelectedDate(dateString);
               }}
               onDateClick={handleDateClick}
+              onCreateSchedule={handleCreateSchedule}
+              onScheduleClick={handleScheduleClick}
             />
           </div>
 
@@ -177,6 +232,79 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
             />
           </div>
         </div>
+
+        {/* 일정 등록 모달 (데스크탑) */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-semibold text-gray-900">일정 등록</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                  aria-label="닫기"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <ScheduleForm
+                mode="create"
+                initialData={scheduleDefaultDate ? {
+                  id: '', teamId, title: '', description: null,
+                  startAt: `${scheduleDefaultDate}T09:00`,
+                  endAt: `${scheduleDefaultDate}T10:00`,
+                  createdBy: '', createdAt: '', updatedAt: '',
+                } : undefined}
+                onSubmit={handleCreateSubmit}
+                onCancel={() => setShowCreateModal(false)}
+                isPending={createSchedule.isPending}
+                error={createSchedule.error instanceof Error ? createSchedule.error.message : null}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 일정 상세/수정/삭제 모달 (데스크탑) */}
+        <ScheduleDetailModal
+          isOpen={showDetailModal}
+          schedule={selectedSchedule}
+          isLeader={isLeader}
+          onClose={() => { setShowDetailModal(false); setSelectedSchedule(null); }}
+          onEdit={() => { setShowDetailModal(false); setShowEditModal(true); }}
+          onDelete={handleDelete}
+          isDeleting={deleteSchedule.isPending}
+        />
+
+        {showEditModal && selectedSchedule && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-semibold text-gray-900">일정 수정</h2>
+                <button
+                  type="button"
+                  onClick={() => { setShowEditModal(false); setSelectedSchedule(null); }}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                  aria-label="닫기"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <ScheduleForm
+                mode="edit"
+                initialData={selectedSchedule}
+                onSubmit={handleEditSubmit}
+                onCancel={() => { setShowEditModal(false); setSelectedSchedule(null); }}
+                isPending={updateSchedule.isPending}
+                error={updateSchedule.error instanceof Error ? updateSchedule.error.message : null}
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -248,13 +376,16 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
             <CalendarView
               currentDate={currentDate}
               view={calendarView}
-              schedules={[]}
+              schedules={schedules}
+              isLeader={isLeader}
               onViewChange={handleViewChange}
               onDateChange={(date) => {
                 const dateString = date.toISOString().split('T')[0];
                 setSelectedDate(dateString);
               }}
               onDateClick={handleDateClick}
+              onCreateSchedule={handleCreateSchedule}
+              onScheduleClick={handleScheduleClick}
             />
           </div>
         </div>
@@ -272,6 +403,79 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
           />
         </div>
       </div>
+
+      {/* 일정 등록 모달 */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-gray-900">일정 등록</h2>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                aria-label="닫기"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <ScheduleForm
+              mode="create"
+              initialData={scheduleDefaultDate ? {
+                id: '', teamId, title: '', description: null,
+                startAt: `${scheduleDefaultDate}T09:00`,
+                endAt: `${scheduleDefaultDate}T10:00`,
+                createdBy: '', createdAt: '', updatedAt: '',
+              } : undefined}
+              onSubmit={handleCreateSubmit}
+              onCancel={() => setShowCreateModal(false)}
+              isPending={createSchedule.isPending}
+              error={createSchedule.error instanceof Error ? createSchedule.error.message : null}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 일정 상세/수정/삭제 모달 */}
+      <ScheduleDetailModal
+        isOpen={showDetailModal}
+        schedule={selectedSchedule}
+        isLeader={isLeader}
+        onClose={() => { setShowDetailModal(false); setSelectedSchedule(null); }}
+        onEdit={() => { setShowDetailModal(false); setShowEditModal(true); }}
+        onDelete={handleDelete}
+        isDeleting={deleteSchedule.isPending}
+      />
+
+      {showEditModal && selectedSchedule && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-gray-900">일정 수정</h2>
+              <button
+                type="button"
+                onClick={() => { setShowEditModal(false); setSelectedSchedule(null); }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                aria-label="닫기"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <ScheduleForm
+              mode="edit"
+              initialData={selectedSchedule}
+              onSubmit={handleEditSubmit}
+              onCancel={() => { setShowEditModal(false); setSelectedSchedule(null); }}
+              isPending={updateSchedule.isPending}
+              error={updateSchedule.error instanceof Error ? updateSchedule.error.message : null}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

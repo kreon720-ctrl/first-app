@@ -9,6 +9,7 @@ describe('TeamList', () => {
     {
       id: 'team-1',
       name: '개발팀',
+      description: null,
       leaderId: 'leader-1',
       myRole: 'LEADER',
       createdAt: '2026-04-01T00:00:00.000Z',
@@ -16,6 +17,7 @@ describe('TeamList', () => {
     {
       id: 'team-2',
       name: '디자인팀',
+      description: null,
       leaderId: 'leader-2',
       myRole: 'MEMBER',
       createdAt: '2026-04-02T00:00:00.000Z',

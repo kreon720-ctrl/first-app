@@ -36,7 +36,7 @@ describe('Auth Store', () => {
       };
       const accessToken = 'test-access-token';
 
-      useAuthStore.getState().setUser(user, accessToken);
+      useAuthStore.getState().setUser(user, accessToken, 'test-refresh-token');
 
       const state = useAuthStore.getState();
       expect(state.currentUser).toEqual(user);
@@ -53,7 +53,7 @@ describe('Auth Store', () => {
         email: 'test@example.com',
         name: 'Test User',
       };
-      useAuthStore.getState().setUser(user, 'test-token');
+      useAuthStore.getState().setUser(user, 'test-token', 'test-refresh-token');
 
       // Then logout
       useAuthStore.getState().logout();
@@ -74,7 +74,7 @@ describe('Auth Store', () => {
         email: 'test@example.com',
         name: 'Test User',
       };
-      useAuthStore.getState().setUser(user, 'test-token');
+      useAuthStore.getState().setUser(user, 'test-token', 'test-refresh-token');
 
       // Then clear user
       useAuthStore.getState().clearUser();

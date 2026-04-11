@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 500" width="620" height="500">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&amp;display=swap');
+      .top-text {
+        font-family: 'Dancing Script', 'Brush Script MT', cursive;
+        font-size: 70px;
+        font-weight: 700;
+        fill: #1e8c1e;
+      }
+      .bottom-text {
+        font-family: 'Dancing Script', 'Brush Script MT', cursive;
+        font-size: 108px;
+        font-weight: 700;
+        fill: #d01010;
+      }
+    </style>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="30" height="30" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="30" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="flesh-clip">
+      <path d="M 92 268 Q 310 430 528 268 L 310 100 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- ===== WATERMELON SLICE ===== -->
+  <!-- Dark green outer rind -->
+  <path d="M 55 302 Q 310 478 565 302 L 545 288 Q 310 458 75 288 Z" fill="#1e6b1e"/>
+  <!-- Medium green rind -->
+  <path d="M 75 288 Q 310 458 545 288 L 528 274 Q 310 442 92 274 Z" fill="#2aa52a"/>
+  <!-- White inner rind strip -->
+  <path d="M 92 274 Q 310 442 528 274 L 520 265 Q 310 430 100 265 Z" fill="#e8f5e0"/>
+  <!-- Red flesh -->
+  <path d="M 100 265 Q 310 430 520 265 L 310 100 Z" fill="#e8192c"/>
+  <!-- Hatch lines on flesh -->
+  <path d="M 100 265 Q 310 430 520 265 L 310 100 Z" fill="url(#hatch)"/>
+
+  <!-- Seeds -->
+  <ellipse cx="200" cy="295" rx="11" ry="17" fill="#0d0d0d" transform="rotate(-18 200 295)"/>
+  <ellipse cx="265" cy="338" rx="10" ry="16" fill="#0d0d0d" transform="rotate(-6 265 338)"/>
+  <ellipse cx="310" cy="355" rx="10" ry="16" fill="#0d0d0d" transform="rotate(0 310 355)"/>
+  <ellipse cx="358" cy="338" rx="10" ry="16" fill="#0d0d0d" transform="rotate(6 358 338)"/>
+  <ellipse cx="420" cy="295" rx="11" ry="17" fill="#0d0d0d" transform="rotate(18 420 295)"/>
+  <ellipse cx="175" cy="248" rx="9" ry="14" fill="#0d0d0d" transform="rotate(-22 175 248)"/>
+  <ellipse cx="448" cy="248" rx="9" ry="14" fill="#0d0d0d" transform="rotate(22 448 248)"/>
+
+  <!-- ===== VINE CURLS (left/right of top text) ===== -->
+  <!-- Left side vine -->
+  <path d="M 68 162 C 52 152 48 134 60 122 C 72 110 88 118 82 132" fill="none" stroke="#1e8c1e" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 82 132 C 86 142 78 152 68 148" fill="none" stroke="#1e8c1e" stroke-width="2" stroke-linecap="round"/>
+  <!-- Right side vine -->
+  <path d="M 552 162 C 568 152 572 134 560 122 C 548 110 532 118 538 132" fill="none" stroke="#1e8c1e" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 538 132 C 534 142 542 152 552 148" fill="none" stroke="#1e8c1e" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Left heart outline -->
+  <path d="M 56 126 C 56 120 62 114 68 120 C 74 114 80 120 80 126 C 80 134 68 143 68 143 C 68 143 56 134 56 126 Z"
+        fill="none" stroke="#1e8c1e" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Right heart outline -->
+  <path d="M 540 126 C 540 120 546 114 552 120 C 558 114 564 120 564 126 C 564 134 552 143 552 143 C 552 143 540 134 540 126 Z"
+        fill="none" stroke="#1e8c1e" stroke-width="2.2" stroke-linejoin="round"/>
+
+  <!-- ===== RED SPLASH DROPS (top right) ===== -->
+  <ellipse cx="462" cy="86" rx="5" ry="13" fill="#cc1111" transform="rotate(-35 462 86)"/>
+  <ellipse cx="480" cy="70" rx="4.5" ry="10" fill="#cc1111" transform="rotate(-12 480 70)"/>
+  <ellipse cx="475" cy="100" rx="3.5" ry="8" fill="#cc1111" transform="rotate(18 475 100)"/>
+  <ellipse cx="496" cy="88" rx="3.5" ry="7" fill="#cc1111" transform="rotate(8 496 88)"/>
+
+  <!-- ===== "Water mellon" — top green script ===== -->
+  <text x="310" y="175" text-anchor="middle" class="top-text">Water mellon</text>
+
+  <!-- ===== "Works" — bottom red script ===== -->
+  <text x="310" y="470" text-anchor="middle" class="bottom-text">Works</text>
+</svg>

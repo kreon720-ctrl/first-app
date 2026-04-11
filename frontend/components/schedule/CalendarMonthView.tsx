@@ -9,9 +9,10 @@ interface CalendarMonthViewProps {
   schedules?: Schedule[];
   selectedDate?: Date;
   onDateClick?: (date: Date) => void;
+  onScheduleClick?: (schedule: Schedule) => void;
 }
 
-export function CalendarMonthView({ currentDate, schedules = [], selectedDate, onDateClick }: CalendarMonthViewProps) {
+export function CalendarMonthView({ currentDate, schedules = [], selectedDate, onDateClick, onScheduleClick }: CalendarMonthViewProps) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -60,12 +61,18 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
     return date.getMonth() === month;
   };
 
+  // utcToKST shifts by +9h → must use getUTC* to read KST components without double-shift
+  const scheduleToDay = (utcDate: Date): Date => {
+    const kst = utcToKST(utcDate);
+    return new Date(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate());
+  };
+
   const getSchedulesForDate = (date: Date): Schedule[] => {
+    const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     return schedules.filter(schedule => {
-      const scheduleStart = utcToKST(new Date(schedule.startAt));
-      const scheduleEnd = utcToKST(new Date(schedule.endAt));
-      
-      return date >= scheduleStart && date <= scheduleEnd;
+      const startDay = scheduleToDay(new Date(schedule.startAt));
+      const endDay = scheduleToDay(new Date(schedule.endAt));
+      return targetDay >= startDay && targetDay <= endDay;
     });
   };
 
@@ -131,8 +138,9 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
                       {daySchedules.slice(0, 3).map((schedule, idx) => (
                         <div
                           key={idx}
+                          onClick={(e) => { e.stopPropagation(); onScheduleClick?.(schedule); }}
                           className={`
-                            text-xs truncate px-1 py-0.5 rounded
+                            text-xs truncate px-1 py-0.5 rounded cursor-pointer hover:opacity-75
                             ${today ? 'bg-white/20 text-white' : 'bg-primary-100 text-primary-800'}
                           `}
                         >

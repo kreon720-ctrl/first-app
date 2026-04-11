@@ -12,9 +12,12 @@ interface CalendarViewProps {
   selectedDate?: Date;
   view: CalendarViewType;
   schedules?: Schedule[];
+  isLeader?: boolean;
   onViewChange?: (view: CalendarViewType) => void;
   onDateChange?: (date: Date) => void;
   onDateClick?: (date: Date) => void;
+  onCreateSchedule?: (defaultDate?: string) => void;
+  onScheduleClick?: (schedule: Schedule) => void;
 }
 
 export function CalendarView({
@@ -22,9 +25,12 @@ export function CalendarView({
   selectedDate,
   view = 'month',
   schedules = [],
+  isLeader = false,
   onViewChange,
   onDateChange,
   onDateClick,
+  onCreateSchedule,
+  onScheduleClick,
 }: CalendarViewProps) {
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -74,6 +80,10 @@ export function CalendarView({
 
   const handleDateClick = (date: Date) => {
     onDateClick?.(date);
+    if (isLeader && onCreateSchedule) {
+      const dateStr = date.toISOString().split('T')[0];
+      onCreateSchedule(dateStr);
+    }
   };
 
   return (
@@ -92,11 +102,11 @@ export function CalendarView({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          
+
           <h2 className="text-lg font-semibold text-gray-900 min-w-[150px] text-center">
             {formatDateRange()}
           </h2>
-          
+
           <button
             type="button"
             onClick={() => navigateDate('next')}
@@ -109,24 +119,41 @@ export function CalendarView({
           </button>
         </div>
 
-        {/* View tabs */}
-        <div className="flex border-b border-gray-200">
-          {tabs.map((tab) => (
+        <div className="flex items-center gap-2">
+          {/* 팀장 전용 일정 등록 버튼 */}
+          {isLeader && onCreateSchedule && (
             <button
-              key={tab.id}
               type="button"
-              onClick={() => onViewChange?.(tab.id)}
-              className={`
-                px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-150
-                ${view === tab.id
-                  ? 'text-primary-600 border-primary-500'
-                  : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
+              onClick={() => onCreateSchedule()}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-500 text-white text-sm font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors duration-150"
+              aria-label="일정 등록"
             >
-              {tab.label}
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              일정 등록
             </button>
-          ))}
+          )}
+
+          {/* View tabs */}
+          <div className="flex border-b border-gray-200">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onViewChange?.(tab.id)}
+                className={`
+                  px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-150
+                  ${view === tab.id
+                    ? 'text-primary-600 border-primary-500'
+                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+                  }
+                `}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -138,6 +165,7 @@ export function CalendarView({
             schedules={schedules}
             selectedDate={selectedDate}
             onDateClick={handleDateClick}
+            onScheduleClick={onScheduleClick}
           />
         )}
         {view === 'week' && (
@@ -146,6 +174,7 @@ export function CalendarView({
             schedules={schedules}
             selectedDate={selectedDate}
             onDateClick={handleDateClick}
+            onScheduleClick={onScheduleClick}
           />
         )}
         {view === 'day' && (
@@ -154,6 +183,7 @@ export function CalendarView({
             schedules={schedules}
             selectedDate={selectedDate}
             onDateClick={handleDateClick}
+            onScheduleClick={onScheduleClick}
           />
         )}
       </div>

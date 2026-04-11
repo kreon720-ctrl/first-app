@@ -8,6 +8,7 @@ import { pool } from '@/lib/db/pool'
 
 interface CreateTeamBody {
   name?: string
+  description?: string
 }
 
 /**
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       teams: teams.map(team => ({
         id: team.id,
         name: team.name,
+        description: team.description ?? null,
         leaderId: team.leader_id,
         myRole: team.role,
         createdAt: team.created_at,
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!authResult.success) return authResult.response
 
     const body: CreateTeamBody = await request.json()
-    const { name } = body
+    const { name, description } = body
 
     // 1. 팀 이름 검증
     if (!name) {
@@ -70,14 +72,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
+    if (description && description.length > 500) {
+      return NextResponse.json(
+        { error: '팀 업무 설명은 최대 500자까지 입력 가능합니다.' },
+        { status: 400 }
+      )
+    }
+
     // 2. 팀 생성 및 리더 등록 (트랜잭션)
     const client = await pool.connect()
     let team: Awaited<ReturnType<typeof createTeam>>
     try {
       await client.query('BEGIN')
-      const teamResult = await client.query<{ id: string; name: string; leader_id: string; created_at: Date }>(
-        `INSERT INTO teams (name, leader_id) VALUES ($1, $2) RETURNING id, name, leader_id, created_at`,
-        [name, authResult.user.userId]
+      const teamResult = await client.query<{ id: string; name: string; description: string | null; leader_id: string; created_at: Date }>(
+        `INSERT INTO teams (name, leader_id, description) VALUES ($1, $2, $3) RETURNING id, name, description, leader_id, created_at`,
+        [name, authResult.user.userId, description ?? null]
       )
       team = teamResult.rows[0]
       await client.query(
@@ -96,6 +105,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       {
         id: team.id,
         name: team.name,
+        description: team.description ?? null,
         leaderId: team.leader_id,
         myRole: 'LEADER' as const,
         createdAt: team.created_at,

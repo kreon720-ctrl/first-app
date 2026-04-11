@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Schedule } from '@/types/schedule';
 import { utcToKST, formatTime, formatDateKorean } from '@/lib/utils/timezone';
 
@@ -9,26 +9,42 @@ interface CalendarDayViewProps {
   schedules?: Schedule[];
   selectedDate?: Date;
   onDateClick?: (date: Date) => void;
+  onScheduleClick?: (schedule: Schedule) => void;
 }
 
-export function CalendarDayView({ currentDate, schedules = [], selectedDate, onDateClick }: CalendarDayViewProps) {
+export function CalendarDayView({ currentDate, schedules = [], selectedDate, onDateClick, onScheduleClick }: CalendarDayViewProps) {
   const kstDate = utcToKST(currentDate);
 
-  const getSchedulesForDay = (): Schedule[] => {
-    return schedules.filter(schedule => {
-      const scheduleStart = utcToKST(new Date(schedule.startAt));
-      const scheduleEnd = utcToKST(new Date(schedule.endAt));
-      
-      return kstDate >= scheduleStart && kstDate <= scheduleEnd;
-    });
+  // utcToKST shifts by +9h → use getUTC* to get KST date components without double-shift
+  const scheduleToDay = (utcDate: Date): Date => {
+    const kst = utcToKST(utcDate);
+    return new Date(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate());
   };
 
-  const daySchedules = getSchedulesForDay();
+  // targetDay: kstDate already has +9h applied, use getUTC* for KST date
+  const targetDay = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
 
-  // Sort by start time
-  daySchedules.sort((a, b) => {
-    return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
+  // Only single-day schedules that both start and end today (KST)
+  const timedSchedules = schedules.filter(schedule => {
+    const startDay = scheduleToDay(new Date(schedule.startAt));
+    const endDay = scheduleToDay(new Date(schedule.endAt));
+    return (
+      startDay.getTime() === targetDay.getTime() &&
+      endDay.getTime() === targetDay.getTime()
+    );
   });
+
+  // utcToKST adds +9h so getUTCHours() equals KST hours
+  const getKSTHour = (utcDate: Date): number =>
+    utcToKST(utcDate).getUTCHours();
+
+  const timelineRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (timelineRef.current) {
+      timelineRef.current.scrollTop = 8 * 56;
+    }
+  }, []);
 
   return (
     <div className="w-full">
@@ -38,62 +54,48 @@ export function CalendarDayView({ currentDate, schedules = [], selectedDate, onD
           {formatDateKorean(kstDate)}
         </h3>
         <p className="text-sm text-gray-500 mt-1">
-          일정 {daySchedules.length}개
+          일정 {timedSchedules.length}개
         </p>
       </div>
 
-      {/* Schedule list */}
-      {daySchedules.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <svg className="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <p className="text-sm text-gray-500">일정이 없습니다.</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {daySchedules.map((schedule) => {
-            const startTime = utcToKST(new Date(schedule.startAt));
-            const endTime = utcToKST(new Date(schedule.endAt));
-
-            return (
-              <div
-                key={schedule.id}
-                className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-150"
-              >
-                <div className="flex items-start gap-3">
-                  {/* Time column */}
-                  <div className="flex-shrink-0 w-24">
-                    <div className="text-sm font-medium text-gray-900">
-                      {formatTime(startTime)}
+      {/* Timeline */}
+      <div
+        ref={timelineRef}
+        className="border border-gray-200 rounded-lg bg-white overflow-y-auto"
+        style={{ maxHeight: 'calc(100vh - 260px)' }}
+      >
+        {Array.from({ length: 24 }, (_, hour) => {
+          const hourSchedules = timedSchedules.filter(s =>
+            getKSTHour(new Date(s.startAt)) === hour
+          );
+          return (
+            <div key={hour} className="flex border-b border-gray-100 min-h-[56px]">
+              <div className="w-14 flex-shrink-0 border-r border-gray-200 px-1 pt-1 text-xs text-gray-400">
+                {String(hour).padStart(2, '0')}:00
+              </div>
+              <div className="flex-1 relative">
+                {hourSchedules.map((schedule, idx) => (
+                  <div
+                    key={`${schedule.id}-${idx}`}
+                    onClick={() => onScheduleClick?.(schedule)}
+                    className="absolute inset-x-1 top-0.5 bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded cursor-pointer hover:bg-primary-200 transition-colors duration-150 z-10"
+                    style={{ minHeight: '52px' }}
+                    title={schedule.title}
+                  >
+                    <div className="font-medium truncate">{schedule.title}</div>
+                    <div className="text-primary-600 text-[10px] mt-0.5">
+                      {formatTime(new Date(schedule.startAt))} ~ {formatTime(new Date(schedule.endAt))}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {formatTime(endTime)}
-                    </div>
-                  </div>
-
-                  {/* Schedule info */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-base font-semibold text-gray-800 truncate">
-                      {schedule.title}
-                    </h4>
                     {schedule.description && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                        {schedule.description}
-                      </p>
+                      <div className="text-gray-600 text-[10px] mt-0.5 line-clamp-1">{schedule.description}</div>
                     )}
                   </div>
-                </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -24,6 +24,7 @@ describe('TeamExploreList', () => {
     {
       id: 'team-1',
       name: '개발팀',
+      description: null,
       leaderId: 'leader-1',
       leaderName: '홍길동',
       memberCount: 5,
@@ -32,6 +33,7 @@ describe('TeamExploreList', () => {
     {
       id: 'team-2',
       name: '디자인팀',
+      description: null,
       leaderId: 'leader-2',
       leaderName: '이영희',
       memberCount: 3,

@@ -15,18 +15,24 @@ export function TeamExploreList({ teams, onSuccess }: TeamExploreListProps) {
   const [successMessages, setSuccessMessages] = useState<Record<string, string>>({});
   const [errorMessages, setErrorMessages] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmTeam, setConfirmTeam] = useState<PublicTeam | null>(null);
 
-  const handleJoinRequest = async (team: PublicTeam) => {
+  const handleJoinClick = (team: PublicTeam) => {
+    setConfirmTeam(team);
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmTeam) return;
+    const team = confirmTeam;
+    setConfirmTeam(null);
     setIsSubmitting(true);
     try {
       await apiClient.post(`/api/teams/${team.id}/join-requests`, {});
-      
       setPendingTeams((prev) => new Set(prev).add(team.id));
       setSuccessMessages((prev) => ({
         ...prev,
-        [team.id]: `${team.name}에 가입 신청를 완료했습니다. 팀장의 승인을 기다려주세요.`,
+        [team.id]: `${team.name}에 가입 신청을 완료했습니다. 팀장의 승인을 기다려주세요.`,
       }));
-      
       onSuccess?.(team.id);
     } catch (err: unknown) {
       const errMsg = err instanceof ApiError || err instanceof Error ? err.message : undefined;
@@ -66,68 +72,97 @@ export function TeamExploreList({ teams, onSuccess }: TeamExploreListProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {teams.map((team) => {
-        const isPending = pendingTeams.has(team.id);
-        const isSuccess = successMessages[team.id];
-        const isError = errorMessages[team.id];
+    <>
+      <div className="flex flex-col gap-3">
+        {teams.map((team) => {
+          const isPending = pendingTeams.has(team.id);
+          const isSuccess = successMessages[team.id];
+          const isError = errorMessages[team.id];
 
-        return (
-          <div
-            key={team.id}
-            className="w-full bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-gray-800 truncate">{team.name}</h3>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="text-sm font-normal text-gray-600">
-                    팀장: {team.leaderName}
-                  </span>
-                  <span className="text-sm font-normal text-gray-500">
-                    {team.memberCount}명
-                  </span>
+          return (
+            <div
+              key={team.id}
+              className="w-full bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-800 truncate">{team.name}</h3>
+                  {team.description && (
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{team.description}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-sm font-normal text-gray-600">
+                      팀장: {team.leaderName}
+                    </span>
+                    <span className="text-sm font-normal text-gray-500">
+                      {team.memberCount}명
+                    </span>
+                  </div>
                 </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isPending || isSubmitting}
+                  onClick={() => handleJoinClick(team)}
+                >
+                  {isPending ? '신청 완료' : '가입 신청'}
+                </Button>
               </div>
+
+              {isSuccess && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg bg-success-50 p-2 text-xs text-success-500" role="status">
+                  <svg className="h-3 w-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  {isSuccess}
+                </div>
+              )}
+
+              {isError && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg bg-error-50 p-2 text-xs text-error-500" role="alert">
+                  <svg className="h-3 w-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  {isError}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 가입 확인 다이얼로그 */}
+      {confirmTeam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">가입 신청</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              <span className="font-medium text-gray-900">{confirmTeam.name}</span>에 가입 신청하시겠습니까?
+            </p>
+            <div className="flex gap-3">
               <Button
                 type="button"
                 variant="secondary"
-                size="sm"
-                disabled={isPending || isSubmitting}
-                onClick={() => handleJoinRequest(team)}
+                size="md"
+                fullWidth
+                onClick={() => setConfirmTeam(null)}
               >
-                {isPending ? '신청 완료' : '가입 신청'}
+                취소
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                fullWidth
+                onClick={handleConfirm}
+              >
+                가입
               </Button>
             </div>
-
-            {isSuccess && (
-              <div className="mt-3 flex items-center gap-2 rounded-lg bg-success-50 p-2 text-xs text-success-500" role="status">
-                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {isSuccess}
-              </div>
-            )}
-
-            {isError && (
-              <div className="mt-3 flex items-center gap-2 rounded-lg bg-error-50 p-2 text-xs text-error-500" role="alert">
-                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {isError}
-              </div>
-            )}
           </div>
-        );
-      })}
-    </div>
+        </div>
+      )}
+    </>
   );
 }

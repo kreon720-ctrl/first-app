@@ -46,17 +46,7 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">내 팀 목록</h2>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => router.push('/teams/explore')}
-          >
-            팀 탐색
-          </Button>
-        </div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">내 팀 목록</h2>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
@@ -83,34 +73,30 @@ export default function HomePage() {
           />
         )}
 
-        {/* FAB for team creation */}
-        {!isLoading && teams.length === 0 && (
-          <div className="flex flex-col items-center mt-6">
-            <Button
-              type="button"
-              variant="primary"
-              size="lg"
-              onClick={() => router.push('/teams/new')}
-            >
-              + 팀 생성
-            </Button>
-          </div>
-        )}
+        {/* Bottom action buttons */}
+        <div className="flex justify-center gap-3 mt-8">
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            onClick={() => router.push('/teams/explore')}
+            className="w-32"
+          >
+            팀 탐색
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={() => router.push('/teams/new')}
+            className="w-32"
+          >
+            + 팀 생성
+          </Button>
+        </div>
+
       </main>
 
-      {/* Floating Action Button (when teams exist) */}
-      {!isLoading && teams.length > 0 && (
-        <button
-          type="button"
-          onClick={() => router.push('/teams/new')}
-          className="fixed bottom-6 right-4 z-10 inline-flex items-center justify-center gap-2 rounded-full py-3 px-5 text-base font-semibold bg-primary-500 text-white shadow-lg hover:bg-primary-600 active:bg-primary-700 transition-colors duration-150"
-          aria-label="팀 생성"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
-      )}
     </div>
   );
 }

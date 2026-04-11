@@ -21,6 +21,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       teams: publicTeams.map(team => ({
         id: team.id,
         name: team.name,
+        description: team.description ?? null,
         leaderId: team.leader_id,
         leaderName: team.leader_name,
         memberCount: team.member_count,

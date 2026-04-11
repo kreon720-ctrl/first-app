@@ -8,6 +8,7 @@ describe('TeamCard', () => {
   const mockTeam: Team = {
     id: 'team-123',
     name: '개발팀',
+    description: null,
     leaderId: 'leader-123',
     myRole: 'LEADER',
     createdAt: '2026-04-01T00:00:00.000Z',

@@ -5,6 +5,7 @@ export type TeamRole = 'LEADER' | 'MEMBER';
 export interface Team {
   id: string;
   name: string;
+  description: string | null;
   leaderId: string;
   myRole: TeamRole;
   createdAt: string;
@@ -13,6 +14,7 @@ export interface Team {
 export interface PublicTeam {
   id: string;
   name: string;
+  description: string | null;
   leaderId: string;
   leaderName: string;
   memberCount: number;
@@ -33,6 +35,7 @@ export interface TeamMember {
 
 export interface TeamCreateInput {
   name: string;
+  description?: string;
 }
 
 // Join Request types
