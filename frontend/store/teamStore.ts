@@ -38,7 +38,7 @@ export const useTeamStore = create<TeamState>((set) => ({
   },
 
   setCalendarView: (view: CalendarView) => {
-    set({ calendarView: view });
+    set({ calendarView: view, selectedDate: getTodayKST() });
   },
 
   resetSelectedDate: () => {

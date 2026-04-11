@@ -23,11 +23,12 @@ export function CalendarDayView({ currentDate, schedules = [], selectedDate, onD
     return new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()));
   };
 
-  // Schedules that overlap with today (KST)
+  // Schedules that start and end on the same day (KST) and match target day
   const timedSchedules = schedules.filter(schedule => {
     const startDay = scheduleToDay(new Date(schedule.startAt));
     const endDay = scheduleToDay(new Date(schedule.endAt));
-    return targetDay.getTime() >= startDay.getTime() && targetDay.getTime() <= endDay.getTime();
+    const isSameDay = startDay.getTime() === endDay.getTime();
+    return isSameDay && startDay.getTime() === targetDay.getTime();
   });
 
   // utcToKST adds +9h so getUTCHours() equals KST hours

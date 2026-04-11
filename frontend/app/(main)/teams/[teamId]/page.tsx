@@ -19,6 +19,21 @@ interface TeamMainPageProps {
   params: Promise<{ teamId: string }>;
 }
 
+function getKSTTimeStrings(dateStr: string): { startAt: string; endAt: string } {
+  const now = new Date();
+  const kstHour = new Date(now.getTime() + 9 * 60 * 60 * 1000).getUTCHours();
+  const endHour = (kstHour + 1) % 24;
+  const endDate = endHour === 0 ? (() => {
+    const d = new Date(dateStr);
+    d.setUTCDate(d.getUTCDate() + 1);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  })() : dateStr;
+  return {
+    startAt: `${dateStr}T${String(kstHour).padStart(2, '0')}:00`,
+    endAt: `${endDate}T${String(endHour).padStart(2, '0')}:00`,
+  };
+}
+
 export default function TeamMainPage({ params }: TeamMainPageProps) {
   const { teamId } = use(params);
   const router = useRouter();
@@ -268,8 +283,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
                 mode="create"
                 initialData={scheduleDefaultDate ? {
                   id: '', teamId, title: '', description: null,
-                  startAt: `${scheduleDefaultDate}T09:00`,
-                  endAt: `${scheduleDefaultDate}T10:00`,
+                  ...getKSTTimeStrings(scheduleDefaultDate),
                   createdBy: '', createdAt: '', updatedAt: '',
                 } : undefined}
                 onSubmit={handleCreateSubmit}
@@ -285,7 +299,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
         <ScheduleDetailModal
           isOpen={showDetailModal}
           schedule={selectedSchedule}
-          currentUserId={currentUser?.userId ?? null}
+          currentUserId={currentUser?.id ?? null}
           onClose={() => { setShowDetailModal(false); setSelectedSchedule(null); }}
           onEdit={() => { setShowDetailModal(false); setShowEditModal(true); }}
           onDelete={handleDelete}
@@ -441,8 +455,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
               mode="create"
               initialData={scheduleDefaultDate ? {
                 id: '', teamId, title: '', description: null,
-                startAt: `${scheduleDefaultDate}T09:00`,
-                endAt: `${scheduleDefaultDate}T10:00`,
+                ...getKSTTimeStrings(scheduleDefaultDate),
                 createdBy: '', createdAt: '', updatedAt: '',
               } : undefined}
               onSubmit={handleCreateSubmit}

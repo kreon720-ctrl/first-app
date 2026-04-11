@@ -61,13 +61,14 @@ export function formatDate(date: Date): string {
 export function formatDateKorean(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const kst = utcToKST(d);
-  
-  const year = kst.getFullYear();
-  const month = kst.getMonth() + 1;
-  const day = kst.getDate();
+
+  // Use UTC methods on KST-shifted date to get correct KST date components
+  const year = kst.getUTCFullYear();
+  const month = kst.getUTCMonth() + 1;
+  const day = kst.getUTCDate();
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-  const weekday = weekdays[kst.getDay()];
-  
+  const weekday = weekdays[kst.getUTCDay()];
+
   return `${year}년 ${month}월 ${day}일 (${weekday})`;
 }
 

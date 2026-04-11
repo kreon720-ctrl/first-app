@@ -10,6 +10,7 @@ const mockSchedule = {
   startAt: '2026-04-15T10:00:00.000Z',
   endAt: '2026-04-15T11:00:00.000Z',
   createdBy: 'user-1',
+  creatorName: '홍길동',
   createdAt: '2026-04-14T10:00:00.000Z',
   updatedAt: '2026-04-14T10:00:00.000Z',
 };
@@ -29,7 +30,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={false}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -44,7 +45,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={null}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -59,7 +60,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -79,7 +80,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={scheduleWithoutDesc}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -96,7 +97,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -112,7 +113,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -131,7 +132,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -146,13 +147,13 @@ describe('ScheduleDetailModal', () => {
     });
   });
 
-  describe('LEADER vs MEMBER UI', () => {
-    it('shows edit and delete buttons for LEADER', () => {
+  describe('Creator vs Non-Creator UI', () => {
+    it('shows edit and delete buttons for schedule creator', () => {
       render(
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -163,12 +164,12 @@ describe('ScheduleDetailModal', () => {
       expect(screen.getByText('삭제')).toBeTruthy();
     });
 
-    it('hides edit and delete buttons for MEMBER', () => {
+    it('hides edit and delete buttons for non-creator', () => {
       render(
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={false}
+          currentUserId="user-2"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -184,7 +185,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -200,7 +201,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -218,7 +219,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -234,7 +235,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
@@ -252,7 +253,7 @@ describe('ScheduleDetailModal', () => {
         <ScheduleDetailModal
           isOpen={true}
           schedule={mockSchedule}
-          isLeader={true}
+          currentUserId="user-1"
           onClose={mockOnClose}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}

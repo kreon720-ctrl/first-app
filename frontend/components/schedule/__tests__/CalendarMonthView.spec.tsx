@@ -37,7 +37,7 @@ describe('CalendarMonthView', () => {
 
     // Find today's date (15) - it should have special styling
     const todayElement = screen.getByText('15');
-    expect(todayElement.closest('button')).toHaveClass('bg-primary-500');
+    expect(todayElement.closest('button')).toHaveClass('border-orange-500');
   });
 
   it('calls onDateClick when a date is clicked', () => {

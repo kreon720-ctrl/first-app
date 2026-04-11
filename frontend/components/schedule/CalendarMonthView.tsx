@@ -213,7 +213,7 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
                       className={`
                         relative p-2 rounded-lg border transition-all duration-150 flex flex-col
                         ${today
-                          ? 'bg-gray-100 border-gray-300 ring-1 ring-gray-300'
+                          ? 'border-orange-500 ring-1 ring-orange-400'
                           : selected
                             ? 'bg-white border-primary-500 ring-2 ring-primary-500'
                             : !currentMonthDay
@@ -227,7 +227,7 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
                       <div className={`
                         text-sm font-medium mb-1 flex-shrink-0
                         ${today
-                          ? 'text-gray-900 font-bold'
+                          ? 'text-black font-bold'
                           : !currentMonthDay
                             ? 'text-gray-400'
                             : dayIndex === 0
@@ -269,9 +269,7 @@ export function CalendarMonthView({ currentDate, schedules = [], selectedDate, o
                       >
                         <div
                           className={`
-                            text-xs px-1 py-0.5 truncate cursor-pointer hover:opacity-75 transition-opacity
-                            ${isStartDayToday ? 'bg-white/20 text-white' : 'bg-primary-100 text-primary-800'}
-                            rounded
+                            text-xs px-1 py-0.5 truncate text-center cursor-pointer hover:opacity-75 transition-opacity bg-primary-100 text-primary-800 rounded
                           `}
                           title={schedule.title}
                           onClick={(e) => { e.stopPropagation(); onScheduleClick?.(schedule); }}

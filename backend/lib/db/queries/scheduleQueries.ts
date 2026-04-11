@@ -4,6 +4,7 @@ export interface Schedule {
   id: string
   team_id: string
   created_by: string
+  creator_name: string | null
   title: string
   description: string | null
   start_at: Date
@@ -50,12 +51,13 @@ export async function getSchedulesByDateRange(
 ): Promise<Schedule[]> {
   try {
     const result = await pool.query<Schedule>(
-      `SELECT id, team_id, created_by, title, description, start_at, end_at, created_at, updated_at
-       FROM schedules
-       WHERE team_id = $1
-         AND start_at < $3
-         AND end_at > $2
-       ORDER BY start_at ASC`,
+      `SELECT s.id, s.team_id, s.created_by, u.name AS creator_name, s.title, s.description, s.start_at, s.end_at, s.created_at, s.updated_at
+       FROM schedules s
+       LEFT JOIN users u ON u.id = s.created_by
+       WHERE s.team_id = $1
+         AND s.start_at < $3
+         AND s.end_at > $2
+       ORDER BY s.start_at ASC`,
       [teamId, startAt, endAt]
     )
     return result.rows
@@ -70,9 +72,10 @@ export async function getScheduleById(
 ): Promise<Schedule | null> {
   try {
     const result = await pool.query<Schedule>(
-      `SELECT id, team_id, created_by, title, description, start_at, end_at, created_at, updated_at
-       FROM schedules
-       WHERE team_id = $1 AND id = $2`,
+      `SELECT s.id, s.team_id, s.created_by, u.name AS creator_name, s.title, s.description, s.start_at, s.end_at, s.created_at, s.updated_at
+       FROM schedules s
+       LEFT JOIN users u ON u.id = s.created_by
+       WHERE s.team_id = $1 AND s.id = $2`,
       [teamId, id]
     )
     return result.rows[0] ?? null

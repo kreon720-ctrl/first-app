@@ -10,6 +10,7 @@ export interface Schedule {
   startAt: string;
   endAt: string;
   createdBy: string;
+  creatorName: string | null;
   createdAt: string;
   updatedAt: string;
 }

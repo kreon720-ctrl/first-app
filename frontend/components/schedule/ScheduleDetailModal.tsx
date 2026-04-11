@@ -82,10 +82,18 @@ export function ScheduleDetailModal({
         </div>
 
         {/* End Date */}
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="text-sm font-medium text-gray-500 mb-1 block">종료 일시</label>
           <p className="text-base font-normal text-gray-800">
             {formatDate(schedule.endAt)}
+          </p>
+        </div>
+
+        {/* Creator */}
+        <div className="mb-6">
+          <label className="text-sm font-medium text-gray-500 mb-1 block">등록자</label>
+          <p className="text-base font-normal text-gray-800">
+            {schedule.creatorName || '알 수 없음'}
           </p>
         </div>
 

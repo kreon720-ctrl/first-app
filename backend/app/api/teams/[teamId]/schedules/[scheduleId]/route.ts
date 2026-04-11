@@ -52,6 +52,7 @@ export async function GET(
       startAt: schedule.start_at,
       endAt: schedule.end_at,
       createdBy: schedule.created_by,
+      creatorName: schedule.creator_name,
       createdAt: schedule.created_at,
       updatedAt: schedule.updated_at,
     })
