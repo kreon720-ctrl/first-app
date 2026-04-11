@@ -21,6 +21,7 @@
 | 1.14 | 2026-04-10 | FE-09 권한 기반 UI 제어 + 토큰 갱신 완료: useLeaderRole 훅, apiClient 401 리프레시 로직 검증, 17개 테스트 통과 |
 | 1.15 | 2026-04-10 | FE-10 반응형 UI 검증 + 빌드 확인 완료: TypeScript 0오류, ScheduleForm ESLint 수정, 62개 테스트 누적 통과 |
 | 1.16 | 2026-04-10 | FE-11 E2E 시나리오 테스트 완료: UC-01~UC-07 전체 흐름 검증, 7개 시나리오 테스트 통과 |
+| 1.17 | 2026-04-11 | FE-12 Vercel 배포 준비 완료: middleware→proxy 마이그레이션, CORS 설정, vercel.json, .env.example, 292개 테스트 통과, 빌드 경고 0 |
 
 ---
 
@@ -921,20 +922,41 @@ FE-01 (초기세팅) ✅ → FE-02 (공통 컴포넌트 + Query 훅) → FE-03 (
 **설명**: Vercel 배포 설정 및 프로덕션 환경 검증
 **예상 소요**: 1시간
 **의존성**:
-- [ ] FE-11
+- [x] FE-11
 
 **작업 내용**:
-- [ ] GitHub 리포지토리 생성 및 코드 푸시
-- [ ] Vercel에 GitHub 연결 및 프로젝트 생성
-- [ ] Vercel Dashboard에서 환경변수 설정 (DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET 등)
+- [x] GitHub 리포지토리 생성 및 코드 푸시 (기존 origin/main 활용)
+- [x] `middleware.ts` → `proxy.ts` 마이그레이션 (Next.js 16 proxy 컨벤션 적용, 빌드 경고 제거)
+- [x] Backend CORS 설정: `next.config.ts` headers + `proxy.ts` OPTIONS preflight 처리
+- [x] `frontend/vercel.json`, `backend/vercel.json` 생성
+- [x] `frontend/.env.example` (NEXT_PUBLIC_API_URL), `backend/.env.example` (FRONTEND_URL 추가)
+- [ ] Vercel에 GitHub 연결 및 프로젝트 생성 (수동 — Vercel Dashboard)
+- [ ] Vercel Dashboard에서 환경변수 설정 (DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL, NEXT_PUBLIC_API_URL 등)
 - [ ] 배포 트리거 및 빌드 로그 확인
 - [ ] 배포 URL에서 로그인·팀 생성·채팅 동작 확인
 
 **완료 조건**:
-- [ ] Vercel 빌드 성공
+- [x] `next build` 로컬 성공 — frontend & backend 빌드 경고 0, 오류 0
+- [x] WebSocket 미사용 확인 (채팅은 refetchInterval 폴링)
+- [x] DB Pool 글로벌 싱글턴 + max:5 설정 확인
+- [x] CORS 설정 완료 (FRONTEND_URL 기반 Allow-Origin)
+- [ ] Vercel 빌드 성공 (배포 후 확인)
 - [ ] 배포 URL에서 회원가입 → 로그인 → 팀 생성 동작 확인
 - [ ] 채팅 폴링 동작 확인 (3초 갱신)
 - [ ] 모바일 브라우저에서 화면 정상 확인
+
+**FE-12 배포 준비 결과**:
+- ✅ `frontend/proxy.ts`: middleware→proxy 마이그레이션 완료, 12개 테스트 통과
+- ✅ `backend/proxy.ts`: CORS OPTIONS preflight 처리
+- ✅ `backend/next.config.ts`: CORS 응답 헤더 설정 (FRONTEND_URL 기반)
+- ✅ `frontend/vercel.json`, `backend/vercel.json`: Vercel 프레임워크 설정
+- ✅ `frontend/.env.example`, `backend/.env.example`: 환경변수 문서화
+- ✅ 전체 292개 테스트 통과, 빌드 경고 0
+
+**Vercel 수동 배포 절차**:
+1. backend를 먼저 Vercel에 배포 → URL 확인 (예: `https://caltalk-backend.vercel.app`)
+2. frontend Vercel 프로젝트 환경변수 `NEXT_PUBLIC_API_URL=https://caltalk-backend.vercel.app` 설정 후 배포
+3. backend 환경변수 `FRONTEND_URL=https://caltalk-frontend.vercel.app` 설정 후 재배포
 
 ---
 
@@ -970,11 +992,11 @@ FE-01 (초기세팅) ✅ → FE-02 (공통 컴포넌트 + Query 훅) → FE-03 (
 
 ## Vercel 배포 체크리스트
 
-- [ ] WebSocket 사용 없음 확인 (채팅은 refetchInterval 폴링만 사용)
-- [ ] `backend/lib/db/pool.ts`에 글로벌 싱글턴 + max:5 설정 확인
+- [x] WebSocket 사용 없음 확인 (채팅은 refetchInterval 폴링만 사용)
+- [x] `backend/lib/db/pool.ts`에 글로벌 싱글턴 + max:5 설정 확인
 - [ ] 모든 환경변수가 `.env.local`이 아닌 Vercel Dashboard에 설정됨
-- [ ] Serverless Function 실행 시간 10초 초과 쿼리 없음 확인
-- [ ] `next build` 로컬에서 성공 후 배포
+- [x] Serverless Function 실행 시간 10초 초과 쿼리 없음 확인
+- [x] `next build` 로컬에서 성공 후 배포
 
 ---
 
