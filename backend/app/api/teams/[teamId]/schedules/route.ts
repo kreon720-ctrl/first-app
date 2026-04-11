@@ -83,7 +83,7 @@ export async function GET(
 /**
  * POST /api/teams/:teamId/schedules
  *
- * 일정 생성 (LEADER 전용)
+ * 일정 생성 (모든 팀원)
  * - title 필수, startAt/endAt 필수
  * - startAt < endAt 검증
  */
@@ -97,9 +97,9 @@ export async function POST(
 
     const { teamId } = await params
 
-    // 1. 팀장 권한 검증
-    const leaderResult = await requireLeader(authResult.user.userId, teamId)
-    if (!leaderResult.success) return leaderResult.response
+    // 1. 팀 멤버십 검증
+    const roleResult = await withTeamRole(authResult.user.userId, teamId)
+    if (!roleResult.success) return roleResult.response
 
     // 2. 요청 본문 파싱 및 검증
     const body: CreateScheduleBody = await request.json()

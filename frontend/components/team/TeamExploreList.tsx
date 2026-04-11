@@ -143,21 +143,21 @@ export function TeamExploreList({ teams, onSuccess }: TeamExploreListProps) {
             <div className="flex gap-3">
               <Button
                 type="button"
-                variant="secondary"
-                size="md"
-                fullWidth
-                onClick={() => setConfirmTeam(null)}
-              >
-                취소
-              </Button>
-              <Button
-                type="button"
                 variant="primary"
                 size="md"
                 fullWidth
                 onClick={handleConfirm}
               >
                 가입
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="md"
+                fullWidth
+                onClick={() => setConfirmTeam(null)}
+              >
+                취소
               </Button>
             </div>
           </div>

@@ -13,25 +13,21 @@ interface CalendarDayViewProps {
 }
 
 export function CalendarDayView({ currentDate, schedules = [], selectedDate, onDateClick, onScheduleClick }: CalendarDayViewProps) {
-  const kstDate = utcToKST(currentDate);
+  // currentDate is in UTC (from selectedDate string "YYYY-MM-DD")
+  // Use UTC date components for consistent comparison
+  const targetDay = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate()));
 
-  // utcToKST shifts by +9h → use getUTC* to get KST date components without double-shift
+  // Schedule UTC strings: utcToKST shifts by +9h, so getUTC* gives the correct KST components.
   const scheduleToDay = (utcDate: Date): Date => {
     const kst = utcToKST(utcDate);
-    return new Date(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate());
+    return new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()));
   };
 
-  // targetDay: kstDate already has +9h applied, use getUTC* for KST date
-  const targetDay = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
-
-  // Only single-day schedules that both start and end today (KST)
+  // Schedules that overlap with today (KST)
   const timedSchedules = schedules.filter(schedule => {
     const startDay = scheduleToDay(new Date(schedule.startAt));
     const endDay = scheduleToDay(new Date(schedule.endAt));
-    return (
-      startDay.getTime() === targetDay.getTime() &&
-      endDay.getTime() === targetDay.getTime()
-    );
+    return targetDay.getTime() >= startDay.getTime() && targetDay.getTime() <= endDay.getTime();
   });
 
   // utcToKST adds +9h so getUTCHours() equals KST hours
@@ -41,17 +37,22 @@ export function CalendarDayView({ currentDate, schedules = [], selectedDate, onD
   const timelineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (timelineRef.current) {
-      timelineRef.current.scrollTop = 8 * 56;
+    if (!timelineRef.current) return;
+    const HOUR_PX = 56;
+    if (timedSchedules.length > 0) {
+      const minHour = Math.min(...timedSchedules.map(s => getKSTHour(new Date(s.startAt))));
+      timelineRef.current.scrollTop = Math.max(0, minHour - 1) * HOUR_PX;
+    } else {
+      timelineRef.current.scrollTop = 8 * HOUR_PX;
     }
-  }, []);
+  }, [timedSchedules]);
 
   return (
     <div className="w-full">
       {/* Date header */}
       <div className="mb-4 pb-3 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900">
-          {formatDateKorean(kstDate)}
+          {formatDateKorean(currentDate)}
         </h3>
         <p className="text-sm text-gray-500 mt-1">
           일정 {timedSchedules.length}개

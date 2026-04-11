@@ -12,7 +12,7 @@ interface CalendarViewProps {
   selectedDate?: Date;
   view: CalendarViewType;
   schedules?: Schedule[];
-  isLeader?: boolean;
+  canCreateSchedule?: boolean;
   onViewChange?: (view: CalendarViewType) => void;
   onDateChange?: (date: Date) => void;
   onDateClick?: (date: Date) => void;
@@ -25,7 +25,7 @@ export function CalendarView({
   selectedDate,
   view = 'month',
   schedules = [],
-  isLeader = false,
+  canCreateSchedule = false,
   onViewChange,
   onDateChange,
   onDateClick,
@@ -33,41 +33,44 @@ export function CalendarView({
   onScheduleClick,
 }: CalendarViewProps) {
   const navigateDate = (direction: 'prev' | 'next') => {
+    // Navigate from the 1st of the month to avoid day overflow issues
+    // (e.g., Mar 31 + 1 month → May 1 because Apr has 30 days)
     const newDate = new Date(currentDate);
-    
+    newDate.setUTCDate(1);
+
     if (view === 'month') {
-      newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
+      newDate.setUTCMonth(newDate.getUTCMonth() + (direction === 'next' ? 1 : -1));
     } else if (view === 'week') {
-      newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
+      newDate.setUTCDate(currentDate.getUTCDate() + (direction === 'next' ? 7 : -7));
     } else {
-      newDate.setDate(currentDate.getDate() + (direction === 'next' ? 1 : -1));
+      newDate.setUTCDate(currentDate.getUTCDate() + (direction === 'next' ? 1 : -1));
     }
-    
+
     onDateChange?.(newDate);
   };
 
   const formatDateRange = (): string => {
-    const year = currentDate.getFullYear();
-    
+    const year = currentDate.getUTCFullYear();
+
     if (view === 'month') {
-      const month = currentDate.getMonth() + 1;
+      const month = currentDate.getUTCMonth() + 1;
       return `${year}년 ${month}월`;
     } else if (view === 'week') {
       const startOfWeek = new Date(currentDate);
-      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+      startOfWeek.setUTCDate(currentDate.getUTCDate() - currentDate.getUTCDay());
       const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      
-      const startMonth = startOfWeek.getMonth() + 1;
-      const endMonth = endOfWeek.getMonth() + 1;
-      
+      endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+
+      const startMonth = startOfWeek.getUTCMonth() + 1;
+      const endMonth = endOfWeek.getUTCMonth() + 1;
+
       if (startMonth === endMonth) {
-        return `${year}년 ${startMonth}월 ${startOfWeek.getDate()}일 ~ ${endOfWeek.getDate()}일`;
+        return `${year}년 ${startMonth}월 ${startOfWeek.getUTCDate()}일 ~ ${endOfWeek.getUTCDate()}일`;
       }
       return `${year}년 ${startMonth}월 ~ ${endMonth}월`;
     } else {
-      const month = currentDate.getMonth() + 1;
-      const day = currentDate.getDate();
+      const month = currentDate.getUTCMonth() + 1;
+      const day = currentDate.getUTCDate();
       return `${year}년 ${month}월 ${day}일`;
     }
   };
@@ -80,10 +83,6 @@ export function CalendarView({
 
   const handleDateClick = (date: Date) => {
     onDateClick?.(date);
-    if (isLeader && onCreateSchedule) {
-      const dateStr = date.toISOString().split('T')[0];
-      onCreateSchedule(dateStr);
-    }
   };
 
   return (
@@ -120,8 +119,8 @@ export function CalendarView({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* 팀장 전용 일정 등록 버튼 */}
-          {isLeader && onCreateSchedule && (
+          {/* 일정 등록 버튼 (모든 팀원) */}
+          {canCreateSchedule && onCreateSchedule && (
             <button
               type="button"
               onClick={() => onCreateSchedule()}

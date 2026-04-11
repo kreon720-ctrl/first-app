@@ -7,6 +7,7 @@ import { useTeamStore } from '@/store/teamStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTeamDetail } from '@/hooks/query/useTeams';
 import { useSchedules, useCreateSchedule, useUpdateSchedule, useDeleteSchedule } from '@/hooks/query/useSchedules';
+import { useMyTasks } from '@/hooks/query/useMyTasks';
 import { CalendarView } from '@/components/schedule/CalendarView';
 import { ScheduleForm } from '@/components/schedule/ScheduleForm';
 import { ScheduleDetailModal } from '@/components/schedule/ScheduleDetailModal';
@@ -45,6 +46,8 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
     view: calendarView,
     date: selectedDate,
   });
+  const { data: myTasksData } = useMyTasks();
+  const pendingCount = myTasksData?.totalPendingCount ?? 0;
   const createSchedule = useCreateSchedule(teamId);
   const updateSchedule = useUpdateSchedule(teamId, selectedSchedule?.id ?? '');
   const deleteSchedule = useDeleteSchedule(teamId);
@@ -95,7 +98,10 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
   };
 
   const handleDateClick = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
     setSelectedDate(dateString);
   };
 
@@ -176,8 +182,14 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
                 variant="secondary"
                 size="sm"
                 onClick={handleNavigateToTasks}
+                className="relative"
               >
                 나의 할 일
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                    {pendingCount > 99 ? '99+' : pendingCount}
+                  </span>
+                )}
               </Button>
             )}
             <span className="text-sm font-normal text-gray-600">{currentUser?.name}</span>
@@ -200,11 +212,13 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
               currentDate={currentDate}
               view={calendarView}
               schedules={schedules}
-              isLeader={isLeader}
+              canCreateSchedule={true}
               onViewChange={handleViewChange}
               onDateChange={(date) => {
-                const dateString = date.toISOString().split('T')[0];
-                setSelectedDate(dateString);
+                const year = date.getUTCFullYear();
+                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                const day = String(date.getUTCDate()).padStart(2, '0');
+                setSelectedDate(`${year}-${month}-${day}`);
               }}
               onDateClick={handleDateClick}
               onCreateSchedule={handleCreateSchedule}
@@ -271,7 +285,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
         <ScheduleDetailModal
           isOpen={showDetailModal}
           schedule={selectedSchedule}
-          isLeader={isLeader}
+          currentUserId={currentUser?.userId ?? null}
           onClose={() => { setShowDetailModal(false); setSelectedSchedule(null); }}
           onEdit={() => { setShowDetailModal(false); setShowEditModal(true); }}
           onDelete={handleDelete}
@@ -377,11 +391,13 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
               currentDate={currentDate}
               view={calendarView}
               schedules={schedules}
-              isLeader={isLeader}
+              canCreateSchedule={true}
               onViewChange={handleViewChange}
               onDateChange={(date) => {
-                const dateString = date.toISOString().split('T')[0];
-                setSelectedDate(dateString);
+                const year = date.getUTCFullYear();
+                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                const day = String(date.getUTCDate()).padStart(2, '0');
+                setSelectedDate(`${year}-${month}-${day}`);
               }}
               onDateClick={handleDateClick}
               onCreateSchedule={handleCreateSchedule}

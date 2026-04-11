@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
-import type { Team, PublicTeam, TeamDetail, TeamCreateInput } from '@/types/team';
+import type { Team, PublicTeam, TeamDetail, TeamCreateInput, TeamUpdateInput } from '@/types/team';
 
 export function useMyTeams() {
   return useQuery({
@@ -36,6 +36,32 @@ export function useCreateTeam() {
   return useMutation({
     mutationFn: async (data: TeamCreateInput): Promise<Team> => {
       return apiClient.post<Team>('/api/teams', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams', 'my'] });
+    },
+  });
+}
+
+export function useUpdateTeam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ teamId, data }: { teamId: string; data: TeamUpdateInput }): Promise<Team> => {
+      return apiClient.patch<Team>(`/api/teams/${teamId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams', 'my'] });
+    },
+  });
+}
+
+export function useDeleteTeam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (teamId: string): Promise<void> => {
+      return apiClient.delete<void>(`/api/teams/${teamId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams', 'my'] });

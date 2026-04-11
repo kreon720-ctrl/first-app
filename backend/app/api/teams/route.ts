@@ -9,6 +9,7 @@ import { pool } from '@/lib/db/pool'
 interface CreateTeamBody {
   name?: string
   description?: string
+  isPublic?: boolean
 }
 
 /**
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         id: team.id,
         name: team.name,
         description: team.description ?? null,
+        isPublic: team.is_public,
         leaderId: team.leader_id,
         myRole: team.role,
         createdAt: team.created_at,
@@ -84,9 +86,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let team: Awaited<ReturnType<typeof createTeam>>
     try {
       await client.query('BEGIN')
-      const teamResult = await client.query<{ id: string; name: string; description: string | null; leader_id: string; created_at: Date }>(
-        `INSERT INTO teams (name, leader_id, description) VALUES ($1, $2, $3) RETURNING id, name, description, leader_id, created_at`,
-        [name, authResult.user.userId, description ?? null]
+      const teamResult = await client.query<{ id: string; name: string; description: string | null; is_public: boolean; leader_id: string; created_at: Date }>(
+        `INSERT INTO teams (name, leader_id, description, is_public) VALUES ($1, $2, $3, $4) RETURNING id, name, description, is_public, leader_id, created_at`,
+        [name, authResult.user.userId, description ?? null, body.isPublic ?? false]
       )
       team = teamResult.rows[0]
       await client.query(
@@ -106,6 +108,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         id: team.id,
         name: team.name,
         description: team.description ?? null,
+        isPublic: team.is_public,
         leaderId: team.leader_id,
         myRole: 'LEADER' as const,
         createdAt: team.created_at,

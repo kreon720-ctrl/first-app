@@ -67,7 +67,7 @@ export async function GET(
 /**
  * PATCH /api/teams/:teamId/schedules/:scheduleId
  *
- * 일정 수정 (LEADER 전용)
+ * 일정 수정 (일정 생성자만 가능)
  * - 부분 수정 지원 (title, description, startAt, endAt)
  */
 export async function PATCH(
@@ -80,16 +80,24 @@ export async function PATCH(
 
     const { teamId, scheduleId } = await params
 
-    // 1. 팀장 권한 검증
-    const leaderResult = await requireLeader(authResult.user.userId, teamId)
-    if (!leaderResult.success) return leaderResult.response
+    // 1. 팀 멤버십 검증
+    const roleResult = await withTeamRole(authResult.user.userId, teamId)
+    if (!roleResult.success) return roleResult.response
 
-    // 2. 기존 일정 존재 확인
+    // 2. 기존 일정 존재 확인 및 생성자 확인
     const existingSchedule = await getScheduleById(teamId, scheduleId)
     if (!existingSchedule) {
       return NextResponse.json(
         { error: '일정을 찾을 수 없습니다.' },
         { status: 404 }
+      )
+    }
+
+    // 일정 생성자만 수정 가능
+    if (existingSchedule.created_by !== authResult.user.userId) {
+      return NextResponse.json(
+        { error: '일정 생성자만 수정할 수 있습니다.' },
+        { status: 403 }
       )
     }
 
@@ -155,7 +163,7 @@ export async function PATCH(
 /**
  * DELETE /api/teams/:teamId/schedules/:scheduleId
  *
- * 일정 삭제 (LEADER 전용)
+ * 일정 삭제 (일정 생성자만 가능)
  */
 export async function DELETE(
   request: NextRequest,
@@ -167,11 +175,28 @@ export async function DELETE(
 
     const { teamId, scheduleId } = await params
 
-    // 1. 팀장 권한 검증
-    const leaderResult = await requireLeader(authResult.user.userId, teamId)
-    if (!leaderResult.success) return leaderResult.response
+    // 1. 팀 멤버십 검증
+    const roleResult = await withTeamRole(authResult.user.userId, teamId)
+    if (!roleResult.success) return roleResult.response
 
-    // 2. 일정 삭제
+    // 2. 일정 존재 확인 및 생성자 확인
+    const existingSchedule = await getScheduleById(teamId, scheduleId)
+    if (!existingSchedule) {
+      return NextResponse.json(
+        { error: '일정을 찾을 수 없습니다.' },
+        { status: 404 }
+      )
+    }
+
+    // 일정 생성자만 삭제 가능
+    if (existingSchedule.created_by !== authResult.user.userId) {
+      return NextResponse.json(
+        { error: '일정 생성자만 삭제할 수 있습니다.' },
+        { status: 403 }
+      )
+    }
+
+    // 3. 일정 삭제
     const deleted = await deleteSchedule(teamId, scheduleId)
 
     if (!deleted) {

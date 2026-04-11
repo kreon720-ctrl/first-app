@@ -85,4 +85,115 @@ describe('CalendarMonthView', () => {
     // Should have 6 weeks + 1 header row = 7 grid rows
     expect(weekRows.length).toBeGreaterThanOrEqual(6);
   });
+
+  it('displays same schedule on same row without duplicates', () => {
+    const mockSchedules: Schedule[] = [
+      {
+        id: 'sched-multi',
+        teamId: 'team-1',
+        title: '주간 회의',
+        description: null,
+        startAt: '2026-04-13T00:00:00.000Z', // Mon
+        endAt: '2026-04-17T00:00:00.000Z',   // Fri
+        createdBy: 'user-1',
+        createdAt: '2026-04-01T00:00:00.000Z',
+        updatedAt: '2026-04-01T00:00:00.000Z',
+      },
+    ];
+
+    render(
+      <CalendarMonthView
+        currentDate={mockCurrentDate}
+        schedules={mockSchedules}
+      />
+    );
+
+    // Should only render the schedule once (on its start day)
+    const badges = screen.getAllByText('주간 회의');
+    expect(badges.length).toBe(1);  // not 5 (one per day)
+  });
+
+  it('places overlapping schedules on separate rows', () => {
+    const mockSchedules: Schedule[] = [
+      {
+        id: 'sched-a',
+        teamId: 'team-1',
+        title: '회의 A',
+        description: null,
+        startAt: '2026-04-13T00:00:00.000Z',
+        endAt: '2026-04-17T00:00:00.000Z',
+        createdBy: 'user-1',
+        createdAt: '2026-04-01T00:00:00.000Z',
+        updatedAt: '2026-04-01T00:00:00.000Z',
+      },
+      {
+        id: 'sched-b',
+        teamId: 'team-1',
+        title: '회의 B',
+        description: null,
+        startAt: '2026-04-14T00:00:00.000Z',
+        endAt: '2026-04-16T00:00:00.000Z',
+        createdBy: 'user-1',
+        createdAt: '2026-04-01T00:00:00.000Z',
+        updatedAt: '2026-04-01T00:00:00.000Z',
+      },
+    ];
+
+    const { container } = render(
+      <CalendarMonthView
+        currentDate={mockCurrentDate}
+        schedules={mockSchedules}
+      />
+    );
+
+    // Both schedules should be rendered
+    expect(screen.getAllByText('회의 A').length).toBe(1);
+    expect(screen.getAllByText('회의 B').length).toBe(1);
+
+    // They should have different vertical positions (row assignment)
+    const badgeA = screen.getByText('회의 A').parentElement!;
+    const badgeB = screen.getByText('회의 B').parentElement!;
+    const topA = badgeA.style.top;
+    const topB = badgeB.style.top;
+
+    // Different rows means different top values
+    expect(topA).not.toBe(topB);
+  });
+
+  it('spans schedule bar from start day to end day', () => {
+    const mockSchedules: Schedule[] = [
+      {
+        id: 'sched-span',
+        teamId: 'team-1',
+        title: '주간 회의',
+        description: null,
+        startAt: '2026-04-13T00:00:00.000Z', // Mon (day index 1 in week)
+        endAt: '2026-04-17T00:00:00.000Z',   // Fri (day index 5 in week)
+        createdBy: 'user-1',
+        createdAt: '2026-04-01T00:00:00.000Z',
+        updatedAt: '2026-04-01T00:00:00.000Z',
+      },
+    ];
+
+    const { container } = render(
+      <CalendarMonthView
+        currentDate={mockCurrentDate}
+        schedules={mockSchedules}
+      />
+    );
+
+    // Should render only once (on start day)
+    const badge = screen.getByText('주간 회의');
+    expect(screen.getAllByText('주간 회의').length).toBe(1);
+
+    // The badge should be in the overlay (absolute positioned)
+    const badgeContainer = badge.parentElement;
+    expect(badgeContainer).toBeTruthy();
+
+    // Bar should span from col 2 (Monday) to col 6 (Friday) = 5 columns
+    // left = 1/7 ≈ 14.285%, width = 5/7 ≈ 71.428%
+    const style = badgeContainer as HTMLElement;
+    expect(style.style.left).toBeTruthy();
+    expect(style.style.width).toBeTruthy();
+  });
 });

@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 interface ScheduleDetailModalProps {
   isOpen: boolean;
   schedule: Schedule | null;
-  isLeader: boolean;
+  currentUserId: string | null;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -17,13 +17,16 @@ interface ScheduleDetailModalProps {
 export function ScheduleDetailModal({
   isOpen,
   schedule,
-  isLeader,
+  currentUserId,
   onClose,
   onEdit,
   onDelete,
   isDeleting = false,
 }: ScheduleDetailModalProps) {
   if (!isOpen || !schedule) return null;
+
+  // 일정을 등록한 사람만 수정/삭제 가능
+  const canEditOrDelete = currentUserId === schedule.createdBy;
 
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
@@ -87,27 +90,37 @@ export function ScheduleDetailModal({
         </div>
 
         {/* Actions */}
-        {isLeader && (
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              onClick={onEdit}
-            >
-              수정
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              size="md"
-              onClick={onDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? '삭제 중...' : '삭제'}
-            </Button>
-          </div>
-        )}
+        <div className="flex justify-center gap-3 pt-4 border-t border-gray-200">
+          {canEditOrDelete && (
+            <>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={onEdit}
+              >
+                수정
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                onClick={onDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? '삭제 중...' : '삭제'}
+              </Button>
+            </>
+          )}
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            onClick={onClose}
+          >
+            닫기
+          </Button>
+        </div>
       </div>
     </div>
   );

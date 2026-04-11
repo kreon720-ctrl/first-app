@@ -60,8 +60,8 @@ describe('CalendarWeekView', () => {
   it('displays 7 days in week view', () => {
     const { container } = render(<CalendarWeekView currentDate={mockCurrentDate} />);
 
-    // Count date buttons in header
-    const dateButtons = container.querySelectorAll('.grid.grid-cols-7 button');
+    // Count date buttons in header (WeekView uses flex layout, not grid)
+    const dateButtons = container.querySelectorAll('.flex.mb-1 button');
     expect(dateButtons.length).toBe(7);
   });
 
@@ -93,8 +93,54 @@ describe('CalendarWeekView', () => {
 
     const firstDay = screen.getByText('일');
     const weekdayHeaders = screen.getAllByText(/^[일월화수목금토]$/);
-    
+
     // First weekday header should be Sunday
     expect(weekdayHeaders[0]).toBe(firstDay);
+  });
+
+  it('sorts multi-day schedules by endAt ascending in all-day section', () => {
+    const mockSchedules: Schedule[] = [
+      {
+        id: 'sched-long',
+        teamId: 'team-1',
+        title: '긴 회의',
+        description: null,
+        startAt: '2026-04-13T00:00:00.000Z', // Mon
+        endAt: '2026-04-20T00:00:00.000Z',   // Mon (later end)
+        createdBy: 'user-1',
+        createdAt: '2026-04-01T00:00:00.000Z',
+        updatedAt: '2026-04-01T00:00:00.000Z',
+      },
+      {
+        id: 'sched-short',
+        teamId: 'team-1',
+        title: '짧은 회의',
+        description: null,
+        startAt: '2026-04-13T00:00:00.000Z', // Mon
+        endAt: '2026-04-17T00:00:00.000Z',   // Fri (earlier end)
+        createdBy: 'user-1',
+        createdAt: '2026-04-01T00:00:00.000Z',
+        updatedAt: '2026-04-01T00:00:00.000Z',
+      },
+    ];
+
+    const { container } = render(
+      <CalendarWeekView
+        currentDate={mockCurrentDate}
+        schedules={mockSchedules}
+      />
+    );
+
+    // Both schedules should be rendered once each (no duplicates)
+    const longBadges = screen.getAllByText('긴 회의');
+    const shortBadges = screen.getAllByText('짧은 회의');
+    expect(longBadges.length).toBe(1);  // rendered once, not per day
+    expect(shortBadges.length).toBe(1);  // rendered once, not per day
+
+    // Check order in DOM: shorter schedule (ends earlier) should appear first (top row)
+    const scheduleBadges = container.querySelectorAll('[title$="회의"]');
+    expect(scheduleBadges.length).toBe(2);
+    expect(scheduleBadges[0].getAttribute('title')).toBe('짧은 회의');  // ends earlier → top row
+    expect(scheduleBadges[1].getAttribute('title')).toBe('긴 회의');    // ends later → bottom row
   });
 });

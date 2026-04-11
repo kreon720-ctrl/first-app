@@ -10,6 +10,7 @@ describe('TeamList', () => {
       id: 'team-1',
       name: '개발팀',
       description: null,
+      isPublic: true,
       leaderId: 'leader-1',
       myRole: 'LEADER',
       createdAt: '2026-04-01T00:00:00.000Z',
@@ -18,6 +19,7 @@ describe('TeamList', () => {
       id: 'team-2',
       name: '디자인팀',
       description: null,
+      isPublic: false,
       leaderId: 'leader-2',
       myRole: 'MEMBER',
       createdAt: '2026-04-02T00:00:00.000Z',
@@ -59,8 +61,8 @@ describe('TeamList', () => {
   it('displays correct number of team cards', () => {
     render(<TeamList teams={mockTeams} />);
 
-    const teamCards = screen.getAllByRole('button');
-    expect(teamCards).toHaveLength(2);
+    const teamNames = screen.getAllByText(/팀$/);
+    expect(teamNames).toHaveLength(2);
   });
 
   it('shows LEADER badge for leader role', () => {

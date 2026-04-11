@@ -4,6 +4,7 @@ export interface Team {
   id: string
   name: string
   description: string | null
+  is_public: boolean
   leader_id: string
   created_at: Date
 }
@@ -49,7 +50,7 @@ export async function createTeam(name: string, leaderId: string, description?: s
 export async function getTeamById(teamId: string): Promise<Team | null> {
   try {
     const result = await pool.query<Team>(
-      `SELECT id, name, description, leader_id, created_at
+      `SELECT id, name, description, is_public, leader_id, created_at
        FROM teams
        WHERE id = $1`,
       [teamId]
@@ -60,7 +61,7 @@ export async function getTeamById(teamId: string): Promise<Team | null> {
   }
 }
 
-// GET /api/teams/public 용 — leaderName, memberCount 포함
+// GET /api/teams/public 용 — leaderName, memberCount 포함 (공개 팀만)
 export async function getPublicTeams(): Promise<PublicTeam[]> {
   try {
     const result = await pool.query<PublicTeam>(
@@ -70,6 +71,7 @@ export async function getPublicTeams(): Promise<PublicTeam[]> {
        FROM teams t
        JOIN users u ON u.id = t.leader_id
        LEFT JOIN team_members tm ON tm.team_id = t.id
+       WHERE t.is_public = true
        GROUP BY t.id, t.name, t.description, t.leader_id, t.created_at, u.name
        ORDER BY t.name ASC
        LIMIT 100`
@@ -100,7 +102,7 @@ export async function getTeamMembers(teamId: string): Promise<TeamMemberDetail[]
 export async function getUserTeams(userId: string): Promise<TeamWithRole[]> {
   try {
     const result = await pool.query<TeamWithRole>(
-      `SELECT t.id, t.name, t.description, t.leader_id, t.created_at, tm.role
+      `SELECT t.id, t.name, t.description, t.is_public, t.leader_id, t.created_at, tm.role
        FROM teams t
        JOIN team_members tm ON tm.team_id = t.id
        WHERE tm.user_id = $1
@@ -145,5 +147,50 @@ export async function getUserTeamRole(
     return result.rows[0]?.role ?? null
   } catch (err) {
     throw new Error(`getUserTeamRole 실패: ${(err as Error).message}`)
+  }
+}
+
+export interface UpdateTeamParams {
+  name?: string
+  description?: string
+  isPublic?: boolean
+}
+
+export async function updateTeam(
+  teamId: string,
+  params: UpdateTeamParams
+): Promise<Team | null> {
+  const { name, description, isPublic } = params
+  try {
+    const result = await pool.query<Team>(
+      `UPDATE teams
+       SET name        = COALESCE($2, name),
+           description = CASE WHEN $3::boolean THEN $4 ELSE description END,
+           is_public   = COALESCE($5, is_public)
+       WHERE id = $1
+       RETURNING id, name, description, is_public, leader_id, created_at`,
+      [
+        teamId,
+        name ?? null,
+        'description' in params,
+        description ?? null,
+        isPublic,
+      ]
+    )
+    return result.rows[0] ?? null
+  } catch (err) {
+    throw new Error(`updateTeam 실패: ${(err as Error).message}`)
+  }
+}
+
+export async function deleteTeam(teamId: string): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      `DELETE FROM teams WHERE id = $1`,
+      [teamId]
+    )
+    return (result.rowCount ?? 0) > 0
+  } catch (err) {
+    throw new Error(`deleteTeam 실패: ${(err as Error).message}`)
   }
 }

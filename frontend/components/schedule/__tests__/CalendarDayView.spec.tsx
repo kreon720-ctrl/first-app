@@ -51,6 +51,6 @@ describe('CalendarDayView', () => {
   it('shows empty state when no schedules', () => {
     render(<CalendarDayView currentDate={mockCurrentDate} schedules={[]} />);
 
-    expect(screen.getByText('일정이 없습니다.')).toBeInTheDocument();
+    expect(screen.getByText('일정 0개')).toBeInTheDocument();
   });
 });

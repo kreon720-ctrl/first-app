@@ -6,6 +6,7 @@ export interface Team {
   id: string;
   name: string;
   description: string | null;
+  isPublic: boolean;
   leaderId: string;
   myRole: TeamRole;
   createdAt: string;
@@ -36,6 +37,13 @@ export interface TeamMember {
 export interface TeamCreateInput {
   name: string;
   description?: string;
+  isPublic?: boolean;
+}
+
+export interface TeamUpdateInput {
+  name?: string;
+  description?: string;
+  isPublic?: boolean;
 }
 
 // Join Request types
