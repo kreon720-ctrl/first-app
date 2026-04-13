@@ -105,9 +105,9 @@ export async function getUserTeams(userId: string): Promise<TeamWithRole[]> {
       `SELECT t.id, t.name, t.description, t.is_public, t.leader_id, t.created_at, tm.role
        FROM teams t
        JOIN team_members tm ON tm.team_id = t.id
-       WHERE tm.user_id = $1 AND (t.is_public = true OR t.leader_id = $1)
+       WHERE tm.user_id = $1
        ORDER BY t.created_at DESC`,
-      [userId, userId]
+      [userId]
     )
     return result.rows
   } catch (err) {

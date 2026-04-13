@@ -104,7 +104,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
       }
 
       onSuccess?.();
-      router.push('/');
+      router.push('/login');
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 409) {
         setErrors((prev) => ({
