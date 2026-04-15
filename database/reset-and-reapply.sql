@@ -4,6 +4,7 @@
 -- =============================================
 
 -- 1. Drop all existing tables (in reverse dependency order)
+DROP TABLE IF EXISTS postits CASCADE;
 DROP TABLE IF EXISTS chat_messages CASCADE;
 DROP TABLE IF EXISTS schedules CASCADE;
 DROP TABLE IF EXISTS team_join_requests CASCADE;
@@ -76,6 +77,19 @@ CREATE TABLE IF NOT EXISTS schedules (
     CONSTRAINT chk_schedules_color CHECK (color IN ('indigo', 'blue', 'emerald', 'amber', 'rose'))
 );
 
+-- postits
+CREATE TABLE IF NOT EXISTS postits (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    team_id    UUID        NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    created_by UUID        NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    date       DATE        NOT NULL,
+    color      VARCHAR(20) NOT NULL DEFAULT 'amber',
+    content    TEXT        NOT NULL DEFAULT '',
+    created_at TIMESTAMP   NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP   NOT NULL DEFAULT now(),
+    CONSTRAINT chk_postits_color CHECK (color IN ('indigo', 'blue', 'emerald', 'amber', 'rose'))
+);
+
 -- chat_messages
 CREATE TABLE IF NOT EXISTS chat_messages (
     id        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,6 +113,7 @@ CREATE INDEX IF NOT EXISTS idx_team_join_requests_team_id_status ON team_join_re
 CREATE INDEX IF NOT EXISTS idx_team_join_requests_requester_id ON team_join_requests(requester_id);
 CREATE INDEX IF NOT EXISTS idx_schedules_team_id_start_at ON schedules(team_id, start_at);
 CREATE INDEX IF NOT EXISTS idx_schedules_team_id_end_at ON schedules(team_id, end_at);
+CREATE INDEX IF NOT EXISTS idx_postits_team_id_date ON postits(team_id, date);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_team_id_sent_at ON chat_messages(team_id, sent_at DESC);
 
 -- Done!

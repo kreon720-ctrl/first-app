@@ -3,9 +3,12 @@
 import React from 'react';
 import { Schedule } from '@/types/schedule';
 import { CalendarView as CalendarViewType } from '@/types/schedule';
+import type { PostIt } from '@/types/postit';
+import type { ScheduleColor } from '@/types/schedule';
 import { CalendarMonthView } from './CalendarMonthView';
 import { CalendarWeekView } from './CalendarWeekView';
 import { CalendarDayView } from './CalendarDayView';
+import { PostItColorPalette } from './PostItColorPalette';
 
 interface CalendarViewProps {
   currentDate: Date;
@@ -13,7 +16,14 @@ interface CalendarViewProps {
   view: CalendarViewType;
   schedules?: Schedule[];
   canCreateSchedule?: boolean;
-  compact?: boolean; // 채팅창 없는 모드 (모바일 캘린더 탭 등)
+  compact?: boolean;
+  // 포스트잇 관련 (PC 월간뷰 전용)
+  postits?: PostIt[];
+  currentUserId?: string;
+  selectedPostitColor?: ScheduleColor | null;
+  onPostitColorSelect?: (color: ScheduleColor | null) => void;
+  onPostitDelete?: (id: string, date: string) => void;
+  onPostitContentChange?: (id: string, content: string) => void;
   onViewChange?: (view: CalendarViewType) => void;
   onDateChange?: (date: Date) => void;
   onDateClick?: (date: Date) => void;
@@ -28,6 +38,12 @@ export function CalendarView({
   schedules = [],
   canCreateSchedule = false,
   compact = false,
+  postits = [],
+  currentUserId,
+  selectedPostitColor,
+  onPostitColorSelect,
+  onPostitDelete,
+  onPostitContentChange,
   onViewChange,
   onDateChange,
   onDateClick,
@@ -35,8 +51,6 @@ export function CalendarView({
   onScheduleClick,
 }: CalendarViewProps) {
   const navigateDate = (direction: 'prev' | 'next') => {
-    // Navigate from the 1st of the month to avoid day overflow issues
-    // (e.g., Mar 31 + 1 month → May 1 because Apr has 30 days)
     const newDate = new Date(currentDate);
     newDate.setUTCDate(1);
 
@@ -83,9 +97,8 @@ export function CalendarView({
     { id: 'day', label: '일' },
   ];
 
-  const handleDateClick = (date: Date) => {
-    onDateClick?.(date);
-  };
+  // 팔레트는 월간뷰 + compact 아님 + 콜백 있을 때만 표시
+  const showPalette = view === 'month' && !compact && !!onPostitColorSelect;
 
   return (
     <div className="w-full bg-white">
@@ -121,7 +134,15 @@ export function CalendarView({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* 일정 등록 버튼 (모든 팀원) */}
+          {/* 포스트잇 색상 팔레트 (PC 월간뷰) */}
+          {showPalette && (
+            <PostItColorPalette
+              selectedColor={selectedPostitColor ?? null}
+              onSelect={onPostitColorSelect}
+            />
+          )}
+
+          {/* 일정 등록 버튼 */}
           {canCreateSchedule && onCreateSchedule && (
             <button
               type="button"
@@ -168,8 +189,12 @@ export function CalendarView({
             currentDate={currentDate}
             schedules={schedules}
             selectedDate={selectedDate}
-            onDateClick={handleDateClick}
+            onDateClick={onDateClick}
             onScheduleClick={onScheduleClick}
+            postits={postits}
+            currentUserId={currentUserId}
+            onPostitDelete={onPostitDelete}
+            onPostitContentChange={onPostitContentChange}
           />
         )}
         {view === 'week' && (
@@ -177,7 +202,7 @@ export function CalendarView({
             currentDate={currentDate}
             schedules={schedules}
             selectedDate={selectedDate}
-            onDateClick={handleDateClick}
+            onDateClick={onDateClick}
             onScheduleClick={onScheduleClick}
           />
         )}
@@ -186,7 +211,7 @@ export function CalendarView({
             currentDate={currentDate}
             schedules={schedules}
             selectedDate={selectedDate}
-            onDateClick={handleDateClick}
+            onDateClick={onDateClick}
             onScheduleClick={onScheduleClick}
           />
         )}

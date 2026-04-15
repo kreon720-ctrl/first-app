@@ -7,13 +7,14 @@ import { useTeamStore } from '@/store/teamStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTeamDetail } from '@/hooks/query/useTeams';
 import { useSchedules, useCreateSchedule, useUpdateSchedule, useDeleteSchedule } from '@/hooks/query/useSchedules';
+import { usePostits, useCreatePostit, useUpdatePostitContent, useDeletePostit } from '@/hooks/query/usePostits';
 import { useMyTasks } from '@/hooks/query/useMyTasks';
 import { CalendarView } from '@/components/schedule/CalendarView';
 import { ScheduleForm } from '@/components/schedule/ScheduleForm';
 import { ScheduleDetailModal } from '@/components/schedule/ScheduleDetailModal';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { Button } from '@/components/common/Button';
-import type { Schedule, ScheduleCreateInput, ScheduleUpdateInput } from '@/types/schedule';
+import type { Schedule, ScheduleCreateInput, ScheduleUpdateInput, ScheduleColor } from '@/types/schedule';
 
 interface TeamMainPageProps {
   params: Promise<{ teamId: string }>;
@@ -56,17 +57,28 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [scheduleDefaultDate, setScheduleDefaultDate] = useState<string>('');
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [selectedPostitColor, setSelectedPostitColor] = useState<ScheduleColor | null>(null);
 
   const { data: schedulesData } = useSchedules(teamId, {
     view: calendarView,
     date: selectedDate,
   });
+  // 포스트잇: 현재 월 (YYYY-MM) 기준 조회 — PC + 월간뷰 전용
+  const postitMonth = selectedDate.slice(0, 7);
+  const { data: postitsData } = usePostits(
+    teamId,
+    isDesktop && calendarView === 'month' ? postitMonth : ''
+  );
   const { data: myTasksData } = useMyTasks();
   const pendingCount = myTasksData?.totalPendingCount ?? 0;
   const createSchedule = useCreateSchedule(teamId);
   const updateSchedule = useUpdateSchedule(teamId, selectedSchedule?.id ?? '');
   const deleteSchedule = useDeleteSchedule(teamId);
+  const createPostit = useCreatePostit(teamId);
+  const updatePostitContent = useUpdatePostitContent(teamId);
+  const deletePostitMutation = useDeletePostit(teamId);
   const schedules = schedulesData?.schedules ?? [];
+  const postits = postitsData?.postits ?? [];
 
   // Update selected team ID when component mounts
   useEffect(() => {
@@ -117,7 +129,23 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const day = String(date.getUTCDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
+
+    // PC 월간뷰 + 포스트잇 색상 선택 중이면 포스트잇 생성
+    if (isDesktop && calendarView === 'month' && selectedPostitColor) {
+      createPostit.mutate({ date: dateString, color: selectedPostitColor });
+      setSelectedPostitColor(null);
+      return;
+    }
+
     setSelectedDate(dateString);
+  };
+
+  const handlePostitDelete = (id: string, date: string) => {
+    deletePostitMutation.mutate({ postitId: id, date });
+  };
+
+  const handlePostitContentChange = (id: string, content: string) => {
+    updatePostitContent.mutate({ postitId: id, content });
   };
 
   const handleViewChange = (view: 'month' | 'week' | 'day') => {
@@ -228,6 +256,12 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
               view={calendarView}
               schedules={schedules}
               canCreateSchedule={true}
+              postits={postits}
+              currentUserId={currentUser?.id}
+              selectedPostitColor={selectedPostitColor}
+              onPostitColorSelect={setSelectedPostitColor}
+              onPostitDelete={handlePostitDelete}
+              onPostitContentChange={handlePostitContentChange}
               onViewChange={handleViewChange}
               onDateChange={(date) => {
                 const year = date.getUTCFullYear();

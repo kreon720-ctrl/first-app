@@ -4,6 +4,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Schedule } from '@/types/schedule';
 import { utcToKST, formatTime } from '@/lib/utils/timezone';
 import { ScheduleTooltip } from './ScheduleTooltip';
+import { PostItCard } from './PostItCard';
+import type { PostIt } from '@/types/postit';
 
 interface CalendarMonthViewProps {
   currentDate: Date;
@@ -11,6 +13,11 @@ interface CalendarMonthViewProps {
   selectedDate?: Date;
   onDateClick?: (date: Date) => void;
   onScheduleClick?: (schedule: Schedule) => void;
+  // 포스트잇
+  postits?: PostIt[];
+  currentUserId?: string;
+  onPostitDelete?: (id: string, date: string) => void;
+  onPostitContentChange?: (id: string, content: string) => void;
 }
 
 const COLOR_CLASSES: Record<NonNullable<Schedule['color']>, { bg: string; text: string }> = {
@@ -22,8 +29,8 @@ const COLOR_CLASSES: Record<NonNullable<Schedule['color']>, { bg: string; text: 
 };
 
 const AVG_CHAR_WIDTH_PX = 13;
-const BAR_LINE_HEIGHT_PX = 16; // text-xs line-height: 1rem = 16px
-const BAR_PADDING_V_PX = 4;   // py-0.5 (2px × 2) = 4px
+const BAR_LINE_HEIGHT_PX = 16;
+const BAR_PADDING_V_PX = 4;
 const MIN_BAR_HEIGHT = 20;
 const SCHEDULE_ROW_GAP = 2;
 const SCHEDULE_TOP_OFFSET = 32;
@@ -35,6 +42,10 @@ export function CalendarMonthView({
   selectedDate,
   onDateClick,
   onScheduleClick,
+  postits = [],
+  currentUserId = '',
+  onPostitDelete,
+  onPostitContentChange,
 }: CalendarMonthViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -108,7 +119,6 @@ export function CalendarMonthView({
       : `(${sm}월${sd}일~${em}월${ed}일)`;
   };
 
-  /** 멀티데이 일정 오버레이용 바 높이 추정 */
   const getBarHeight = (text: string, spanCols: number): number => {
     if (containerWidth <= 0) return MIN_BAR_HEIGHT;
     const barWidthPx = (spanCols / 7) * containerWidth - 16;
@@ -117,7 +127,6 @@ export function CalendarMonthView({
     return Math.max(MIN_BAR_HEIGHT, lines * BAR_LINE_HEIGHT_PX + BAR_PADDING_V_PX);
   };
 
-  /** 멀티데이 일정만 행 배정 */
   const getMultiDaySchedulesForWeek = (weekDays: Date[]): {
     schedule: Schedule;
     row: number;
@@ -184,11 +193,16 @@ export function CalendarMonthView({
     return result;
   };
 
-  /** 특정 날짜의 당일 일정 (시작 시각 오름차순) */
   const getSameDaySchedulesForDay = (date: Date): Schedule[] =>
     schedules
       .filter(s => isSameDaySchedule(s) && scheduleToDay(new Date(s.startAt)).getTime() === date.getTime())
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+
+  /** 날짜 키 (YYYY-MM-DD) → 포스트잇 배열 */
+  const getPostitsByDateKey = (date: Date): PostIt[] => {
+    const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+    return postits.filter(p => p.date === key);
+  };
 
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -211,7 +225,6 @@ export function CalendarMonthView({
       {/* 캘린더 그리드 */}
       <div className="flex flex-col gap-1.5">
         {weeks.map((week, weekIndex) => {
-          /* ── 멀티데이 레이아웃 ── */
           const multiDayRows = getMultiDaySchedulesForWeek(week);
           const multiDayBarHeights = multiDayRows.map(({ schedule, colStart, colEnd }) => {
             const dateRange = formatDateRange(schedule);
@@ -230,10 +243,6 @@ export function CalendarMonthView({
             cumulative += (rowMaxHeights[r] ?? MIN_BAR_HEIGHT) + SCHEDULE_ROW_GAP;
           }
 
-          /**
-           * 날짜별 멀티데이 영역 하단 y값 (당일 일정 스페이서 높이 기준)
-           * 멀티데이 일정이 없는 날 = SCHEDULE_TOP_OFFSET (스페이서 불필요)
-           */
           const perDayMultiDayBottom = week.map((_, dayIndex) => {
             const col = dayIndex + 1;
             const barsOnDay = multiDayRows.filter(r => r.colStart <= col && r.colEnd >= col);
@@ -244,7 +253,6 @@ export function CalendarMonthView({
               SCHEDULE_ROW_GAP;
           });
 
-          /* 멀티데이 오버레이 영역만큼 셀 최소 높이 보장 */
           const cellMinHeight = `${Math.max(
             BASE_CELL_MIN_HEIGHT,
             ...perDayMultiDayBottom.map(b => b + 8),
@@ -259,10 +267,7 @@ export function CalendarMonthView({
               >
                 {week.map((date, dayIndex) => {
                   const sameDaySchedules = getSameDaySchedulesForDay(date);
-                  /**
-                   * 멀티데이 오버레이 바 아래에 당일 일정이 시작되도록
-                   * 날짜 숫자 영역(SCHEDULE_TOP_OFFSET) 이후의 남은 공간을 스페이서로 채운다.
-                   */
+                  const dayPostits = getPostitsByDateKey(date);
                   const spacerHeight = perDayMultiDayBottom[dayIndex] - SCHEDULE_TOP_OFFSET;
 
                   return (
@@ -303,7 +308,7 @@ export function CalendarMonthView({
                         <div style={{ height: `${spacerHeight}px` }} className="flex-shrink-0" />
                       )}
 
-                      {/* 당일 일정 (height: auto — 브라우저가 직접 높이 결정) */}
+                      {/* 당일 일정 */}
                       {sameDaySchedules.map(schedule => (
                         <div
                           key={schedule.id}
@@ -316,12 +321,23 @@ export function CalendarMonthView({
                           {formatTime(new Date(schedule.startAt))} {schedule.title}
                         </div>
                       ))}
+
+                      {/* 포스트잇 카드 */}
+                      {dayPostits.map(postit => (
+                        <PostItCard
+                          key={postit.id}
+                          postit={postit}
+                          currentUserId={currentUserId}
+                          onDelete={(id, date) => onPostitDelete?.(id, date)}
+                          onContentChange={(id, content) => onPostitContentChange?.(id, content)}
+                        />
+                      ))}
                     </button>
                   );
                 })}
               </div>
 
-              {/* 멀티데이 일정 오버레이 (가로 스팬 바) */}
+              {/* 멀티데이 일정 오버레이 */}
               {multiDayRows.length > 0 && (
                 <div className="absolute inset-0 pointer-events-none">
                   {multiDayRows.map(({ schedule, row, colStart, colEnd }, idx) => {
