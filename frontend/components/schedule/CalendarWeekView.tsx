@@ -106,35 +106,6 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
 
   return (
     <div className="w-full">
-      {/* ── 요일 헤더 ─────────────────────────────────────────────────────────── */}
-      <div className="flex mb-1">
-        <div className={`${TIME_COL_W} flex-shrink-0`} />
-        {weekDays.map((date, index) => {
-          const today = isToday(date);
-          const sel   = isSelected(date);
-          return (
-            <button
-              key={date.toISOString()}
-              type="button"
-              onClick={() => onDateClick?.(date)}
-              className={`
-                flex-1 flex flex-col items-center py-2 px-1 rounded-lg transition-all duration-150
-                ${today ? 'ring-2 ring-orange-500' : ''}
-                ${sel && !today ? 'ring-2 ring-primary-500' : ''}
-                hover:bg-gray-50
-              `}
-            >
-              <span className={`text-xs font-medium mb-1 ${index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-600'}`}>
-                {weekdays[index]}
-              </span>
-              <span className={`text-lg font-semibold ${index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-800'}`}>
-                {date.getUTCDate()}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ── 종일/다일 이벤트 섹션 ─────────────────────────────────────────────── */}
       {(() => {
         const allDaySchedules = schedules
@@ -188,15 +159,45 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
         );
       })()}
 
-      {/* ── 시간별 타임라인 ────────────────────────────────────────────────────── */}
+      {/* ── 시간별 타임라인 (요일 헤더 sticky 포함) ───────────────────────────── */}
       <div
         ref={timelineRef}
         className="border border-gray-200 rounded-lg bg-white overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 280px)' }}
+        style={{ maxHeight: 'calc(100vh - 240px)' }}
       >
+        {/* 요일 헤더 — 스크롤 컨테이너와 동일한 너비로 sticky */}
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 flex">
+          <div className={`${TIME_COL_W} flex-shrink-0`} />
+          {weekDays.map((date, index) => {
+            const today = isToday(date);
+            const sel   = isSelected(date);
+            return (
+              <button
+                key={date.toISOString()}
+                type="button"
+                onClick={() => onDateClick?.(date)}
+                className={`
+                  flex-1 flex flex-col items-center py-2 px-1 transition-all duration-150
+                  ${today ? 'ring-2 ring-orange-500 rounded-lg' : ''}
+                  ${sel && !today ? 'ring-2 ring-primary-500 rounded-lg' : ''}
+                  hover:bg-gray-50
+                `}
+              >
+                <span className={`text-xs font-medium mb-1 ${index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-600'}`}>
+                  {weekdays[index]}
+                </span>
+                <span className={`text-lg font-semibold ${index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-800'}`}>
+                  {date.getUTCDate()}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 24시간 그리드 + 이벤트 오버레이 */}
         <div className="relative" style={{ height: `${24 * HOUR_PX}px` }}>
 
-          {/* 그리드 레이어: 시간 레이블 + 구분선 + 오늘 배경 (고정 높이) */}
+          {/* 그리드 레이어: 시간 레이블 + 구분선 + 오늘 배경 */}
           {Array.from({ length: 24 }, (_, hour) => (
             <div
               key={hour}
