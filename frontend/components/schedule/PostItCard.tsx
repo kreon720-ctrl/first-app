@@ -91,9 +91,10 @@ export function PostItCard({ postit, currentUserId, onDelete, onContentChange }:
             placeholder={isCreator ? '메모를 입력하세요...' : ''}
             rows={3}
             maxLength={MAX_LENGTH}
-            className="w-full bg-transparent resize-none overflow-hidden text-xs leading-relaxed outline-none border-none placeholder-current/40"
+            className="w-full bg-transparent resize-none overflow-hidden leading-relaxed outline-none border-none placeholder-current/40"
             style={{
               color: style.text,
+              fontSize: '14px',
               minHeight: '52px',
               paddingRight: isCreator ? '18px' : undefined,
               cursor: isCreator ? 'text' : 'default',

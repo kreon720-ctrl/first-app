@@ -101,7 +101,7 @@ export function CalendarView({
   const showPalette = view === 'month' && !compact && !!onPostitColorSelect;
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white flex flex-col flex-1 min-h-0">
       {/* Navigation header */}
       <div className="flex items-center justify-between mb-4 px-2">
         {/* Navigation buttons */}
@@ -183,7 +183,7 @@ export function CalendarView({
       </div>
 
       {/* Calendar content */}
-      <div className="px-2">
+      <div className={`px-2 ${view === 'month' ? 'overflow-y-auto flex-1 min-h-0' : 'flex-1 min-h-0'}`}>
         {view === 'month' && (
           <CalendarMonthView
             currentDate={currentDate}

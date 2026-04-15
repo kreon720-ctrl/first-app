@@ -13,6 +13,7 @@ import { CalendarView } from '@/components/schedule/CalendarView';
 import { ScheduleForm } from '@/components/schedule/ScheduleForm';
 import { ScheduleDetailModal } from '@/components/schedule/ScheduleDetailModal';
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { ResizableSplit } from '@/components/common/ResizableSplit';
 import { Button } from '@/components/common/Button';
 import type { Schedule, ScheduleCreateInput, ScheduleUpdateInput, ScheduleColor } from '@/types/schedule';
 
@@ -258,54 +259,58 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
           </div>
         </header>
 
-        {/* Main content: split layout */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Calendar section (left 60%) */}
-          <div className="w-[60%] border-r border-gray-200 overflow-y-auto">
-            <CalendarView
-              currentDate={currentDate}
-              view={calendarView}
-              schedules={schedules}
-              canCreateSchedule={true}
-              postits={postits}
-              currentUserId={currentUser?.id}
-              selectedPostitColor={selectedPostitColor}
-              onPostitColorSelect={setSelectedPostitColor}
-              onPostitDelete={handlePostitDelete}
-              onPostitContentChange={handlePostitContentChange}
-              onViewChange={handleViewChange}
-              onDateChange={(date) => {
-                const year = date.getUTCFullYear();
-                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-                const day = String(date.getUTCDate()).padStart(2, '0');
-                setSelectedDate(`${year}-${month}-${day}`);
-              }}
-              onDateClick={handleDateClick}
-              onCreateSchedule={handleCreateSchedule}
-              onScheduleClick={handleScheduleClick}
-            />
-          </div>
-
-          {/* Chat section (right 40%) */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-sm font-medium text-gray-700">
-                {new Date(selectedDate).toLocaleDateString('ko-KR', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  weekday: 'short',
-                })}{' '}
-                채팅
-              </h2>
+        {/* Main content: resizable split layout */}
+        <ResizableSplit
+          initialLeftPercent={60}
+          minLeftPercent={30}
+          maxLeftPercent={80}
+          left={
+            <div className="border-r border-gray-200 overflow-hidden flex flex-col h-full">
+              <CalendarView
+                currentDate={currentDate}
+                view={calendarView}
+                schedules={schedules}
+                canCreateSchedule={true}
+                postits={postits}
+                currentUserId={currentUser?.id}
+                selectedPostitColor={selectedPostitColor}
+                onPostitColorSelect={setSelectedPostitColor}
+                onPostitDelete={handlePostitDelete}
+                onPostitContentChange={handlePostitContentChange}
+                onViewChange={handleViewChange}
+                onDateChange={(date) => {
+                  const year = date.getUTCFullYear();
+                  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                  const day = String(date.getUTCDate()).padStart(2, '0');
+                  setSelectedDate(`${year}-${month}-${day}`);
+                }}
+                onDateClick={handleDateClick}
+                onCreateSchedule={handleCreateSchedule}
+                onScheduleClick={handleScheduleClick}
+              />
             </div>
-            <ChatPanel
-              teamId={teamId}
-              date={selectedDate}
-              isLeader={isLeader}
-            />
-          </div>
-        </div>
+          }
+          right={
+            <>
+              <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <h2 className="text-sm font-medium text-gray-700">
+                  {new Date(selectedDate).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'short',
+                  })}{' '}
+                  채팅
+                </h2>
+              </div>
+              <ChatPanel
+                teamId={teamId}
+                date={selectedDate}
+                isLeader={isLeader}
+              />
+            </>
+          }
+        />
 
         {/* 포스트잇 에러 토스트 */}
         {postitError && (
