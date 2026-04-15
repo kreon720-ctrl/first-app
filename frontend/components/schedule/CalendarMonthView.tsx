@@ -271,12 +271,14 @@ export function CalendarMonthView({
                   const spacerHeight = perDayMultiDayBottom[dayIndex] - SCHEDULE_TOP_OFFSET;
 
                   return (
-                    <button
+                    <div
                       key={date.toISOString()}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => onDateClick?.(date)}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onDateClick?.(date); }}
                       className={`
-                        relative p-2 rounded-lg border transition-all duration-150 flex flex-col
+                        relative p-2 rounded-lg border transition-all duration-150 flex flex-col cursor-pointer
                         ${isToday(date)
                           ? 'border-orange-500 ring-1 ring-orange-400'
                           : isSelected(date)
@@ -332,7 +334,7 @@ export function CalendarMonthView({
                           onContentChange={(id, content) => onPostitContentChange?.(id, content)}
                         />
                       ))}
-                    </button>
+                    </div>
                   );
                 })}
               </div>

@@ -133,7 +133,7 @@ export function CalendarView({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {/* 포스트잇 색상 팔레트 (PC 월간뷰) */}
           {showPalette && (
             <PostItColorPalette

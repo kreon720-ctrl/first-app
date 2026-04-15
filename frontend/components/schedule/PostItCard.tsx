@@ -25,9 +25,11 @@ export function PostItCard({ postit, currentUserId, onDelete, onContentChange }:
   const style = COLOR_STYLES[postit.color];
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const MAX_LENGTH = 100;
+
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!isCreator) return;
-    const val = e.target.value;
+    const val = e.target.value.slice(0, MAX_LENGTH);
     setLocalContent(val);
     // 디바운스 자동저장 (1.5초)
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -64,8 +66,8 @@ export function PostItCard({ postit, currentUserId, onDelete, onContentChange }:
         />
 
         {/* 내용 영역 */}
-        <div className="relative px-2 pt-1.5 pb-5">
-          {/* 삭제 버튼 (생성자만) */}
+        <div className="relative px-2 pt-1.5 pb-2">
+          {/* 삭제 버튼 (생성자만) — absolute, 텍스트 영역 오른쪽 패딩으로 겹침 방지 */}
           {isCreator && (
             <button
               type="button"
@@ -74,7 +76,7 @@ export function PostItCard({ postit, currentUserId, onDelete, onContentChange }:
               style={{ color: style.text }}
               title="포스트잇 삭제"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
@@ -87,24 +89,18 @@ export function PostItCard({ postit, currentUserId, onDelete, onContentChange }:
             onBlur={handleBlur}
             readOnly={!isCreator}
             placeholder={isCreator ? '메모를 입력하세요...' : ''}
-            rows={2}
-            className="w-full bg-transparent resize-none text-xs leading-relaxed outline-none border-none placeholder-current/40"
+            rows={3}
+            maxLength={MAX_LENGTH}
+            className="w-full bg-transparent resize-none overflow-hidden text-xs leading-relaxed outline-none border-none placeholder-current/40"
             style={{
               color: style.text,
-              minHeight: '40px',
+              minHeight: '52px',
+              paddingRight: isCreator ? '18px' : undefined,
               cursor: isCreator ? 'text' : 'default',
             }}
           />
         </div>
 
-        {/* 오른쪽 하단 dog-ear 접힘 효과 */}
-        <div
-          className="absolute bottom-0 right-0 w-5 h-5 pointer-events-none"
-          style={{
-            background: `linear-gradient(225deg, rgba(255,255,255,0.55) 50%, transparent 50%)`,
-            boxShadow: `-1px -1px 2px ${style.fold}`,
-          }}
-        />
       </div>
     </div>
   );

@@ -27,28 +27,27 @@ const COLOR_BORDER: Record<ScheduleColor, string> = {
 
 export function PostItColorPalette({ selectedColor, onSelect }: PostItColorPaletteProps) {
   return (
-    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 shadow-sm">
-      <span className="text-xs text-gray-500 mr-1 whitespace-nowrap">포스트잇</span>
+    <div className="flex items-center gap-1">
+      <span className="text-[10px] text-gray-500 mr-0.5 whitespace-nowrap">
+        {selectedColor ? '날짜클릭' : '포스트잇'}
+      </span>
       {SCHEDULE_COLORS.map(color => (
         <button
           key={color}
           type="button"
           title={`${color} 포스트잇 추가`}
           onClick={() => onSelect(selectedColor === color ? null : color)}
-          className="w-5 h-5 rounded-sm transition-transform hover:scale-110 flex-shrink-0"
+          className="w-4 h-4 rounded-sm transition-transform hover:scale-110 flex-shrink-0"
           style={{
             background: COLOR_BG[color],
             border: selectedColor === color
-              ? `2px solid #6b7280`   // 선택 시 회색 테두리
+              ? `2px solid #6b7280`
               : `1.5px solid ${COLOR_BORDER[color]}`,
             transform: selectedColor === color ? 'scale(1.15)' : undefined,
             boxShadow: selectedColor === color ? '0 0 0 1px #6b7280' : undefined,
           }}
         />
       ))}
-      {selectedColor && (
-        <span className="text-[10px] text-gray-400 ml-1 whitespace-nowrap">날짜 클릭 →</span>
-      )}
     </div>
   );
 }

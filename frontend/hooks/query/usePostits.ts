@@ -22,6 +22,9 @@ export function useCreatePostit(teamId: string) {
       const month = postit.date.slice(0, 7);
       queryClient.invalidateQueries({ queryKey: ['postits', teamId, month] });
     },
+    onError: (err) => {
+      console.error('포스트잇 생성 실패:', err);
+    },
   });
 }
 

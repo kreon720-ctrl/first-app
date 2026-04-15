@@ -58,6 +58,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
   const [scheduleDefaultDate, setScheduleDefaultDate] = useState<string>('');
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [selectedPostitColor, setSelectedPostitColor] = useState<ScheduleColor | null>(null);
+  const [postitError, setPostitError] = useState<string | null>(null);
 
   const { data: schedulesData } = useSchedules(teamId, {
     view: calendarView,
@@ -132,8 +133,18 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
 
     // PC 월간뷰 + 포스트잇 색상 선택 중이면 포스트잇 생성
     if (isDesktop && calendarView === 'month' && selectedPostitColor) {
-      createPostit.mutate({ date: dateString, color: selectedPostitColor });
+      const colorToCreate = selectedPostitColor;
       setSelectedPostitColor(null);
+      createPostit.mutate(
+        { date: dateString, color: colorToCreate },
+        {
+          onError: (err) => {
+            const msg = err instanceof Error ? err.message : '포스트잇 생성에 실패했습니다.';
+            setPostitError(msg);
+            setTimeout(() => setPostitError(null), 4000);
+          },
+        }
+      );
       return;
     }
 
@@ -295,6 +306,13 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
             />
           </div>
         </div>
+
+        {/* 포스트잇 에러 토스트 */}
+        {postitError && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg">
+            {postitError}
+          </div>
+        )}
 
         {/* 일정 등록 모달 (데스크탑) */}
         {showCreateModal && (
