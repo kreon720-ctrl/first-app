@@ -280,7 +280,7 @@ export function CalendarMonthView({
                       className={`
                         relative p-2 rounded-lg border transition-all duration-150 flex flex-col cursor-pointer
                         ${isToday(date)
-                          ? 'border-orange-500 ring-1 ring-orange-400'
+                          ? 'border-orange-500'
                           : isSelected(date)
                             ? 'bg-white border-primary-500 ring-2 ring-primary-500'
                             : !isCurrentMonth(date)
@@ -341,7 +341,7 @@ export function CalendarMonthView({
 
               {/* 멀티데이 일정 오버레이 */}
               {multiDayRows.length > 0 && (
-                <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 pointer-events-none z-10">
                   {multiDayRows.map(({ schedule, row, colStart, colEnd }, idx) => {
                     const span = colEnd - colStart + 1;
                     const leftPct = `${(colStart - 1) * (100 / 7)}%`;
@@ -369,6 +369,17 @@ export function CalendarMonthView({
                       </div>
                     );
                   })}
+                </div>
+              )}
+              {/* 오늘 날짜 링 — 모든 오버레이 위에 렌더링 */}
+              {week.some(d => isToday(d)) && (
+                <div className="absolute inset-0 pointer-events-none grid grid-cols-7 gap-1.5 z-20">
+                  {week.map((date) => (
+                    <div
+                      key={date.toISOString()}
+                      className={isToday(date) ? 'rounded-lg ring-2 ring-orange-400' : ''}
+                    />
+                  ))}
                 </div>
               )}
             </div>

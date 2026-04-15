@@ -1,15 +1,17 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMyTasks } from '@/hooks/query/useMyTasks';
 import { useUpdateJoinRequestFromTasks } from '@/hooks/query/useUpdateJoinRequestFromTasks';
 import { useAuthStore } from '@/store/authStore';
 import { JoinRequestActions } from '@/components/team/JoinRequestActions';
 import { Button } from '@/components/common/Button';
 
-export default function MyTasksPage() {
+function MyTasksContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const filterTeamId = searchParams.get('teamId');
   const { data, isLoading, isError } = useMyTasks();
   const updateJoinRequest = useUpdateJoinRequestFromTasks();
   const currentUser = useAuthStore((state) => state.currentUser);
@@ -46,7 +48,11 @@ export default function MyTasksPage() {
     }
   };
 
-  const tasks = data?.tasks || [];
+  const allTasks = data?.tasks || [];
+  const tasks = filterTeamId
+    ? allTasks.filter((t) => t.teamId === filterTeamId)
+    : allTasks;
+  const filterTeamName = filterTeamId ? tasks[0]?.teamName : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -82,13 +88,24 @@ export default function MyTasksPage() {
         {/* Section Title */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">
-            가입 신청 목록
+            {filterTeamName ? `${filterTeamName} — 가입 신청` : '가입 신청 목록'}
           </h2>
-          {tasks.length > 0 && (
-            <span className="text-sm font-medium text-gray-500">
-              ({tasks.length}건)
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {tasks.length > 0 && (
+              <span className="text-sm font-medium text-gray-500">
+                ({tasks.length}건)
+              </span>
+            )}
+            {filterTeamId && (
+              <button
+                type="button"
+                onClick={() => router.push('/me/tasks')}
+                className="text-xs text-primary-600 hover:underline"
+              >
+                전체 보기
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Loading State */}
@@ -152,5 +169,13 @@ export default function MyTasksPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function MyTasksPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-sm text-gray-500">로딩 중...</p></div>}>
+      <MyTasksContent />
+    </Suspense>
   );
 }

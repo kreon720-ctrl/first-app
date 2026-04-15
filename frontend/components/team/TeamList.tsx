@@ -6,13 +6,15 @@ import { TeamCard } from './TeamCard';
 
 interface TeamListProps {
   teams: Team[];
+  pendingCountByTeam?: Record<string, number>;
   onTeamClick?: (teamId: string) => void;
+  onApproveTeam?: (teamId: string) => void;
   onUpdateTeam?: (teamId: string, data: { name: string; description: string }) => void;
   onDeleteTeam?: (teamId: string) => void;
   emptyMessage?: string;
 }
 
-export function TeamList({ teams, onTeamClick, onUpdateTeam, onDeleteTeam, emptyMessage = '아직 팀이 없습니다.' }: TeamListProps) {
+export function TeamList({ teams, pendingCountByTeam = {}, onTeamClick, onApproveTeam, onUpdateTeam, onDeleteTeam, emptyMessage = '아직 팀이 없습니다.' }: TeamListProps) {
   if (teams.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
@@ -38,7 +40,9 @@ export function TeamList({ teams, onTeamClick, onUpdateTeam, onDeleteTeam, empty
         <TeamCard
           key={team.id}
           team={team}
+          pendingCount={pendingCountByTeam[team.id] ?? 0}
           onClick={onTeamClick}
+          onApprove={onApproveTeam}
           onUpdate={onUpdateTeam}
           onDelete={onDeleteTeam}
         />

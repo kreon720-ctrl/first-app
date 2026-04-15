@@ -7,12 +7,14 @@ import { Button } from '@/components/common/Button';
 
 interface TeamCardProps {
   team: Team;
+  pendingCount?: number;
   onClick?: (teamId: string) => void;
+  onApprove?: (teamId: string) => void;
   onUpdate?: (teamId: string, data: { name: string; description: string }) => void;
   onDelete?: (teamId: string) => void;
 }
 
-export function TeamCard({ team, onClick, onUpdate, onDelete }: TeamCardProps) {
+export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate, onDelete }: TeamCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editName, setEditName] = useState(team.name);
@@ -121,14 +123,34 @@ export function TeamCard({ team, onClick, onUpdate, onDelete }: TeamCardProps) {
             )}
           </button>
 
-          {/* 팀장 전용 수정/삭제 버튼 */}
+          {/* 팀장 전용 승인/수정/삭제 버튼 */}
           {isLeader && (
             <div className="flex gap-1.5 ml-3 flex-shrink-0">
+              {/* 승인 버튼 */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onApprove?.(team.id); }}
+                  className="p-1.5 rounded-lg hover:bg-amber-50 transition-colors"
+                  aria-label="가입 승인"
+                  title="가입 승인"
+                >
+                  <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full px-0.5 pointer-events-none">
+                    {pendingCount > 99 ? '99+' : pendingCount}
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
                 className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label="수정"
+                title="팀 수정"
               >
                 <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -139,6 +161,7 @@ export function TeamCard({ team, onClick, onUpdate, onDelete }: TeamCardProps) {
                 onClick={() => setShowDeleteConfirm(true)}
                 className="p-1.5 rounded-lg hover:bg-error-50 transition-colors"
                 aria-label="삭제"
+                title="팀 삭제"
               >
                 <svg className="w-4 h-4 text-error-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

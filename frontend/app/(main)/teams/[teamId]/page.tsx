@@ -231,23 +231,19 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
             <h1 className="text-lg font-semibold text-gray-900 truncate">{team.name}</h1>
           </div>
           <div className="flex items-center gap-2">
-            {isLeader && (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handleNavigateToTasks}
-                className="relative"
-              >
-                나의 할 일
-                {pendingCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
-                    {pendingCount > 99 ? '99+' : pendingCount}
-                  </span>
-                )}
-              </Button>
-            )}
-            <span className="text-sm font-normal text-gray-600">{currentUser?.name}</span>
+            <div className="relative">
+              <span className="text-sm font-normal text-gray-600">{currentUser?.name}</span>
+              {isLeader && pendingCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleNavigateToTasks}
+                  className="absolute -top-2 -right-4 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 hover:bg-red-600 transition-colors"
+                  title="승인 대기 건수"
+                >
+                  {pendingCount > 99 ? '99+' : pendingCount}
+                </button>
+              )}
+            </div>
             <Button
               type="button"
               variant="ghost"

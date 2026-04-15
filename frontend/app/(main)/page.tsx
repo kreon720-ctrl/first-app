@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMyTeams, useUpdateTeam, useDeleteTeam } from '@/hooks/query/useTeams';
+import { useMyTasks } from '@/hooks/query/useMyTasks';
 import { useAuthStore } from '@/store/authStore';
 import { TeamList } from '@/components/team/TeamList';
 import { Button } from '@/components/common/Button';
@@ -10,12 +11,21 @@ import { Button } from '@/components/common/Button';
 export default function HomePage() {
   const router = useRouter();
   const { data, isLoading, isError, refetch } = useMyTeams();
+  const { data: tasksData } = useMyTasks();
   const updateTeam = useUpdateTeam();
   const deleteTeam = useDeleteTeam();
   const currentUser = useAuthStore((state) => state.currentUser);
   const logout = useAuthStore((state) => state.logout);
 
   const [toast, setToast] = useState<string | null>(null);
+
+  // 팀별 승인 대기 건수 계산
+  const pendingCountByTeam: Record<string, number> = {};
+  (tasksData?.tasks ?? []).forEach((task) => {
+    if (task.status === 'PENDING') {
+      pendingCountByTeam[task.teamId] = (pendingCountByTeam[task.teamId] ?? 0) + 1;
+    }
+  });
 
   const handleTeamClick = (teamId: string) => {
     router.push(`/teams/${teamId}`);
@@ -31,6 +41,10 @@ export default function HomePage() {
       setToast('팀 수정에 실패했습니다.');
       setTimeout(() => setToast(null), 2000);
     }
+  };
+
+  const handleApproveTeam = (teamId: string) => {
+    router.push(`/me/tasks?teamId=${teamId}`);
   };
 
   const handleDeleteTeam = async (teamId: string) => {
@@ -57,7 +71,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold text-gray-900 truncate">Team CalTalk</h1>
+          <h1 className="text-lg font-semibold text-gray-900 truncate">Watermelon Works</h1>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-normal text-gray-600">{currentUser?.name}</span>
@@ -111,7 +125,9 @@ export default function HomePage() {
         ) : (
           <TeamList
             teams={teams}
+            pendingCountByTeam={pendingCountByTeam}
             onTeamClick={handleTeamClick}
+            onApproveTeam={handleApproveTeam}
             onUpdateTeam={handleUpdateTeam}
             onDeleteTeam={handleDeleteTeam}
             emptyMessage="아직 팀이 없습니다."
