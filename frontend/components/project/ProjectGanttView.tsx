@@ -141,19 +141,6 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
 
         {/* Right: action buttons */}
         <div className="flex items-center gap-1.5 flex-none ml-3">
-          {/* Create project icon */}
-          <button
-            type="button"
-            onClick={() => {
-              setEditingProject(null);
-              setShowProjectModal(true);
-            }}
-            title="프로젝트 생성"
-            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-          >
-            <PlusSquare className="w-5 h-5" />
-          </button>
-
           {/* + 일정 */}
           <button
             type="button"
@@ -165,6 +152,19 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
             className="px-2 py-1 rounded-lg bg-primary-500 text-white text-xs font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             +일정
+          </button>
+
+          {/* Create project icon */}
+          <button
+            type="button"
+            onClick={() => {
+              setEditingProject(null);
+              setShowProjectModal(true);
+            }}
+            title="프로젝트 생성"
+            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <PlusSquare className="w-5 h-5" />
           </button>
 
           {/* Edit project icon (only if project selected) */}
