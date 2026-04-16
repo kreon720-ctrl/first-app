@@ -118,7 +118,7 @@ export async function POST(
     }
 
     // type 검증
-    if (type !== 'NORMAL' && type !== 'SCHEDULE_REQUEST') {
+    if (type !== 'NORMAL' && type !== 'WORK_PERFORMANCE') {
       return NextResponse.json(
         { error: '잘못된 메시지 타입입니다.' },
         { status: 400 }

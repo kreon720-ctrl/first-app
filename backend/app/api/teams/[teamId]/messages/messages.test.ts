@@ -190,19 +190,19 @@ describe('BE-12: Chat APIs', () => {
       })
     })
 
-    it('should send SCHEDULE_REQUEST message', async () => {
+    it('should send WORK_PERFORMANCE message', async () => {
       const response = await endpoint(testTeamId, {
-        type: 'SCHEDULE_REQUEST',
+        type: 'WORK_PERFORMANCE',
         content: 'Please change the meeting time.',
       }, true)
 
       expect(response.status).toBe(201)
       const json = await response.json()
-      expect(json.type).toBe('SCHEDULE_REQUEST')
+      expect(json.type).toBe('WORK_PERFORMANCE')
       expect(mockCreateChatMessage).toHaveBeenCalledWith({
         teamId: testTeamId,
         senderId: testUser.userId,
-        type: 'SCHEDULE_REQUEST',
+        type: 'WORK_PERFORMANCE',
         content: 'Please change the meeting time.',
         sentAt: expect.any(Date),
       })

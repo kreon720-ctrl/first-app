@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     content   TEXT         NOT NULL,
     sent_at   TIMESTAMP    NOT NULL DEFAULT now(),
     created_at TIMESTAMP   NOT NULL DEFAULT now(),
-    CONSTRAINT chk_chat_messages_type    CHECK (type IN ('NORMAL', 'SCHEDULE_REQUEST')),
+    CONSTRAINT chk_chat_messages_type    CHECK (type IN ('NORMAL', 'WORK_PERFORMANCE')),
     CONSTRAINT chk_chat_messages_content CHECK (char_length(content) <= 2000)
 );
 
