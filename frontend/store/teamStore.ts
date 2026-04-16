@@ -28,7 +28,7 @@ export const useTeamStore = create<TeamState>((set) => ({
   calendarView: 'month',
 
   setSelectedTeamId: (teamId: string) => {
-    set({ selectedTeamId: teamId });
+    set({ selectedTeamId: teamId, calendarView: 'month', selectedDate: getTodayKST() });
   },
 
   setSelectedDate: (date: string) => {

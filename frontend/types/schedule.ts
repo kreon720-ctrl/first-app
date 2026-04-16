@@ -1,6 +1,6 @@
 // Schedule types
 
-export type CalendarView = 'month' | 'week' | 'day';
+export type CalendarView = 'month' | 'week' | 'day' | 'project';
 
 export type ScheduleColor = 'indigo' | 'blue' | 'emerald' | 'amber' | 'rose';
 

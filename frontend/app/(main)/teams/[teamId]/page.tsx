@@ -160,7 +160,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
     updatePostitContent.mutate({ postitId: id, content });
   };
 
-  const handleViewChange = (view: 'month' | 'week' | 'day') => {
+  const handleViewChange = (view: 'month' | 'week' | 'day' | 'project') => {
     setCalendarView(view);
   };
 
@@ -283,6 +283,8 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
                 onDateClick={handleDateClick}
                 onCreateSchedule={handleCreateSchedule}
                 onScheduleClick={handleScheduleClick}
+                teamId={teamId}
+                isLeader={isLeader}
               />
             </div>
           }
