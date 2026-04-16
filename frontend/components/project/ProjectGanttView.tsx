@@ -178,7 +178,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
               title="프로젝트 수정"
               className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
             >
-              <Edit2 className="w-5 h-5" />
+              <Edit2 className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -190,7 +190,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
               title="프로젝트 삭제"
               className="p-1.5 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
