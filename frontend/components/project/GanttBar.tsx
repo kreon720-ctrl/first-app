@@ -13,8 +13,8 @@ const GANTT_COLOR_STYLES: Record<GanttBarColor, { bar: string; progress: string;
   rose:    { bar: 'bg-rose-100 border border-rose-300',       progress: 'bg-rose-500',     text: 'text-rose-900' },
 };
 
-export const PROGRESS_BAR_HEIGHT = 28; // px
-export const SCHEDULE_BAR_HEIGHT = 36; // px (~28 * 1.3)
+export const PROGRESS_BAR_HEIGHT = 20; // px
+export const SCHEDULE_BAR_HEIGHT = 28; // px
 
 interface GanttBarProps {
   schedule: ProjectSchedule;
