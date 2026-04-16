@@ -10,7 +10,7 @@ describe('ChatInput', () => {
 
     expect(screen.getByPlaceholderText('메시지를 입력하세요...')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /전송/i })).toBeInTheDocument();
-    expect(screen.getByText(/일정요청/i)).toBeInTheDocument();
+    expect(screen.getByText(/업무실적/i)).toBeInTheDocument();
   });
 
   it('sends message when send button is clicked', () => {
@@ -51,7 +51,7 @@ describe('ChatInput', () => {
     const handleSend = vi.fn();
     render(<ChatInput onSend={handleSend} />);
 
-    const scheduleRequestButton = screen.getByText(/일정요청/i);
+    const scheduleRequestButton = screen.getByText(/업무실적/i);
     fireEvent.click(scheduleRequestButton);
 
     // Should show schedule request mode indicator
@@ -64,7 +64,7 @@ describe('ChatInput', () => {
     render(<ChatInput onSend={handleSend} />);
 
     // Toggle to schedule request mode
-    const scheduleRequestButton = screen.getByText(/일정요청/i);
+    const scheduleRequestButton = screen.getByText(/업무실적/i);
     fireEvent.click(scheduleRequestButton);
 
     const textarea = screen.getByPlaceholderText('일정 변경 요청을 입력하세요...');
@@ -81,7 +81,7 @@ describe('ChatInput', () => {
     render(<ChatInput onSend={handleSend} />);
 
     // Toggle to schedule request mode
-    const scheduleRequestButton = screen.getByText(/일정요청/i);
+    const scheduleRequestButton = screen.getByText(/업무실적/i);
     fireEvent.click(scheduleRequestButton);
 
     // Cancel

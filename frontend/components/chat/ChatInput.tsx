@@ -110,7 +110,7 @@ export function ChatInput({ onSend, isPending = false, maxContentLength = 2000 }
                 clipRule="evenodd"
               />
             </svg>
-            일정요청
+            업무실적
           </button>
         </div>
       </div>
