@@ -12,7 +12,7 @@ interface ChatMessageItemProps {
 export function ChatMessageItem({ message, isLeader = false }: ChatMessageItemProps) {
   const sentAtKST = utcToKST(new Date(message.sentAt));
   const timeString = formatTime(sentAtKST);
-  const isScheduleRequest = message.type === 'SCHEDULE_REQUEST';
+  const isScheduleRequest = message.type === 'WORK_PERFORMANCE';
 
   if (isScheduleRequest) {
     return (
@@ -27,7 +27,7 @@ export function ChatMessageItem({ message, isLeader = false }: ChatMessageItemPr
                 clipRule="evenodd"
               />
             </svg>
-            일정변경요청
+            업무실적
           </span>
           <span className="text-xs font-semibold text-orange-700">
             {message.senderName}

@@ -1,6 +1,6 @@
 // Chat types
 
-export type MessageType = 'NORMAL' | 'SCHEDULE_REQUEST';
+export type MessageType = 'NORMAL' | 'WORK_PERFORMANCE';
 
 export interface ChatMessage {
   id: string;

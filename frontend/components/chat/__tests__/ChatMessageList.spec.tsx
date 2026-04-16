@@ -29,7 +29,7 @@ describe('ChatMessageList', () => {
       teamId: 'team-1',
       senderId: 'user-2',
       senderName: '김철수',
-      type: 'SCHEDULE_REQUEST',
+      type: 'WORK_PERFORMANCE',
       content: '회의 시간 변경 요청합니다.',
       sentAt: '2026-04-15T01:30:00.000Z', // April 15 KST
     },
@@ -64,7 +64,7 @@ describe('ChatMessageList', () => {
     expect(screen.getByText('네, 확인했습니다.')).toBeInTheDocument();
   });
 
-  it('displays SCHEDULE_REQUEST messages with distinct styling', () => {
+  it('displays WORK_PERFORMANCE messages with distinct styling', () => {
     render(<ChatMessageList messages={mockMessages} />);
 
     // Should show schedule request badge

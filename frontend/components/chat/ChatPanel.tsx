@@ -17,7 +17,7 @@ export function ChatPanel({ teamId, date, isLeader = false }: ChatPanelProps) {
 
   const messages = data?.messages || [];
 
-  const handleSend = (content: string, type: 'NORMAL' | 'SCHEDULE_REQUEST') => {
+  const handleSend = (content: string, type: 'NORMAL' | 'WORK_PERFORMANCE') => {
     sendMessage.mutate({ content, type });
   };
 

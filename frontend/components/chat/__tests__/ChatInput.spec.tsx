@@ -47,7 +47,7 @@ describe('ChatInput', () => {
     expect(handleSend).not.toHaveBeenCalled();
   });
 
-  it('toggles to SCHEDULE_REQUEST mode', () => {
+  it('toggles to WORK_PERFORMANCE mode', () => {
     const handleSend = vi.fn();
     render(<ChatInput onSend={handleSend} />);
 
@@ -55,11 +55,11 @@ describe('ChatInput', () => {
     fireEvent.click(scheduleRequestButton);
 
     // Should show schedule request mode indicator
-    expect(screen.getByText('일정 변경 요청 모드')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('일정 변경 요청을 입력하세요...')).toBeInTheDocument();
+    expect(screen.getByText('업무실적 모드')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('업무실적을 입력하세요...')).toBeInTheDocument();
   });
 
-  it('sends SCHEDULE_REQUEST message when in schedule request mode', () => {
+  it('sends WORK_PERFORMANCE message when in schedule request mode', () => {
     const handleSend = vi.fn();
     render(<ChatInput onSend={handleSend} />);
 
@@ -67,16 +67,16 @@ describe('ChatInput', () => {
     const scheduleRequestButton = screen.getByText(/업무실적/i);
     fireEvent.click(scheduleRequestButton);
 
-    const textarea = screen.getByPlaceholderText('일정 변경 요청을 입력하세요...');
+    const textarea = screen.getByPlaceholderText('업무실적을 입력하세요...');
     fireEvent.change(textarea, { target: { value: '회의 시간 변경 요청' } });
 
     const sendButton = screen.getByRole('button', { name: /전송/i });
     fireEvent.click(sendButton);
 
-    expect(handleSend).toHaveBeenCalledWith('회의 시간 변경 요청', 'SCHEDULE_REQUEST');
+    expect(handleSend).toHaveBeenCalledWith('회의 시간 변경 요청', 'WORK_PERFORMANCE');
   });
 
-  it('cancels SCHEDULE_REQUEST mode when cancel button is clicked', () => {
+  it('cancels WORK_PERFORMANCE mode when cancel button is clicked', () => {
     const handleSend = vi.fn();
     render(<ChatInput onSend={handleSend} />);
 
@@ -89,7 +89,7 @@ describe('ChatInput', () => {
     fireEvent.click(cancelButton);
 
     // Should be back to normal mode
-    expect(screen.queryByText('일정 변경 요청 모드')).not.toBeInTheDocument();
+    expect(screen.queryByText('업무실적 모드')).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText('메시지를 입력하세요...')).toBeInTheDocument();
   });
 

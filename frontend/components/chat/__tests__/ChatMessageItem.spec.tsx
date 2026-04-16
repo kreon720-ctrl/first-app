@@ -29,7 +29,7 @@ describe('ChatMessageItem', () => {
     teamId: 'team-1',
     senderId: 'user-2',
     senderName: '김철수',
-    type: 'SCHEDULE_REQUEST',
+    type: 'WORK_PERFORMANCE',
     content: '회의 시간을 4시로 변경 가능할까요?',
     sentAt: '2026-04-15T02:00:00.000Z', // 11:00 KST
   };
@@ -41,16 +41,16 @@ describe('ChatMessageItem', () => {
     expect(screen.getByText('안녕하세요! 오늘 회의 확인 부탁드립니다.')).toBeInTheDocument();
   });
 
-  it('renders SCHEDULE_REQUEST message with distinct styling', () => {
+  it('renders WORK_PERFORMANCE message with distinct styling', () => {
     render(<ChatMessageItem message={mockScheduleRequestMessage} />);
 
     // Should show schedule request badge
-    expect(screen.getByText('일정변경요청')).toBeInTheDocument();
+    expect(screen.getByText('업무실적')).toBeInTheDocument();
     expect(screen.getByText('김철수')).toBeInTheDocument();
     expect(screen.getByText('회의 시간을 4시로 변경 가능할까요?')).toBeInTheDocument();
 
     // Should have orange styling
-    const container = screen.getByText('일정변경요청').closest('.bg-orange-50');
+    const container = screen.getByText('업무실적').closest('.bg-orange-50');
     expect(container).toBeInTheDocument();
   });
 
@@ -61,7 +61,7 @@ describe('ChatMessageItem', () => {
     expect(screen.getByText('LEADER')).toHaveClass('bg-amber-100');
   });
 
-  it('does not show LEADER badge for SCHEDULE_REQUEST messages', () => {
+  it('does not show LEADER badge for WORK_PERFORMANCE messages', () => {
     render(<ChatMessageItem message={mockScheduleRequestMessage} isLeader={true} />);
 
     expect(screen.queryByText('LEADER')).not.toBeInTheDocument();
