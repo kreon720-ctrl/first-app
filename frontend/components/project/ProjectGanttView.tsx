@@ -149,7 +149,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
               setEditingSchedule(null);
               setShowScheduleModal(true);
             }}
-            className="px-3 py-1.5 rounded-lg bg-primary-500 text-white text-sm font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-2 py-1 rounded-lg bg-primary-500 text-white text-xs font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             +일정
           </button>
