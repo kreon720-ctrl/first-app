@@ -13,17 +13,33 @@ export function getWeekStart(dateStr: string): Date {
 
 /**
  * Returns all week starts (Sundays) that cover the project date range.
- * Includes the week containing startDate through the week containing endDate.
+ * Weeks are assigned to months via Thursday convention.
+ * Leading weeks whose Thursday falls before the project start month are excluded.
  */
 export function getProjectWeeks(startDate: string, endDate: string): Date[] {
   const start = getWeekStart(startDate);
   const end = getWeekStart(endDate);
 
+  const startDateObj = new Date(startDate + 'T00:00:00Z');
+  const startYear = startDateObj.getUTCFullYear();
+  const startMonth = startDateObj.getUTCMonth(); // 0-indexed
+
   const weeks: Date[] = [];
   const current = new Date(start);
 
   while (current <= end) {
-    weeks.push(new Date(current));
+    // Thursday of this week determines which month the week belongs to
+    const thursday = new Date(current);
+    thursday.setUTCDate(current.getUTCDate() + 4);
+
+    const weekYear = thursday.getUTCFullYear();
+    const weekMonth = thursday.getUTCMonth();
+
+    // Exclude weeks that belong to months before the project start month
+    if (weekYear > startYear || (weekYear === startYear && weekMonth >= startMonth)) {
+      weeks.push(new Date(current));
+    }
+
     current.setUTCDate(current.getUTCDate() + 7);
   }
 
