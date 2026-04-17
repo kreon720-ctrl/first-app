@@ -5,12 +5,12 @@ import type { ProjectSchedule, GanttBarColor } from '@/types/project';
 
 // Static color lookup table for Tailwind v4 compatibility
 // (no dynamic class names - all classes must be statically present)
-const GANTT_COLOR_STYLES: Record<GanttBarColor, { bar: string; progress: string; text: string }> = {
-  indigo:  { bar: 'bg-indigo-100 border border-indigo-300',   progress: 'bg-indigo-300',   text: 'text-indigo-900' },
-  blue:    { bar: 'bg-blue-100 border border-blue-300',       progress: 'bg-blue-300',     text: 'text-blue-900' },
-  emerald: { bar: 'bg-emerald-100 border border-emerald-300', progress: 'bg-emerald-300',  text: 'text-emerald-900' },
-  amber:   { bar: 'bg-amber-100 border border-amber-300',     progress: 'bg-amber-300',    text: 'text-amber-900' },
-  rose:    { bar: 'bg-rose-100 border border-rose-300',       progress: 'bg-rose-300',     text: 'text-rose-900' },
+const GANTT_COLOR_STYLES: Record<GanttBarColor, { bar: string; barDelayed: string; progress: string; text: string }> = {
+  indigo:  { bar: 'bg-indigo-100 border border-indigo-300',   barDelayed: 'bg-indigo-100 border-2 border-red-500',   progress: 'bg-indigo-300',   text: 'text-indigo-900' },
+  blue:    { bar: 'bg-blue-100 border border-blue-300',       barDelayed: 'bg-blue-100 border-2 border-red-500',     progress: 'bg-blue-300',     text: 'text-blue-900' },
+  emerald: { bar: 'bg-emerald-100 border border-emerald-300', barDelayed: 'bg-emerald-100 border-2 border-red-500',  progress: 'bg-emerald-300',  text: 'text-emerald-900' },
+  amber:   { bar: 'bg-amber-100 border border-amber-300',     barDelayed: 'bg-amber-100 border-2 border-red-500',    progress: 'bg-amber-300',    text: 'text-amber-900' },
+  rose:    { bar: 'bg-rose-100 border border-rose-300',       barDelayed: 'bg-rose-100 border-2 border-red-500',     progress: 'bg-rose-300',     text: 'text-rose-900' },
 };
 
 export const PROGRESS_BAR_HEIGHT = 20; // px
@@ -23,9 +23,14 @@ interface GanttBarProps {
 
 export function GanttBar({ schedule, onClick }: GanttBarProps) {
   const styles = GANTT_COLOR_STYLES[schedule.color] ?? GANTT_COLOR_STYLES.indigo;
+  const isDelayed = schedule.isDelayed ?? false;
+  const barClass = isDelayed ? styles.barDelayed : styles.bar;
 
   const fmtDate = (d: string) => d.slice(5).replace('-', '/'); // MM/DD
   const label = `${schedule.title} (${fmtDate(schedule.startDate)}~${fmtDate(schedule.endDate)})`;
+  const hoverLabel = isDelayed
+    ? `${schedule.progress}% (일정지연)`
+    : `${schedule.progress}%`;
 
   return (
     <div
@@ -39,7 +44,7 @@ export function GanttBar({ schedule, onClick }: GanttBarProps) {
           onClick();
         }
       }}
-      className={`group relative w-full rounded overflow-hidden cursor-pointer select-none ${styles.bar}`}
+      className={`group relative w-full rounded overflow-hidden cursor-pointer select-none ${barClass}`}
       style={{ height: SCHEDULE_BAR_HEIGHT }}
     >
       {/* Progress bar overlay */}
@@ -63,8 +68,8 @@ export function GanttBar({ schedule, onClick }: GanttBarProps) {
 
       {/* Progress label — visible on hover */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-        <span className={`text-xs font-bold ${styles.text}`}>
-          {schedule.progress}%
+        <span className={`text-xs font-bold ${isDelayed ? 'text-red-600' : styles.text}`}>
+          {hoverLabel}
         </span>
       </div>
     </div>

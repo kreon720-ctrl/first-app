@@ -168,6 +168,7 @@ export const useProjectStore = create<ProjectState>()(
           description: input.description,
           leader: input.leader,
           progress: input.progress,
+          isDelayed: input.isDelayed,
           phaseId: input.phaseId,
           createdBy,
           createdAt: now,
@@ -204,6 +205,7 @@ export const useProjectStore = create<ProjectState>()(
                       description: input.description,
                       leader: input.leader,
                       progress: input.progress,
+                      isDelayed: input.isDelayed,
                       phaseId: input.phaseId,
                     }
                   : s

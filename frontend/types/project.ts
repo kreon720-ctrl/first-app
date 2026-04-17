@@ -34,6 +34,7 @@ export interface ProjectSchedule {
   description: string;
   leader: string;
   progress: number;
+  isDelayed: boolean;
   phaseId: string;
   createdBy: string;
   createdAt: string;
@@ -57,5 +58,6 @@ export interface ProjectScheduleCreateInput {
   description: string;
   leader: string;
   progress: number;
+  isDelayed: boolean;
   phaseId: string;
 }

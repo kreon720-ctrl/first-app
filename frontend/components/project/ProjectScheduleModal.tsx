@@ -43,6 +43,7 @@ export function ProjectScheduleModal({
   const [description, setDescription] = useState('');
   const [leader, setLeader] = useState('');
   const [progress, setProgress] = useState(0);
+  const [isDelayed, setIsDelayed] = useState(false);
   const [phaseId, setPhaseId] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -56,6 +57,7 @@ export function ProjectScheduleModal({
       setDescription(schedule.description);
       setLeader(schedule.leader);
       setProgress(schedule.progress);
+      setIsDelayed(schedule.isDelayed ?? false);
       setPhaseId(schedule.phaseId);
     } else {
       // Default phase to first phase
@@ -98,6 +100,7 @@ export function ProjectScheduleModal({
       description: description.trim(),
       leader: leader.trim(),
       progress,
+      isDelayed,
       phaseId,
     });
   };
@@ -209,9 +212,22 @@ export function ProjectScheduleModal({
             />
           </div>
 
-          {/* 진행률 */}
+          {/* 진행률 + 지연 체크박스 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">진행률</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-gray-700">진행률</label>
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isDelayed}
+                  onChange={e => setIsDelayed(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-red-500 cursor-pointer"
+                />
+                <span className={`text-xs font-medium ${isDelayed ? 'text-red-500' : 'text-gray-400'}`}>
+                  지연
+                </span>
+              </label>
+            </div>
             <div className="flex items-center gap-3">
               <input
                 type="range"
