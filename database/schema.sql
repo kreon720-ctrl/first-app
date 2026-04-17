@@ -94,6 +94,13 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     CONSTRAINT chk_chat_messages_content CHECK (char_length(content) <= 2000)
 );
 
+CREATE TABLE IF NOT EXISTS work_performance_permissions (
+    team_id    UUID        NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    user_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (team_id, user_id)
+);
+
 -- =====================
 -- INDEXES
 -- =====================
@@ -135,3 +142,7 @@ CREATE INDEX IF NOT EXISTS idx_postits_team_id_date
 -- chat_messages
 CREATE INDEX IF NOT EXISTS idx_chat_messages_team_id_sent_at
     ON chat_messages(team_id, sent_at DESC);
+
+-- work_performance_permissions
+CREATE INDEX IF NOT EXISTS idx_wpp_team
+    ON work_performance_permissions(team_id);

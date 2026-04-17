@@ -1,4 +1,5 @@
 import { pool } from '@/lib/db/pool'
+import { hasWorkPermission } from './permissionQueries'
 
 export type MessageType = 'NORMAL' | 'WORK_PERFORMANCE'
 
@@ -53,11 +54,22 @@ export async function createChatMessage(
 }
 
 // KST 날짜(YYYY-MM-DD) 기준으로 해당 날의 메시지 조회 (senderName JOIN 포함)
+// requesterRole이 'LEADER'면 전체, 'MEMBER'면 권한 확인 후 필터링
 export async function getMessagesByDate(
   teamId: string,
-  kstDate: string
+  kstDate: string,
+  requesterId: string,
+  requesterRole: 'LEADER' | 'MEMBER'
 ): Promise<ChatMessage[]> {
   const { start, end } = kstDateToUtcRange(kstDate)
+
+  // 팀장은 WORK_PERFORMANCE 타입 필터 없이 전체 조회
+  const typeFilter =
+    requesterRole === 'LEADER' ||
+    (await hasWorkPermission(teamId, requesterId))
+      ? ''
+      : `AND cm.type != 'WORK_PERFORMANCE'`
+
   try {
     const result = await pool.query<ChatMessage>(
       `SELECT cm.id, cm.team_id, cm.sender_id, u.name AS sender_name,
@@ -67,6 +79,7 @@ export async function getMessagesByDate(
        WHERE cm.team_id = $1
          AND cm.sent_at >= $2
          AND cm.sent_at < $3
+         ${typeFilter}
        ORDER BY cm.sent_at ASC`,
       [teamId, start, end]
     )
@@ -80,8 +93,17 @@ export async function getMessagesByDate(
 export async function getMessagesByTeam(
   teamId: string,
   limit = 50,
-  before?: Date
+  before?: Date,
+  requesterId?: string,
+  requesterRole?: 'LEADER' | 'MEMBER'
 ): Promise<ChatMessage[]> {
+  const typeFilter =
+    !requesterId ||
+    requesterRole === 'LEADER' ||
+    (await hasWorkPermission(teamId, requesterId!))
+      ? ''
+      : `AND cm.type != 'WORK_PERFORMANCE'`
+
   try {
     const result = before
       ? await pool.query<ChatMessage>(
@@ -90,6 +112,7 @@ export async function getMessagesByTeam(
            FROM chat_messages cm
            JOIN users u ON u.id = cm.sender_id
            WHERE cm.team_id = $1 AND cm.sent_at < $2
+             ${typeFilter}
            ORDER BY cm.sent_at DESC
            LIMIT $3`,
           [teamId, before, limit]
@@ -100,11 +123,12 @@ export async function getMessagesByTeam(
            FROM chat_messages cm
            JOIN users u ON u.id = cm.sender_id
            WHERE cm.team_id = $1
+             ${typeFilter}
            ORDER BY cm.sent_at DESC
            LIMIT $2`,
           [teamId, limit]
         )
-    return result.rows.reverse() // 오래된 순으로 반환
+    return result.rows.reverse()
   } catch (err) {
     throw new Error(`getMessagesByTeam 실패: ${(err as Error).message}`)
   }

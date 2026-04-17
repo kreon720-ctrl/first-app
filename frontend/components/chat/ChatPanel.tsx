@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMessages, useSendMessage } from '@/hooks/query/useMessages';
 import { useTeamDetail } from '@/hooks/query/useTeams';
+import { useWorkPermissions, useSetWorkPermissions } from '@/hooks/query/useWorkPermissions';
 import { ChatMessageList } from './ChatMessageList';
 import { ChatInput } from './ChatInput';
+import type { TeamMember } from '@/types/team';
 
 interface ChatPanelProps {
   teamId: string;
@@ -16,107 +18,69 @@ export function ChatPanel({ teamId, date, isLeader = false }: ChatPanelProps) {
   const { data, isLoading, isError } = useMessages(teamId, date);
   const sendMessage = useSendMessage(teamId, date);
   const { data: teamDetail } = useTeamDetail(isLeader ? teamId : '');
+  const { data: permData } = useWorkPermissions(teamId);
+  const setPermissions = useSetWorkPermissions(teamId);
 
-  const [showMemberList, setShowMemberList] = useState(false);
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-  const [selectedMemberName, setSelectedMemberName] = useState<string | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  // 팝업 열림/닫힘
+  const [showModal, setShowModal] = useState(false);
+  // 팝업 내 임시 체크 상태
+  const [draftIds, setDraftIds] = useState<Set<string>>(new Set());
 
-  // 외부 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowMemberList(false);
-      }
+  const members: TeamMember[] = teamDetail?.members ?? [];
+  const serverPermittedIds: string[] = permData?.permittedUserIds ?? [];
+
+  // 팝업 열 때: 서버 권한 → 팀장만 기본 체크 (서버 값 없으면 팀장만)
+  const handleOpenModal = () => {
+    if (serverPermittedIds.length > 0) {
+      setDraftIds(new Set(serverPermittedIds));
+    } else {
+      setDraftIds(new Set(members.filter(m => m.role === 'LEADER').map(m => m.userId)));
     }
-    if (showMemberList) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showMemberList]);
+    setShowModal(true);
+  };
 
-  const allMessages = data?.messages || [];
+  const toggleDraft = (userId: string) => {
+    setDraftIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
 
-  // 멤버 필터 적용: 선택된 멤버의 WORK_PERFORMANCE 메시지만 표시
-  const messages = selectedMemberId
-    ? allMessages.filter(
-        m => m.type === 'WORK_PERFORMANCE' && m.senderId === selectedMemberId
-      )
-    : allMessages;
+  const handleClose = async () => {
+    await setPermissions.mutateAsync(Array.from(draftIds));
+    setShowModal(false);
+  };
+
+  const messages = data?.messages || [];
 
   const handleSend = (content: string, type: 'NORMAL' | 'WORK_PERFORMANCE') => {
     sendMessage.mutate({ content, type });
   };
 
-  const handleSelectMember = (userId: string, name: string) => {
-    setSelectedMemberId(userId);
-    setSelectedMemberName(name);
-    setShowMemberList(false);
-  };
+  // 권한 설정 상태 요약 배지
+  const filterActive = serverPermittedIds.length > 1 && serverPermittedIds.length < members.length;
 
-  const handleClearFilter = () => {
-    setSelectedMemberId(null);
-    setSelectedMemberName(null);
-  };
-
-  const members = teamDetail?.members ?? [];
-
-  // 팀장 전용 관리자 버튼 (첫 번째 메시지 헤더 행 오른쪽에 삽입)
   const adminSlot = isLeader ? (
-    <div className="relative" ref={dropdownRef}>
-      <div className="flex items-center gap-1.5">
-        {selectedMemberId && (
-          <>
-            <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-              {selectedMemberName}
-            </span>
-            <button
-              onClick={handleClearFilter}
-              className="text-gray-400 hover:text-gray-600 text-xs leading-none"
-              title="필터 해제"
-            >
-              ✕
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => setShowMemberList(prev => !prev)}
-          className="px-2.5 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50 text-gray-700 bg-white"
-        >
-          관리자
-        </button>
-      </div>
-      {showMemberList && (
-        <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded shadow-lg z-50">
-          <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
-            팀원 업무실적 조회
-          </div>
-          {members.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-gray-400">멤버 없음</div>
-          ) : (
-            members.map(member => (
-              <button
-                key={member.userId}
-                onClick={() => handleSelectMember(member.userId, member.name)}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 ${
-                  selectedMemberId === member.userId ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700'
-                }`}
-              >
-                {member.name}
-                {member.role === 'LEADER' && (
-                  <span className="ml-1 text-xs text-indigo-400">(팀장)</span>
-                )}
-              </button>
-            ))
-          )}
-        </div>
+    <div className="flex items-center gap-1.5">
+      {filterActive && (
+        <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+          {serverPermittedIds.length}명 권한설정
+        </span>
       )}
+      <button
+        onClick={handleOpenModal}
+        className="px-2.5 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50 text-gray-700 bg-white"
+      >
+        관리자
+      </button>
     </div>
   ) : undefined;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Message list */}
+      {/* Message list — 백엔드에서 이미 권한 필터링된 메시지만 수신 */}
       <div className="flex-1 overflow-y-auto px-4 py-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
@@ -140,7 +104,6 @@ export function ChatPanel({ teamId, date, isLeader = false }: ChatPanelProps) {
             messages={messages}
             isLeader={isLeader}
             adminSlot={adminSlot}
-            emptyLabel={selectedMemberId ? `${selectedMemberName}님의 업무실적 메시지가 없습니다.` : undefined}
           />
         )}
       </div>
@@ -158,6 +121,55 @@ export function ChatPanel({ teamId, date, isLeader = false }: ChatPanelProps) {
           * 3초마다 자동 갱신
         </p>
       </div>
+
+      {/* 업무실적 보기 권한부여 팝업 */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-80 max-h-[70vh] flex flex-col">
+            {/* 헤더 */}
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-800">업무실적 보기 권한부여</h2>
+              <p className="text-xs text-gray-400 mt-0.5">체크한 사용자만 업무실적 메시지를 볼 수 있습니다.</p>
+            </div>
+
+            {/* 멤버 목록 */}
+            <div className="overflow-y-auto flex-1 px-5 py-3 flex flex-col gap-2">
+              {members.length === 0 ? (
+                <p className="text-sm text-gray-400 py-4 text-center">팀원이 없습니다.</p>
+              ) : (
+                members.map(member => (
+                  <label
+                    key={member.userId}
+                    className="flex items-center gap-3 cursor-pointer py-1.5 px-2 rounded-lg hover:bg-gray-50 select-none"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={draftIds.has(member.userId)}
+                      onChange={() => toggleDraft(member.userId)}
+                      className="w-4 h-4 accent-indigo-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-800">{member.name}</span>
+                    {member.role === 'LEADER' && (
+                      <span className="ml-auto text-xs text-indigo-400 font-medium">팀장</span>
+                    )}
+                  </label>
+                ))
+              )}
+            </div>
+
+            {/* 저장 버튼 */}
+            <div className="px-5 py-4 border-t border-gray-100">
+              <button
+                onClick={handleClose}
+                disabled={setPermissions.isPending}
+                className="w-full py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {setPermissions.isPending ? '저장 중...' : '닫기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

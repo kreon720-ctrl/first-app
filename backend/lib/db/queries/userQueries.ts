@@ -43,6 +43,19 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   }
 }
 
+export async function updateUserName(id: string, name: string): Promise<User | null> {
+  try {
+    const result = await pool.query<User>(
+      `UPDATE users SET name = $1 WHERE id = $2
+       RETURNING id, email, name, password_hash, created_at`,
+      [name, id]
+    )
+    return result.rows[0] ?? null
+  } catch (err) {
+    throw new Error(`updateUserName 실패: ${(err as Error).message}`)
+  }
+}
+
 export async function getUserById(id: string): Promise<User | null> {
   try {
     const result = await pool.query<User>(

@@ -133,6 +133,21 @@ export async function addTeamMember(
   }
 }
 
+export async function removeTeamMember(
+  teamId: string,
+  userId: string
+): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      `DELETE FROM team_members WHERE team_id = $1 AND user_id = $2`,
+      [teamId, userId]
+    )
+    return (result.rowCount ?? 0) > 0
+  } catch (err) {
+    throw new Error(`removeTeamMember 실패: ${(err as Error).message}`)
+  }
+}
+
 export async function getUserTeamRole(
   teamId: string,
   userId: string

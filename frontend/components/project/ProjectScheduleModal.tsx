@@ -8,6 +8,7 @@ import type {
   GanttBarColor,
 } from '@/types/project';
 import { GANTT_BAR_COLORS } from '@/types/project';
+import { useAuthStore } from '@/store/authStore';
 
 // Tailwind static swatch classes (same pattern as ScheduleForm)
 const GANTT_COLOR_SWATCH: Record<GanttBarColor, string> = {
@@ -33,6 +34,8 @@ export function ProjectScheduleModal({
   onSubmit,
   onCancel,
 }: ProjectScheduleModalProps) {
+  const currentUserName = useAuthStore(s => s.currentUser?.name ?? '');
+
   const [title, setTitle] = useState('');
   const [color, setColor] = useState<GanttBarColor>('indigo');
   const [startDate, setStartDate] = useState('');
@@ -62,6 +65,8 @@ export function ProjectScheduleModal({
       // Default dates to project dates
       setStartDate(project.startDate);
       setEndDate(project.endDate);
+      // Default leader to current user
+      setLeader(currentUserName);
     }
   }, [mode, schedule, project]);
 

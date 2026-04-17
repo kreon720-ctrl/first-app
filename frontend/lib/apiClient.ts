@@ -199,6 +199,14 @@ class ApiClient {
     });
   }
 
+  async put<T>(url: string, body?: unknown, options?: FetchOptions): Promise<T> {
+    return this.fetch<T>(url, {
+      method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+      ...options,
+    });
+  }
+
   async delete<T>(url: string, options?: FetchOptions): Promise<T> {
     return this.fetch<T>(url, { method: 'DELETE', ...options });
   }

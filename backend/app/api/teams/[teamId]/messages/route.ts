@@ -45,14 +45,17 @@ export async function GET(
       ? new Date(searchParams.get('before')!)
       : undefined
 
+    const requesterId = authResult.user.userId
+    const requesterRole = roleResult.context.role as 'LEADER' | 'MEMBER'
+
     let messages: ChatMessage[]
 
     if (date) {
-      // 날짜별 조회 (KST 기준)
-      messages = await getMessagesByDate(teamId, date)
+      // 날짜별 조회 (KST 기준) — 권한에 따라 WORK_PERFORMANCE 필터링
+      messages = await getMessagesByDate(teamId, date, requesterId, requesterRole)
     } else {
       // 최신 메시지 조회 (limit/cursor 기반)
-      messages = await getMessagesByTeam(teamId, limit, before)
+      messages = await getMessagesByTeam(teamId, limit, before, requesterId, requesterRole)
     }
 
     return NextResponse.json({
