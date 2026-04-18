@@ -1,18 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { PlusSquare, Edit2, Trash2 } from 'lucide-react';
 import { useProjectStore } from '@/store/projectStore';
-import type {
-  Project,
-  ProjectSchedule,
-  ProjectCreateInput,
-  ProjectScheduleCreateInput,
-} from '@/types/project';
+import type { Project } from '@/types/project';
 import { GanttChart } from './GanttChart';
 import { ProjectCreateModal } from './ProjectCreateModal';
 import { ProjectScheduleModal } from './ProjectScheduleModal';
 import { ProjectScheduleDetailModal } from './ProjectScheduleDetailModal';
+import { useProjectActions } from './useProjectActions';
+import { useScheduleActions } from './useScheduleActions';
+import { useGanttModals } from './useGanttModals';
 
 interface ProjectGanttViewProps {
   teamId: string;
@@ -42,68 +40,26 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
     ? store.getProjectSchedules(selectedProject.id)
     : [];
 
-  // Modal states
-  const [showProjectModal, setShowProjectModal] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState<ProjectSchedule | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedSchedule, setSelectedSchedule] = useState<ProjectSchedule | null>(null);
+  const modals = useGanttModals();
 
-  const handleCreateProject = (input: ProjectCreateInput) => {
-    store.createProject(teamId, input, currentUserId);
-    setShowProjectModal(false);
-    setEditingProject(null);
-  };
+  const projectActions = useProjectActions({
+    teamId,
+    currentUserId,
+    selectedProject,
+    onModalClose: modals.closeProjectModal,
+  });
 
-  const handleUpdateProject = (input: ProjectCreateInput) => {
-    if (!editingProject) return;
-    store.updateProject(editingProject.id, input);
-    setShowProjectModal(false);
-    setEditingProject(null);
-  };
-
-  const handleDeleteProject = () => {
-    if (!selectedProject) return;
-    if (!confirm(`"${selectedProject.name}" 프로젝트를 삭제하시겠습니까? 모든 일정도 함께 삭제됩니다.`)) return;
-    store.deleteProject(selectedProject.id, teamId);
-  };
-
-  const handleCreateSchedule = (input: ProjectScheduleCreateInput) => {
-    if (!selectedProject) return;
-    store.createProjectSchedule(selectedProject.id, teamId, input, currentUserId);
-    setShowScheduleModal(false);
-    setEditingSchedule(null);
-  };
-
-  const handleUpdateSchedule = (input: ProjectScheduleCreateInput) => {
-    if (!editingSchedule || !selectedProject) return;
-    store.updateProjectSchedule(editingSchedule.id, selectedProject.id, input);
-    setShowScheduleModal(false);
-    setEditingSchedule(null);
-  };
-
-  const handleDeleteSchedule = (schedule: ProjectSchedule) => {
-    if (!selectedProject) return;
-    store.deleteProjectSchedule(schedule.id, selectedProject.id);
-    setShowDetailModal(false);
-    setSelectedSchedule(null);
-  };
-
-  const handleBarClick = (schedule: ProjectSchedule) => {
-    setSelectedSchedule(schedule);
-    setShowDetailModal(true);
-  };
-
-  const handleEditFromDetail = (schedule: ProjectSchedule) => {
-    setShowDetailModal(false);
-    setEditingSchedule(schedule);
-    setShowScheduleModal(true);
-  };
+  const scheduleActions = useScheduleActions({
+    teamId,
+    currentUserId,
+    selectedProject,
+    onScheduleModalClose: modals.closeScheduleModal,
+    onDetailModalClose: modals.closeDetailModal,
+  });
 
   // Find phase name for detail modal
-  const selectedSchedulePhaseName = selectedSchedule && selectedProject
-    ? selectedProject.phases.find((p) => p.id === selectedSchedule.phaseId)?.name
+  const selectedSchedulePhaseName = modals.selectedSchedule && selectedProject
+    ? selectedProject.phases.find((p) => p.id === modals.selectedSchedule!.phaseId)?.name
     : undefined;
 
   return (
@@ -114,7 +70,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
         <div className="flex items-center gap-1.5 flex-none">
           <button
             type="button"
-            onClick={() => { setEditingProject(null); setShowProjectModal(true); }}
+            onClick={modals.openCreateProject}
             title="프로젝트 생성"
             className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
@@ -123,7 +79,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
           {selectedProject && (
             <button
               type="button"
-              onClick={() => { setEditingProject(selectedProject); setShowProjectModal(true); }}
+              onClick={() => modals.openEditProject(selectedProject)}
               title="프로젝트 수정"
               className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
             >
@@ -133,7 +89,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
           {selectedProject && (
             <button
               type="button"
-              onClick={handleDeleteProject}
+              onClick={projectActions.handleDeleteProject}
               title="프로젝트 삭제"
               className="p-1.5 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
@@ -166,7 +122,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
           <button
             type="button"
             disabled={!selectedProject}
-            onClick={() => { setEditingSchedule(null); setShowScheduleModal(true); }}
+            onClick={modals.openCreateSchedule}
             className="px-2 py-1 rounded-lg bg-primary-500 text-white text-xs font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             +일정
@@ -181,7 +137,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
             project={selectedProject}
             schedules={schedules}
             currentUserId={currentUserId}
-            onBarClick={handleBarClick}
+            onBarClick={modals.openDetailModal}
           />
         ) : (
           <div className="h-full flex flex-col items-center justify-center gap-3">
@@ -202,44 +158,41 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
       </div>
 
       {/* Project create/edit modal */}
-      {showProjectModal && (
+      {modals.showProjectModal && (
         <ProjectCreateModal
-          mode={editingProject ? 'edit' : 'create'}
-          project={editingProject}
-          onSubmit={editingProject ? handleUpdateProject : handleCreateProject}
-          onCancel={() => {
-            setShowProjectModal(false);
-            setEditingProject(null);
-          }}
+          mode={modals.editingProject ? 'edit' : 'create'}
+          project={modals.editingProject}
+          onSubmit={modals.editingProject
+            ? (input) => projectActions.handleUpdateProject(modals.editingProject!, input)
+            : projectActions.handleCreateProject
+          }
+          onCancel={modals.closeProjectModal}
         />
       )}
 
       {/* Schedule create/edit modal */}
-      {showScheduleModal && selectedProject && (
+      {modals.showScheduleModal && selectedProject && (
         <ProjectScheduleModal
-          mode={editingSchedule ? 'edit' : 'create'}
+          mode={modals.editingSchedule ? 'edit' : 'create'}
           project={selectedProject}
-          schedule={editingSchedule}
-          onSubmit={editingSchedule ? handleUpdateSchedule : handleCreateSchedule}
-          onCancel={() => {
-            setShowScheduleModal(false);
-            setEditingSchedule(null);
-          }}
+          schedule={modals.editingSchedule}
+          onSubmit={modals.editingSchedule
+            ? (input) => scheduleActions.handleUpdateSchedule(modals.editingSchedule!, input)
+            : scheduleActions.handleCreateSchedule
+          }
+          onCancel={modals.closeScheduleModal}
         />
       )}
 
       {/* Schedule detail modal */}
       <ProjectScheduleDetailModal
-        isOpen={showDetailModal}
-        schedule={selectedSchedule}
+        isOpen={modals.showDetailModal}
+        schedule={modals.selectedSchedule}
         currentUserId={currentUserId}
         phaseName={selectedSchedulePhaseName}
-        onClose={() => {
-          setShowDetailModal(false);
-          setSelectedSchedule(null);
-        }}
-        onEdit={handleEditFromDetail}
-        onDelete={handleDeleteSchedule}
+        onClose={modals.closeDetailModal}
+        onEdit={modals.openEditSchedule}
+        onDelete={scheduleActions.handleDeleteSchedule}
       />
     </div>
   );

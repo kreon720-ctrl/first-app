@@ -1,4 +1,9 @@
-// API Client - fetch wrapper with automatic Authorization header injection and 401 retry logic
+// API Client - HTTP 메서드 (get/post/patch/put/delete)만 담당
+// 토큰 관리: tokenManager.ts
+// 401 재시도 로직: authInterceptor.ts
+
+import { tokenManager } from './tokenManager';
+import { handleUnauthorized } from './authInterceptor';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -10,94 +15,20 @@ interface FetchOptions extends Omit<RequestInit, 'headers'> {
 
 class ApiClient {
   private baseUrl: string;
-  private isRefreshing = false;
-  private refreshPromise: Promise<string | null> | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
   /**
-   * Get access token from localStorage
-   */
-  private getAccessToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('accessToken');
-  }
-
-  /**
-   * Get refresh token from localStorage
-   */
-  private getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('refreshToken');
-  }
-
-  /**
-   * Set tokens to localStorage
+   * Delegate token management to tokenManager
    */
   setTokens(accessToken: string, refreshToken: string): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    tokenManager.setTokens(accessToken, refreshToken);
   }
 
-  /**
-   * Clear tokens from localStorage and auth cookie
-   */
   clearTokens(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    document.cookie = 'auth-initialized=; path=/; max-age=0';
-  }
-
-  /**
-   * Refresh access token using refresh token
-   */
-  private async refreshToken(): Promise<string | null> {
-    if (this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    this.refreshPromise = (async () => {
-      try {
-        const refreshToken = this.getRefreshToken();
-        if (!refreshToken) {
-          return null;
-        }
-
-        const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-
-        if (!response.ok) {
-          return null;
-        }
-
-        const data = await response.json();
-        const newAccessToken = data.accessToken;
-
-        // Update access token in localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('accessToken', newAccessToken);
-        }
-
-        return newAccessToken;
-      } catch (error) {
-        console.error('Token refresh failed:', error);
-        return null;
-      } finally {
-        this.isRefreshing = false;
-        this.refreshPromise = null;
-      }
-    })();
-
-    return this.refreshPromise;
+    tokenManager.clearTokens();
   }
 
   /**
@@ -122,39 +53,25 @@ class ApiClient {
 
     // Add Authorization header if not skipped
     if (!skipAuth) {
-      const accessToken = this.getAccessToken();
+      const accessToken = tokenManager.getAccessToken();
       if (accessToken) {
         hadAccessToken = true;
         headers['Authorization'] = `Bearer ${accessToken}`;
       }
     }
 
-    // First attempt
-    let response = await fetch(`${this.baseUrl}${url}`, {
-      ...restOptions,
-      headers,
-    });
+    const fullUrl = `${this.baseUrl}${url}`;
 
-    // If 401 and we had a token, attempt token refresh and retry
+    // First attempt
+    let response = await fetch(fullUrl, { ...restOptions, headers });
+
+    // If 401 and we had a token, delegate retry to authInterceptor
     // If we didn't have a token, pass the 401 through (e.g. login with wrong credentials)
     if (response.status === 401 && hadAccessToken && !skipRetry) {
-      const newAccessToken = await this.refreshToken();
-
-      if (newAccessToken) {
-        // Retry with new token
-        headers['Authorization'] = `Bearer ${newAccessToken}`;
-        response = await fetch(`${this.baseUrl}${url}`, {
-          ...restOptions,
-          headers,
-        });
-      } else {
-        // Token refresh failed - clear tokens and redirect to login
-        this.clearTokens();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        throw new Error('Authentication required');
-      }
+      response = await handleUnauthorized((authHeader) => {
+        const retryHeaders = { ...headers, Authorization: authHeader };
+        return fetch(fullUrl, { ...restOptions, headers: retryHeaders });
+      });
     }
 
     // Parse response

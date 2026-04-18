@@ -1,4 +1,6 @@
-// Project Store - manages project and schedule state using Zustand with persistence
+// Project Store - manages project CRUD + selection state
+// Schedules and sub-schedules are managed in projectScheduleStore.ts / subScheduleStore.ts
+// but share the same Zustand persist instance via the unified store below.
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -19,6 +21,7 @@ function getNow(): string {
   return new Date().toISOString();
 }
 
+// ── Unified state interface (all three domains share one persist store) ──
 interface ProjectState {
   projects: Record<string, Project[]>;          // keyed by teamId
   schedules: Record<string, ProjectSchedule[]>; // keyed by projectId
