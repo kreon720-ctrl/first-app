@@ -47,15 +47,38 @@ export function ProjectScheduleDetailModal({
   onEdit,
   onDelete,
 }: ProjectScheduleDetailModalProps) {
+  if (!isOpen || !schedule) return null;
+  return (
+    <ProjectScheduleDetailModalBody
+      schedule={schedule}
+      currentUserId={currentUserId}
+      phaseName={phaseName}
+      onClose={onClose}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    />
+  );
+}
+
+interface ProjectScheduleDetailModalBodyProps {
+  schedule: ProjectSchedule;
+  currentUserId: string;
+  phaseName?: string;
+  onClose: () => void;
+  onEdit: (schedule: ProjectSchedule) => void;
+  onDelete: (schedule: ProjectSchedule) => void;
+}
+
+function ProjectScheduleDetailModalBody({
+  schedule,
+  currentUserId,
+  phaseName,
+  onClose,
+  onEdit,
+  onDelete,
+}: ProjectScheduleDetailModalBodyProps) {
   const currentUserName = useAuthStore(s => s.currentUser?.name ?? '');
 
-  const editor = schedule
-    ? useSubScheduleEditor({ schedule, currentUserId })
-    : null;
-
-  if (!isOpen || !schedule) return null;
-
-  // editor will always be non-null here since schedule is non-null
   const {
     subSchedules,
     showCreate,
@@ -68,7 +91,7 @@ export function ProjectScheduleDetailModal({
     openCreate,
     openEdit,
     closeCreate,
-  } = editor!;
+  } = useSubScheduleEditor({ schedule, currentUserId });
 
   const isOwner   = schedule.createdBy === currentUserId;
   const colorInfo = GANTT_COLOR_DISPLAY[schedule.color] ?? GANTT_COLOR_DISPLAY.indigo;
