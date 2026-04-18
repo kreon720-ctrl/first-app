@@ -1,4 +1,4 @@
-# Team CalTalk — ERD (Entity Relationship Diagram)
+# TEAM WORKS — ERD (Entity Relationship Diagram)
 
 ## 문서 이력
 
@@ -7,6 +7,7 @@
 | 1.0 | 2026-04-07 | 최초 작성 |
 | 1.1 | 2026-04-08 | team_invitations 테이블 제거 → team_join_requests 테이블 추가. 관련 제약조건·인덱스·외래키 정보 갱신 |
 | 1.2 | 2026-04-08 | users.password 컬럼명 → password_hash 로 수정 (schema.sql 실제 구현 반영). teams 인덱스 권장사항에 idx_teams_leader_id 추가 |
+| 1.3 | 2026-04-18 | 앱명 Team CalTalk → TEAM WORKS 반영. chat_messages.type 값 SCHEDULE_REQUEST → WORK_PERFORMANCE 변경 (실제 구현 반영). work_performance_permissions 테이블 추가 |
 
 ---
 
@@ -61,10 +62,15 @@ erDiagram
         UUID id PK "not null"
         UUID team_id FK "not null → teams.id"
         UUID sender_id FK "not null → users.id"
-        VARCHAR type "not null, NORMAL | SCHEDULE_REQUEST, default NORMAL"
+        VARCHAR type "not null, NORMAL | WORK_PERFORMANCE, default NORMAL"
         TEXT content "not null, max 2000"
         TIMESTAMP sent_at "not null"
         TIMESTAMP created_at "not null"
+    }
+
+    work_performance_permissions {
+        UUID team_id FK "not null → teams.id, PK(team_id, user_id)"
+        UUID user_id FK "not null → users.id, PK(team_id, user_id)"
     }
 
     users ||--o{ team_members : "소속"
@@ -75,6 +81,8 @@ erDiagram
     users ||--o{ schedules : "생성"
     teams ||--o{ chat_messages : "소속"
     users ||--o{ chat_messages : "발신"
+    teams ||--o{ work_performance_permissions : "권한설정"
+    users ||--o{ work_performance_permissions : "조회허용"
 ```
 
 ---
@@ -183,7 +191,7 @@ erDiagram
 | id | UUID | PK, NOT NULL | 메시지 고유 식별자 |
 | team_id | UUID | FK → teams.id, NOT NULL | 소속 팀 |
 | sender_id | UUID | FK → users.id, NOT NULL | 메시지 발신자 |
-| type | VARCHAR(30) | NOT NULL, DEFAULT 'NORMAL' | 메시지 유형: `NORMAL` \| `SCHEDULE_REQUEST` |
+| type | VARCHAR(30) | NOT NULL, DEFAULT 'NORMAL' | 메시지 유형: `NORMAL` \| `WORK_PERFORMANCE` |
 | content | TEXT | NOT NULL | 메시지 본문, 최대 2000자 |
 | sent_at | TIMESTAMP | NOT NULL | 전송 일시 (UTC 저장, KST 변환으로 날짜 그룹핑) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT now() | 레코드 생성 일시 |
@@ -191,6 +199,22 @@ erDiagram
 **인덱스 권장사항**
 - `CREATE INDEX idx_chat_messages_team_id_sent_at ON chat_messages(team_id, sent_at DESC);` — 팀의 날짜별 메시지 조회 (가장 빈번한 쿼리 패턴)
 - `CREATE INDEX idx_chat_messages_sender_id ON chat_messages(sender_id);` — 발신자 기준 메시지 조회 (선택적)
+
+---
+
+### 2.7 work_performance_permissions (업무보고 조회 권한)
+
+팀장이 팀원별로 `WORK_PERFORMANCE` 타입 메시지(업무보고)를 볼 수 있는 권한을 관리합니다. 복합 PK `(team_id, user_id)`로 중복을 방지하며, 팀장이 일괄 교체(DELETE → INSERT) 방식으로 권한을 설정합니다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| team_id | UUID | FK → teams.id, NOT NULL | 권한이 적용되는 팀 |
+| user_id | UUID | FK → users.id, NOT NULL | 업무보고 조회가 허용된 사용자 |
+
+> **복합 PK:** `PRIMARY KEY (team_id, user_id)`
+
+**인덱스 권장사항**
+- `CREATE INDEX idx_work_perf_perms_team_id ON work_performance_permissions(team_id);` — 팀별 허용 목록 조회
 
 ---
 
@@ -210,7 +234,7 @@ erDiagram
 | schedules | end_at > start_at | 일정 종료 시각은 시작 시각 이후여야 함 |
 | team_members | role IN ('LEADER', 'MEMBER') | 허용된 역할 값만 저장 |
 | team_join_requests | status IN ('PENDING', 'APPROVED', 'REJECTED') | 허용된 상태 값만 저장 |
-| chat_messages | type IN ('NORMAL', 'SCHEDULE_REQUEST') | 허용된 메시지 유형만 저장 |
+| chat_messages | type IN ('NORMAL', 'WORK_PERFORMANCE') | 허용된 메시지 유형만 저장 |
 
 ### 3.3 외래키 제약
 

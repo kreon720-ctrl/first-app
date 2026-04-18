@@ -1,4 +1,4 @@
-# Team CalTalk API 명세서
+# TEAM WORKS API 명세서
 
 ## 문서 이력
 
@@ -7,6 +7,7 @@
 | 1.0 | 2026-04-07 | 최초 작성 |
 | 1.1 | 2026-04-08 | 섹션 4(Invitations) 전면 제거 → 섹션 4(Join Requests)로 교체. GET /api/teams/public, POST /api/teams/:teamId/join-requests, GET /api/teams/:teamId/join-requests, PATCH /api/teams/:teamId/join-requests/:requestId, GET /api/me/tasks 추가. 엔드포인트 요약 테이블 갱신 |
 | 1.2 | 2026-04-08 | POST /api/teams 비즈니스 규칙에서 잘못된 BR-03 참조 제거 (BR-01, FR-02-1 으로 수정) |
+| 1.3 | 2026-04-18 | 앱명 Team CalTalk → TEAM WORKS 반영. 메시지 type WORK_PERFORMANCE → WORK_PERFORMANCE 변경 (실제 구현 반영). 섹션 7(업무보고 조회 권한) 추가: GET/PATCH /api/teams/:teamId/work-permissions |
 
 ---
 
@@ -1128,7 +1129,7 @@ Authorization: Bearer <accessToken>
     {
       "id": "b8c9d0e1-f2a3-4567-bcde-fa8901234567",
       "teamId": "b1c2d3e4-f5a6-7890-bcde-fa1234567890",
-      "type": "SCHEDULE_REQUEST",
+      "type": "WORK_PERFORMANCE",
       "senderId": "d4e5f6a7-b8c9-0123-defa-bc3456789012",
       "senderName": "김철수",
       "content": "팀장님, 4월 10일 일정을 오후로 변경 부탁드립니다.",
@@ -1144,7 +1145,7 @@ Authorization: Bearer <accessToken>
 | messages | array | 해당 날짜의 메시지 배열, `sentAt` 오름차순 정렬 |
 | messages[].id | string | 메시지 UUID |
 | messages[].teamId | string | 소속 팀 UUID |
-| messages[].type | string | 메시지 유형: `NORMAL` 또는 `SCHEDULE_REQUEST` |
+| messages[].type | string | 메시지 유형: `NORMAL` 또는 `WORK_PERFORMANCE` |
 | messages[].senderId | string | 발신자 사용자 UUID |
 | messages[].senderName | string | 발신자 표시 이름 |
 | messages[].content | string | 메시지 본문 |
@@ -1168,7 +1169,7 @@ Authorization: Bearer <accessToken>
 
 ### POST /api/teams/:teamId/messages
 
-**설명**: 팀 채팅 메시지를 전송합니다. `NORMAL` 타입의 일반 메시지와 `SCHEDULE_REQUEST` 타입의 일정 변경 요청 메시지를 모두 처리합니다.
+**설명**: 팀 채팅 메시지를 전송합니다. `NORMAL` 타입의 일반 메시지와 `WORK_PERFORMANCE` 타입의 업무보고 메시지를 모두 처리합니다.
 **인증**: 필요
 **권한**: LEADER·MEMBER 모두 (해당 팀 소속 구성원)
 
@@ -1197,14 +1198,14 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "type": "SCHEDULE_REQUEST",
+  "type": "WORK_PERFORMANCE",
   "content": "팀장님, 4월 10일 일정을 오후로 변경 부탁드립니다."
 }
 ```
 
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
-| type | string | X | 메시지 유형: `NORMAL` 또는 `SCHEDULE_REQUEST`. 미입력 시 기본값 `NORMAL` |
+| type | string | X | 메시지 유형: `NORMAL` 또는 `WORK_PERFORMANCE`(업무보고). 미입력 시 기본값 `NORMAL` |
 | content | string | O | 메시지 본문, 최대 2000자 |
 
 **Response**
@@ -1215,7 +1216,7 @@ Authorization: Bearer <accessToken>
 {
   "id": "a7b8c9d0-e1f2-3456-abcd-ef7890123456",
   "teamId": "b1c2d3e4-f5a6-7890-bcde-fa1234567890",
-  "type": "SCHEDULE_REQUEST",
+  "type": "WORK_PERFORMANCE",
   "senderId": "d4e5f6a7-b8c9-0123-defa-bc3456789012",
   "senderName": "김철수",
   "content": "팀장님, 4월 10일 일정을 오후로 변경 부탁드립니다.",
@@ -1229,7 +1230,7 @@ Authorization: Bearer <accessToken>
 |-----------|-------------|------|
 | 400 | "메시지 내용은 필수입니다." | content 누락 |
 | 400 | "메시지는 최대 2000자까지 입력 가능합니다." | content 길이 초과 (FR-05-5) |
-| 400 | "type은 NORMAL 또는 SCHEDULE_REQUEST이어야 합니다." | 허용되지 않는 type 값 |
+| 400 | "잘못된 메시지 타입입니다." | 허용되지 않는 type 값 (`NORMAL`, `WORK_PERFORMANCE` 외) |
 | 401 | "인증이 필요합니다." | Access Token 없음 또는 만료 |
 | 403 | "해당 팀에 접근 권한이 없습니다." | 요청자가 해당 팀의 구성원이 아님 |
 | 404 | "팀을 찾을 수 없습니다." | 존재하지 않는 teamId |
@@ -1238,7 +1239,115 @@ Authorization: Bearer <accessToken>
 
 ---
 
-## 7. 엔드포인트 요약
+## 7. Work Permissions (업무보고 조회 권한)
+
+---
+
+### GET /api/teams/:teamId/work-permissions
+
+**설명**: 팀의 업무보고(`WORK_PERFORMANCE`) 메시지 조회 권한 목록을 반환합니다. 허용된 사용자 ID 배열을 반환하며, 빈 배열이면 전체 구성원이 조회 가능합니다.
+**인증**: 필요
+**권한**: LEADER·MEMBER 모두 (해당 팀 소속 구성원)
+
+**Request**
+
+- Headers:
+  ```
+  Authorization: Bearer <accessToken>
+  ```
+- Path Parameters:
+
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| teamId | string (UUID) | 조회할 팀의 UUID |
+
+- Body: 없음
+
+**Response**
+
+- 성공: `200 OK`
+
+```json
+{
+  "permittedUserIds": [
+    "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "d4e5f6a7-b8c9-0123-defa-bc3456789012"
+  ]
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| permittedUserIds | string[] | 업무보고 조회가 허용된 사용자 UUID 배열 |
+
+- 실패:
+
+| 상태 코드 | 에러 메시지 | 원인 |
+|-----------|-------------|------|
+| 401 | "인증이 필요합니다." | Access Token 없음 또는 만료 |
+| 403 | "해당 팀에 접근 권한이 없습니다." | 요청자가 해당 팀의 구성원이 아님 |
+| 404 | "팀을 찾을 수 없습니다." | 존재하지 않는 teamId |
+
+---
+
+### PATCH /api/teams/:teamId/work-permissions
+
+**설명**: 팀의 업무보고 조회 권한을 일괄 설정합니다. 전달된 `userIds`로 기존 권한을 전부 교체합니다. 빈 배열 전달 시 전체 권한 해제.
+**인증**: 필요
+**권한**: LEADER만 (해당 팀의 팀장)
+
+**Request**
+
+- Headers:
+  ```
+  Authorization: Bearer <accessToken>
+  ```
+- Path Parameters:
+
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| teamId | string (UUID) | 권한을 설정할 팀의 UUID |
+
+- Body:
+
+```json
+{
+  "userIds": [
+    "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "d4e5f6a7-b8c9-0123-defa-bc3456789012"
+  ]
+}
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| userIds | string[] | O | 업무보고 조회를 허용할 사용자 UUID 배열 (기존 설정 전부 교체) |
+
+**Response**
+
+- 성공: `200 OK`
+
+```json
+{
+  "permittedUserIds": [
+    "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "d4e5f6a7-b8c9-0123-defa-bc3456789012"
+  ]
+}
+```
+
+- 실패:
+
+| 상태 코드 | 에러 메시지 | 원인 |
+|-----------|-------------|------|
+| 400 | "userIds는 배열이어야 합니다." | userIds 필드가 배열이 아님 |
+| 401 | "인증이 필요합니다." | Access Token 없음 또는 만료 |
+| 403 | "해당 팀에 접근 권한이 없습니다." | 요청자가 해당 팀의 팀장이 아님 |
+| 404 | "팀을 찾을 수 없습니다." | 존재하지 않는 teamId |
+
+---
+
+## 8. 엔드포인트 요약
 
 | 메서드 | 경로 | 설명 | 인증 | 권한 |
 |--------|------|------|------|------|
@@ -1260,6 +1369,8 @@ Authorization: Bearer <accessToken>
 | DELETE | /api/teams/:teamId/schedules/:scheduleId | 팀 일정 삭제 | 필요 | LEADER만 |
 | GET | /api/teams/:teamId/messages | 채팅 메시지 조회 | 필요 | LEADER·MEMBER |
 | POST | /api/teams/:teamId/messages | 채팅 메시지 전송 | 필요 | LEADER·MEMBER |
+| GET | /api/teams/:teamId/work-permissions | 업무보고 조회 권한 목록 조회 | 필요 | LEADER·MEMBER |
+| PATCH | /api/teams/:teamId/work-permissions | 업무보고 조회 권한 일괄 설정 | 필요 | LEADER만 |
 
 ---
 

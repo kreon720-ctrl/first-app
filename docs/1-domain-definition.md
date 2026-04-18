@@ -1,4 +1,4 @@
-# Team CalTalk 도메인 정의서
+# TEAM WORKS 도메인 정의서
 
 ## 문서 이력
 
@@ -8,6 +8,7 @@
 | 1.1 | 2026-04-07 | 추적성·검증성 보강, TeamInvitation 추가, 수락 조건 추가 |
 | 1.2 | 2026-04-08 | 팀 가입 신청(TeamJoinRequest) 방식으로 팀원 합류 흐름 전면 변경 — TeamInvitation 제거, TeamJoinRequest 추가, 나의 할 일(My Tasks) 개념 추가, 팀 공개 목록 조회 추가 |
 | 1.3 | 2026-04-08 | 4.2 Team 엔티티에 팀장 생성 시점(팀 생성 시 자동 LEADER) 명시, UC-02 연관 규칙 BR-01 추가 |
+| 1.4 | 2026-04-18 | 앱명 Team CalTalk → TEAM WORKS 반영. ChatMessage.type SCHEDULE_REQUEST → WORK_PERFORMANCE 변경 |
 
 ---
 
@@ -106,7 +107,7 @@
 |------|------|------|
 | id | UUID | PK, not null |
 | teamId | UUID | FK → Team.id, not null |
-| type | Enum | `NORMAL` \| `SCHEDULE_REQUEST`, default: NORMAL |
+| type | Enum | `NORMAL` \| `WORK_PERFORMANCE`, default: NORMAL |
 | senderId | UUID | FK → User.id, not null |
 | content | String | not null, 최대 2000자 |
 | sentAt | DateTime | not null |
@@ -138,7 +139,7 @@
 | BR-01 | 모든 기능은 로그인한 사용자만 이용 가능 |
 | BR-02 | 팀 일정의 생성·수정·삭제는 팀장(LEADER)만 수행 가능 |
 | BR-03 | 팀 가입 신청의 승인·거절은 해당 팀의 팀장(LEADER)만 수행 가능. 승인 시 신청자는 TeamMember(MEMBER)로 등록 |
-| BR-04 | 팀원이 일정 변경을 원할 경우 SCHEDULE_REQUEST 타입 채팅으로 팀장에게 요청 |
+| BR-04 | 팀원이 업무보고를 보낼 경우 WORK_PERFORMANCE 타입 채팅으로 전송하며, 팀장이 권한을 부여한 구성원만 열람 가능 |
 | BR-05 | 채팅 메시지는 sentAt 기준 날짜(KST)로 그룹핑하여 날짜별 조회 |
 | BR-06 | 일정과 채팅은 팀 내부에서만 공유되며 타 팀에 노출되지 않음 |
 | BR-07 | 로그인한 모든 사용자는 공개 팀 목록을 조회하고 원하는 팀에 가입 신청을 할 수 있음. 단, 이미 해당 팀의 구성원이거나 PENDING 상태의 신청이 존재하면 중복 신청 불가 |
@@ -209,7 +210,7 @@
 
 **UC-06 채팅으로 일정 변경 요청**
 - Given: MEMBER 권한의 인증된 사용자
-- When: type=SCHEDULE_REQUEST 메시지 전송
+- When: type=WORK_PERFORMANCE 메시지 전송
 - Then: 채팅 이력에 저장, 팀장에게 표시
 
 ---

@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Team CalTalk API",
+    "title": "TEAM WORKS API",
     "description": "팀 단위 캘린더 기반 일정관리 + 채팅 애플리케이션 API. API Route 소스 위치: backend/app/api/",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "x-source-directory": "backend/app/api"
   },
   "servers": [
@@ -351,7 +351,7 @@
           },
           "type": {
             "type": "string",
-            "enum": ["NORMAL", "SCHEDULE_REQUEST"],
+            "enum": ["NORMAL", "WORK_PERFORMANCE"],
             "example": "NORMAL"
           },
           "senderId": {
@@ -1704,7 +1704,7 @@
       "post": {
         "tags": ["Messages"],
         "summary": "채팅 메시지 전송",
-        "description": "팀 채팅 메시지를 전송합니다. NORMAL 타입의 일반 메시지와 SCHEDULE_REQUEST 타입의 일정 변경 요청 메시지를 모두 처리합니다.",
+        "description": "팀 채팅 메시지를 전송합니다. NORMAL 타입의 일반 메시지와 WORK_PERFORMANCE 타입의 업무보고 메시지를 모두 처리합니다.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
@@ -1728,7 +1728,7 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": ["NORMAL", "SCHEDULE_REQUEST"],
+                    "enum": ["NORMAL", "WORK_PERFORMANCE"],
                     "default": "NORMAL",
                     "example": "NORMAL"
                   },
@@ -1803,6 +1803,103 @@
       }
     }
   },
+    "/teams/{teamId}/work-permissions": {
+      "get": {
+        "tags": ["WorkPermissions"],
+        "summary": "업무보고 조회 권한 목록 조회",
+        "description": "팀의 WORK_PERFORMANCE 메시지(업무보고) 조회 권한이 있는 사용자 ID 목록을 반환합니다.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "조회할 팀의 UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["permittedUserIds"],
+                  "properties": {
+                    "permittedUserIds": {
+                      "type": "array",
+                      "items": { "type": "string", "format": "uuid" },
+                      "example": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "인증 필요" },
+          "403": { "description": "접근 권한 없음" },
+          "404": { "description": "팀 없음" }
+        }
+      },
+      "patch": {
+        "tags": ["WorkPermissions"],
+        "summary": "업무보고 조회 권한 일괄 설정",
+        "description": "팀의 업무보고 조회 권한을 일괄 설정합니다. 기존 설정을 전부 교체합니다. 팀장만 실행 가능.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "권한을 설정할 팀의 UUID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userIds"],
+                "properties": {
+                  "userIds": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "uuid" },
+                    "example": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "권한 설정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["permittedUserIds"],
+                  "properties": {
+                    "permittedUserIds": {
+                      "type": "array",
+                      "items": { "type": "string", "format": "uuid" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "userIds는 배열이어야 합니다." },
+          "401": { "description": "인증 필요" },
+          "403": { "description": "팀장만 권한 설정 가능" },
+          "404": { "description": "팀 없음" }
+        }
+      }
+    }
+  },
   "tags": [
     {
       "name": "Auth",
@@ -1823,6 +1920,10 @@
     {
       "name": "Messages",
       "description": "채팅 메시지 API (조회, 전송)"
+    },
+    {
+      "name": "WorkPermissions",
+      "description": "업무보고 조회 권한 API (목록 조회, 일괄 설정)"
     }
   ]
 }
