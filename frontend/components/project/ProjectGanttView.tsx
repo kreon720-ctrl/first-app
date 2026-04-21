@@ -134,7 +134,10 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
           <button
             type="button"
             disabled={!selectedProject}
-            onClick={modals.openCreateSchedule}
+            onClick={async () => {
+              await store.loadTeamProjects(teamId);
+              modals.openCreateSchedule();
+            }}
             className="px-2 py-1 rounded-lg bg-primary-500 text-white text-xs font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             +일정

@@ -271,7 +271,7 @@ export function ProjectScheduleModal({
               >
                 <option value="">단계 선택</option>
                 {project.phases.map((phase) => (
-                  <option key={phase.id} value={phase.id}>
+                  <option key={phase.id ?? phase.name} value={phase.id ?? ''}>
                     {phase.name}
                   </option>
                 ))}
