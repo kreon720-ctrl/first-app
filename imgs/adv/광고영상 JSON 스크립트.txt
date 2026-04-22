@@ -1,0 +1,379 @@
+# The Complete Guide to JSON Prompting for Seedance 2.0
+
+## Why Structured Prompts Beat Paragraph Prompts Every Time
+
+Think about how a film crew receives a shot list. It isn't a rambling note from the director — it's a structured breakdown: scene number, lens, blocking, lighting setup, audio cue. JSON prompting works the same way. Instead of bundling your entire vision into a single flowing sentence, you hand the model a clean, labeled blueprint built from braces, keys, commas, and nested objects.
+
+JSON — short for JavaScript Object Notation — is effectively the mother tongue of modern generative video systems. These models parse structured data far more reliably than they parse mood-heavy prose, which means a well-formed JSON block translates directly into what appears on screen.
+
+### The Problem With Paragraph Prompts
+
+Consider a common paragraph-style instruction:
+
+> A skateboarder glides through a neon-lit Tokyo alley at midnight. The atmosphere feels rainy and moody, with reflections bouncing off the pavement. The camera follows from behind with a smooth tracking motion, giving it a dreamy cyberpunk vibe.
+
+Looks fine on paper. But when handed to a video model, several things can go sideways:
+
+- **Pace drift** — Is the skateboarder cruising leisurely or pushing hard? The model guesses, and the motion often looks rubbery or teleported.
+- **Lighting ambiguity** — "Neon-lit" can turn into a blown-out rainbow mess or a flat purple wash.
+- **Atmosphere overreach** — "Rainy and moody" might deliver a hurricane or, alternatively, barely a mist.
+- **Camera interpretation** — "Tracking motion" is vague. Dolly? Gimbal? Drone? The output shakes or glides unpredictably.
+- **Scene drift** — The alley might morph mid-shot, neon signs flickering in and out of existence.
+
+Fixing these issues means regenerating, burning credits, and rewriting half the prompt. Every time.
+
+### The JSON Alternative
+
+Here's the same idea, restructured:
+
+```json
+{
+  "subject": "skateboarder",
+  "appearance": "black hoodie, cargo pants, worn sneakers",
+  "action": "gliding forward at a steady cruising pace",
+  "environment": {
+    "location": "narrow Tokyo alley",
+    "time_of_day": "midnight",
+    "weather": "light drizzle, wet asphalt",
+    "lighting": "neon pink and cyan signage reflecting on puddles",
+    "background_elements": ["steam vents", "hanging lanterns", "flickering kanji signs"]
+  },
+  "camera": {
+    "position": "low angle, behind subject",
+    "lens": "24mm",
+    "movement": "smooth gimbal tracking shot",
+    "speed": "matching subject velocity"
+  },
+  "mood": "dreamy, cyberpunk",
+  "style": "cinematic realism",
+  "avoid": ["motion blur artifacts", "teleporting limbs", "distorted neon text"]
+}
+```
+
+The best part? You're not writing full sentences. You're writing labels and short values — and the output is sharper for it.
+
+## What JSON Prompting Actually Gets You
+
+Structured prompts trade vagueness for precision. Here's what changes when you make the switch.
+
+1. **Director-Level Control** — Every parameter is its own field. Want to dial in a specific look? Slot a camera object with lens, aperture, focal_length, shot_type, and movement. A 35mm lens at f/2.8 with a slow dolly-in produces something fundamentally different from a 14mm wide at f/11 — and JSON lets you specify exactly that.
+2. **Layered Scene Orchestration** — Real video contains stacked motion: a character moves, the camera moves, the background shifts, lighting evolves, and sound layers in — all at once. JSON handles this with nested objects instead of runaway sentences.
+3. **Template-Driven Consistency** — For brand campaigns, series content, or recurring characters, JSON becomes a reusable scaffold. Lock in your character definition, lighting palette, and camera grammar once — then swap out only the action or location field for each new shot.
+4. **Synchronized Audio Direction** — Modern video models generate sound alongside visuals. JSON makes timing precise via an audio_track array with time, type, content keys.
+5. **Fewer Hallucinations** — Ambiguity is where models go rogue. Structured fields leave less room for invention — so you get stable faces, consistent wardrobe, locked-in lighting, and physics that don't break mid-clip.
+
+## Meet Seedance 2.0: Why It Pairs Exceptionally Well With JSON
+
+Seedance 2.0 is ByteDance's latest multimodal video model, and it's arguably the strongest match for JSON prompting available right now.
+
+- **Multimodal input at scale.** Seedance 2.0 accepts text, images, videos, and audio as inputs — up to 12 assets in a single generation (9 images, 3 video clips up to 15 seconds each, 3 audio clips up to 15 seconds each, plus text prompts).
+- **Native audio generation.** Generate video and audio simultaneously. Your audio_track field isn't aspirational — it's enforced.
+- **Multi-shot consistency.** The model maintains stable character appearance across frames and shots, solving character drift, style inconsistency, and detail loss.
+- **Camera and motion replication.** Upload a reference video with camera movements or choreography you like, and the model replicates them with your own content.
+- **Flexible output.** 4 to 15 seconds in length, aspect ratios 16:9 / 9:16 / 4:3 / 3:4 / 21:9 / 1:1, up to 1080p.
+
+## Building a Seedance 2.0 JSON Prompt — Step by Step
+
+### Step 1: Sketch Your Shot Before You Type
+
+Before opening a JSON editor, answer these questions:
+
+- **Subject** — Who or what anchors the frame?
+- **Action** — What are they doing, and at what tempo?
+- **Environment** — Where? When? Weather? Time of day?
+- **Camera** — Lens, movement, angle, framing
+- **Lighting** — Direction, color temperature, intensity, contrast
+- **Style** — Photoreal, anime, 3D render, claymation, documentary?
+- **Audio** — Dialogue, ambient, music, SFX
+- **Exclusions** — What should never appear?
+
+These become your top-level keys.
+
+### Step 2: Build the Structure
+
+Here's a reusable Seedance 2.0 scaffold:
+
+```json
+{
+  "model": "Seedance 2.0",
+  "scene": {
+    "subject": {
+      "description": "[who or what]",
+      "appearance": "[wardrobe, hair, distinguishing features]",
+      "age_range": "[optional]"
+    },
+    "action": "[specific verb phrase with tempo]",
+    "environment": {
+      "location": "[specific place]",
+      "time_of_day": "[precise time]",
+      "weather": "[optional]",
+      "lighting": "[direction + color + intensity]",
+      "background_elements": ["element 1", "element 2", "element 3"]
+    },
+    "camera": {
+      "lens": "[focal length]",
+      "aperture": "[f-stop]",
+      "shot_type": "[wide / medium / close-up / etc.]",
+      "angle": "[eye-level / low / high / Dutch]",
+      "movement": "[static / pan / tilt / dolly / tracking / crane]",
+      "direction": "[left / right / forward / backward]"
+    },
+    "style": "[visual style]",
+    "mood": "[emotional tone]"
+  },
+  "audio_track": [
+    {"time": 0.0, "type": "ambient", "content": "[ambient sound]"},
+    {"time": 0.0, "type": "music", "style": "[genre / instrument]"},
+    {"time": 2.0, "type": "sfx", "content": "[specific sound effect]"}
+  ],
+  "output": {
+    "duration_seconds": 8,
+    "resolution": "1080p",
+    "aspect_ratio": "16:9"
+  },
+  "avoid": ["element 1", "element 2"]
+}
+```
+
+Copy this as your base. Swap values. Ship videos.
+
+### Step 3: Worked Example — Same Scaffold, Different Scene
+
+Say you want to pivot the earlier Tokyo skateboarder into something completely different — a traditional tea ceremony in Kyoto, shot in a documentary style.
+
+```json
+{
+  "model": "Seedance 2.0",
+  "scene": {
+    "subject": {
+      "description": "an elderly tea master",
+      "appearance": "indigo kimono, silver hair tied back, calm expression"
+    },
+    "action": "slowly whisking matcha in a ceramic bowl with deliberate, practiced motion",
+    "environment": {
+      "location": "tatami-floored tea room in Kyoto",
+      "time_of_day": "late afternoon",
+      "lighting": "warm diffused light filtering through shoji screens",
+      "background_elements": ["hanging scroll", "single ikebana arrangement", "cast-iron kettle steaming"]
+    },
+    "camera": {
+      "lens": "50mm",
+      "aperture": "f/2.0",
+      "shot_type": "medium close-up",
+      "angle": "eye-level",
+      "movement": "static tripod shot",
+      "focus": "shallow depth of field on the whisk"
+    },
+    "style": "documentary realism",
+    "mood": "meditative, reverent"
+  },
+  "audio_track": [
+    {"time": 0.0, "type": "ambient", "content": "quiet room tone"},
+    {"time": 0.0, "type": "sfx", "content": "bamboo whisk against ceramic"},
+    {"time": 2.5, "type": "sfx", "content": "distant temple bell"},
+    {"time": 5.0, "type": "sfx", "content": "kettle softly steaming"}
+  ],
+  "output": {
+    "duration_seconds": 10,
+    "resolution": "1080p",
+    "aspect_ratio": "16:9"
+  },
+  "avoid": ["modern objects", "fast cuts", "harsh shadows"]
+}
+```
+
+Same skeleton. Entirely different film.
+
+### Step 4: Iterate Surgically
+
+This is where JSON pays off. Don't like the lighting? Change the lighting field only. Want to test a wider lens? Adjust camera.lens. Everything else stays locked. Compare that to rewriting a paragraph and watching five other things drift unpredictably.
+
+## Advanced Seedance 2.0 Patterns
+
+### Multi-Shot Sequences
+
+Seedance 2.0 handles multi-shot payloads in a single generation. Structure them as an array:
+
+```json
+{
+  "model": "Seedance 2.0",
+  "shots": [
+    {
+      "shot_id": 1,
+      "duration": 4,
+      "description": "Wide establishing shot of a coastal cliff at dawn",
+      "camera": {"lens": "14mm", "movement": "slow aerial push-in"},
+      "character_ref": "character_01"
+    },
+    {
+      "shot_id": 2,
+      "duration": 5,
+      "description": "Medium shot of the same character looking out to sea, wind in her hair",
+      "camera": {"lens": "85mm", "movement": "slight handheld drift"},
+      "character_ref": "character_01"
+    },
+    {
+      "shot_id": 3,
+      "duration": 6,
+      "description": "Close-up on her hands gripping a letter, fingers trembling",
+      "camera": {"lens": "100mm macro", "movement": "static"},
+      "character_ref": "character_01"
+    }
+  ],
+  "character_library": {
+    "character_01": {
+      "appearance": "woman in her late 20s, auburn hair, cream wool sweater, weathered silver ring",
+      "maintain_consistency": true
+    }
+  },
+  "continuity": {
+    "lighting": "cool dawn, soft overcast",
+    "color_grade": "muted teal and warm skin tones",
+    "audio_continuity": true
+  }
+}
+```
+
+The character_library block is what keeps her face, hair, and sweater identical across all three shots — exploiting Seedance 2.0's consistency engine directly.
+
+### Reference-Driven Generation
+
+When you're supplying images, video, or audio as references, tell the model what each one is for:
+
+```json
+{
+  "model": "Seedance 2.0",
+  "references": {
+    "character_image": {"role": "subject appearance", "apply_to": "all shots"},
+    "motion_video": {"role": "camera movement reference", "apply_to": "shot 2 only"},
+    "audio_sample": {"role": "voice timbre for dialogue", "apply_to": "full sequence"}
+  },
+  "prompt": "A martial artist rehearsing a slow kata in a bamboo forest at dawn."
+}
+```
+
+### Physics-Aware Actions
+
+Seedance 2.0 is strong on physics. Lean into that with explicit physics fields:
+
+```json
+{
+  "action": "glass shattering on stone floor",
+  "physics": {
+    "gravity": "realistic",
+    "fragmentation": "radial scatter pattern",
+    "debris_count": "medium",
+    "sound_sync": true
+  },
+  "slow_motion": {
+    "enabled": true,
+    "factor": 0.25,
+    "target_moment": "impact"
+  }
+}
+```
+
+## Practical Tips for Cleaner Output
+
+- **Prioritize what matters.** Don't stuff every possible field. If lighting isn't critical, leave it loose and let the model interpret. Over-specification can box the model into awkward compromises.
+- **One idea per key.** Writing "lighting": "warm sunset with cold blue shadows and dramatic fog" mashes three concepts into one field. Split them: key_light, fill_light, atmosphere.
+- **Save your templates.** Once you dial in a look — say, a noir detective style — keep that JSON as a reusable preset.
+- **Use avoid actively.** Seedance 2.0 responds well to exclusion lists. If you keep getting extra limbs, distorted text, or weird lens flare, name them in avoid.
+- **Match your duration to your action.** A complex multi-beat action in 4 seconds will feel rushed. A simple static scene stretched to 15 seconds will feel empty.
+- **Test small, then scale.** Generate a 4-second version first to validate the look. Once the core scene works, extend to full length.
+
+## Wrapping Up
+
+JSON prompting isn't a gimmick — it's what separates hobbyist output from production-grade video. Paragraph prompts leave too much to chance; structured prompts hand the model a shot list. Seedance 2.0 is built for this workflow.
+이 구조 가이드를 읽고 난 오퍼스 4.7이, 방금 준 누잇 브리프에 맞춘 프롬프트 3개를 위 규격대로 반환합니다. 다음 Step부터는 그 반환물을 각각 힉스필드에 붙여 넣기만 하면 됩니다.
+
+Step 2: 힉스필드에서 아바타 만들기
+모델 아바타 프롬프트
+오퍼스 4.7이 만들어 준 아바타 프롬프트를 그대로 복사해 둡니다. 누잇 광고에서는 파리지앵 감성의 30대 여성 한 명을 모든 씬에 일관되게 등장시켜야 하기 때문에, 얼굴, 머리, 체형, 낮/밤 의상, 메이크업, 에너지, 일관성 지시까지 하나의 character_reference 오브젝트 안에 묶어 둡니다.
+
+nuit-character-reference.json
+복사
+{
+  "character_reference": {
+    "id": "nuit_female_lead",
+    "nationality": "French (Parisian)",
+    "age_range": "early-to-mid 30s",
+    "face": {
+      "shape": "soft oval with defined jawline",
+      "skin": "fair porcelain with natural warmth, subtle freckles across nose bridge",
+      "eyes": "deep hazel, almond-shaped, slightly downturned, introspective",
+      "eyebrows": "natural, softly arched, un-groomed elegance",
+      "lips": "medium fullness, natural rose tone, no heavy lipstick",
+      "cheekbones": "high, sculpted but soft",
+      "expression_default": "quiet, unreadable, interior"
+    },
+    "hair": {
+      "color": "dark chestnut brown with subtle warm highlights",
+      "length": "collarbone length",
+      "style": "effortless, slightly tousled, middle part, natural texture",
+      "finish": "matte, not glossy"
+    },
+    "body": {
+      "build": "slender, elongated neck, delicate collarbone prominent",
+      "posture": "composed, unhurried, confident but not performative"
+    },
+    "wardrobe": {
+      "daytime": "charcoal gray tailored wool coat, cream silk blouse, black cigarette trousers, black leather pumps",
+      "nighttime": "ivory silk slip dress, bare feet, no jewelry except a thin gold chain"
+    },
+    "makeup": "minimal, skin-first, slight mascara, bare lips — Parisian no-makeup aesthetic",
+    "energy": "self-contained, private, quietly sensual without performing for anyone",
+    "consistency_note": "Same face, same hair, same woman across all four scenes. No identity drift."
+  }
+}
+이 프롬프트는 Step 2의 힉스필드 Create Avatar 단계에서 그대로 붙여 넣습니다. consistency_note 필드가 핵심인데, 영상 모델이 여러 컷에서 얼굴을 헷갈리지 않게 잡아 주는 역할을 합니다.
+
+Marketing Studio로 이동
+힉스필드에 접속하고 상단의 Marketing Studio를 클릭합니다. 여기는 광고 영상 제작용으로 프리셋이 최적화되어 있는 공간입니다.
+
+좌측 패널에서 Avatar를 선택합니다. 이미 만들어져 있는 40여 개의 기본 아바타 중에서 고르거나, 이번처럼 향수 브랜드 컨셉에 맞춘 커스텀 아바타가 필요하면 Create Avatar를 누릅니다.
+
+Create Avatar → Generate
+Create Avatar 창이 뜨면 방금 복사한 아바타 프롬프트를 붙여 넣고 Generate를 누릅니다. 몇 초 안에 아바타 후보가 여러 장 생성됩니다.
+
+마음에 드는 이미지를 골라 저장합니다. 저장한 아바타는 내 아바타 목록에 바로 추가되기 때문에, 뒤 단계의 영상 생성에서 바로 불러올 수 있습니다.
+
+💡
+아바타 저장 팁
+한 번에 여러 장 뽑아두고 3명 정도를 저장해 두면, 나중에 영상 퀄리티가 애매한 장면에서 다른 아바타로 갈아 끼우기 쉽습니다.
+
+Step 3: 제품 샷 만들기
+제품 샷 프롬프트
+오퍼스 4.7에서 받은 제품 샷 프롬프트를 복사해 둡니다. 누잇은 '밤에, 혼자서만 꺼내는 향수'라는 컨셉이라 병도 그 무드를 그대로 따라갑니다. 빛을 튕기지 않고 빨아들이는 스모크 블루-블랙 글래스, 각인된 워드마크, 낮게 속삭이는 이탤릭 서브카피까지 한 번에 잡아 두는 구조입니다.
+
+nuit-product-reference.json
+복사
+{
+  "product_reference": {
+    "id": "nuit_perfume_bottle",
+    "brand": "NUIT",
+    "concept": "a perfume worn only at night, only for oneself",
+    "bottle": {
+      "shape": "tall rectangular flacon, softly rounded shoulders, minimalist silhouette",
+      "height_ratio": "slim and elongated, roughly 3:1 height-to-width",
+      "material": "heavy smoked glass, deep midnight blue-black, semi-translucent",
+      "glass_finish": "hand-polished, catches light along one vertical edge",
+      "liquid": "dark amber-gold, visible faintly through the smoked glass",
+      "cap": "solid matte black metal, weighted, architectural cylinder",
+      "label": {
+        "style": "no front label — only deep-embossed wordmark directly into glass",
+        "wordmark": "NUIT",
+        "typography": "thin serif, all caps, wide letter-spacing",
+        "finish": "subtle, visible only when light crosses it"
+      },
+      "secondary_text": {
+        "position": "lower front, very small",
+        "text": "pour moi seule",
+        "typography": "italic serif, almost whispered"
+      }
+    },
+    "mood_signature": "silent luxury, nocturnal, private, not display-oriented",
+    "light_behavior": "absorbs light rather than reflects it; one soft highlight along the edge is enough",
+    "consistency_note": "Identical bottle in every shot it appears. No design variation."
+  }
+}
