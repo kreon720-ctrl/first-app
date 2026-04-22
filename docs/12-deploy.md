@@ -15,7 +15,7 @@
 TEAM WORKS는 **frontend**(React 클라이언트)와 **backend**(Next.js API 서버) 두 개의 독립적인 Next.js 앱으로 구성됩니다. Vercel에 각각 별도 프로젝트로 배포합니다.
 
 ```
-GitHub: github.com/kreon720-ctrl/first-app
+GitHub: github.com/kreon720-ctrl/team-works
   ├── backend/   → Vercel 프로젝트 A (API 서버, Next.js 16.2.2)
   └── frontend/  → Vercel 프로젝트 B (React 클라이언트, Next.js 16.2.3)
 ```
@@ -103,7 +103,7 @@ psql "postgresql://user:password@host/dbname?sslmode=require" -f database/schema
 ### 2-1. Vercel 프로젝트 생성
 
 1. [https://vercel.com/new](https://vercel.com/new) 접속
-2. **Import Git Repository** → `kreon720-ctrl/first-app` 선택
+2. **Import Git Repository** → `kreon720-ctrl/team-works` 선택
 3. **Configure Project** 화면에서:
    - **Project Name**: `teamworks-backend` (원하는 이름)
    - **Root Directory**: `backend` 입력 후 확인 (**중요!**)
@@ -150,7 +150,7 @@ curl https://teamworks-backend.vercel.app/api/teams/public
 ### 3-1. Vercel 프로젝트 생성
 
 1. [https://vercel.com/new](https://vercel.com/new) 접속
-2. **Import Git Repository** → `kreon720-ctrl/first-app` 선택
+2. **Import Git Repository** → `kreon720-ctrl/team-works` 선택
 3. **Configure Project** 화면에서:
    - **Project Name**: `teamworks-frontend` (원하는 이름)
    - **Root Directory**: `frontend` 입력 후 확인 (**중요!**)

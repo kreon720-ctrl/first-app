@@ -2036,7 +2036,7 @@ function handleApiError(status: number, error: any) {
 #### 1. 저장소 클론 및 설정
 
 ```bash
-cd C:\_vibe\first-app\backend
+cd C:\_vibe\team-works\backend
 
 # 의존성 설치
 npm install

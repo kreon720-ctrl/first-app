@@ -139,7 +139,7 @@ psql -U teamworks -d teamworks_db -h localhost -c "SELECT version();"
 
 ```bash
 cd /opt
-sudo git clone https://github.com/kreon720-ctrl/first-app.git teamworks
+sudo git clone https://github.com/kreon720-ctrl/team-works.git teamworks
 sudo chown -R $USER:$USER /opt/teamworks
 cd /opt/teamworks
 ```
