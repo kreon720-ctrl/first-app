@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Button } from '@/components/common/Button';
 import { AIAssistantButton } from '@/components/common/AIAssistantButton';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
-import { TeamWorkIcon } from '@/components/common/TeamWorkIcon';
 
 interface TeamPageHeaderProps {
   teamName: string;
@@ -45,7 +44,6 @@ export function TeamPageHeader({
           <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">{teamName}</h1>
         </div>
         <Link href="/" className="absolute left-1/2 -translate-x-1/2 select-none flex items-center gap-2 cursor-pointer">
-          <TeamWorkIcon className="w-[46px] h-[46px] text-gray-500 dark:text-[#FFB800]" />
           <span className="text-xl font-bold tracking-widest text-gray-900 dark:text-dark-text">TEAM WORKS</span>
         </Link>
         <div className="flex items-center gap-2">
