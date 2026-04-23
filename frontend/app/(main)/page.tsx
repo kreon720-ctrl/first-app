@@ -7,6 +7,8 @@ import { useMyTasks } from '@/hooks/query/useMyTasks';
 import { useAuthStore } from '@/store/authStore';
 import { TeamList } from '@/components/team/TeamList';
 import { Button } from '@/components/common/Button';
+import { AIAssistantButton } from '@/components/common/AIAssistantButton';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 export default function HomePage() {
   const router = useRouter();
@@ -67,14 +69,15 @@ export default function HomePage() {
   const teams = data?.teams || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-base">
       {/* Header */}
-      <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30">
+      <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold text-gray-900 truncate">TEAM WORKS</h1>
+          <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">TEAM WORKS</h1>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-normal text-gray-600">{currentUser?.name}</span>
+          <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">{currentUser?.name}</span>
+          <AIAssistantButton />
           <Button
             type="button"
             variant="ghost"
@@ -83,12 +86,13 @@ export default function HomePage() {
           >
             로그아웃
           </Button>
+          <ThemeToggle />
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">내 팀 목록</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4 dark:text-dark-text">내 팀 목록</h2>
 
         {/* Toast 메시지 */}
         {toast && (

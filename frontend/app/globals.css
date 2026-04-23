@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4: class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ================================================
    Tailwind v4 Theme Tokens
    @theme 블록에 정의된 변수만 유틸리티 클래스로 생성됨
@@ -41,17 +44,32 @@
   --color-info-50:  #EFF6FF;
   --color-info-500: #3B82F6;
   --color-info-700: #1D4ED8;
+
+  /* === Dark Mode Surface === */
+  --color-dark-base:            #141313;
+  --color-dark-surface:         #201f1f;
+  --color-dark-elevated:        #2b2a2a;
+  --color-dark-highest:         #353434;
+
+  /* === Dark Mode Text === */
+  --color-dark-text:            #e5e2e1;
+  --color-dark-text-muted:      #c4c7c7;
+  --color-dark-text-disabled:   #8e9192;
+
+  /* === Dark Mode Border === */
+  --color-dark-border:          #444748;
+
+  /* === Dark Mode Accent (Amber Gold) === */
+  --color-dark-accent:          #ffd795;
+  --color-dark-accent-strong:   #fbb400;
+
+  /* === Dark Mode Error === */
+  --color-dark-error:           #ffb4ab;
+  --color-dark-error-container: #93000a;
 }
 
 body {
   background: #ffffff;
   color: #171717;
   font-family: Arial, Helvetica, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #0a0a0a;
-    color: #ededed;
-  }
 }

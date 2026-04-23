@@ -50,7 +50,7 @@ export default function MainLayout({
   // Show loading spinner until client is mounted
   if (!isClient) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-dark-base">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
       </div>
     );
@@ -60,14 +60,14 @@ export default function MainLayout({
 
   if (!hasToken && !isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-dark-base">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-base">
       {children}
     </div>
   );

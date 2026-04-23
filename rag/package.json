@@ -1,0 +1,15 @@
+{
+  "name": "teamworks-rag",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TEAM WORKS Gemma 2 9B chatbot with RAG over ollama/*.md",
+  "type": "module",
+  "scripts": {
+    "index": "node index.js",
+    "server": "node server.js",
+    "ask": "node ask.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}

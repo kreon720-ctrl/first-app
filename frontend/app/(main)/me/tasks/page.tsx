@@ -7,6 +7,8 @@ import { useUpdateJoinRequestFromTasks } from '@/hooks/query/useUpdateJoinReques
 import { useAuthStore } from '@/store/authStore';
 import { JoinRequestActions } from '@/components/team/JoinRequestActions';
 import { Button } from '@/components/common/Button';
+import { AIAssistantButton } from '@/components/common/AIAssistantButton';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 function MyTasksContent() {
   const router = useRouter();
@@ -55,23 +57,24 @@ function MyTasksContent() {
   const filterTeamName = filterTeamId ? tasks[0]?.teamName : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-base">
       {/* Header */}
-      <header className="flex items-center h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30">
+      <header className="flex items-center h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
         <button
           type="button"
           onClick={handleNavigateHome}
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150 mr-2"
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150 mr-2 dark:hover:bg-dark-elevated"
           aria-label="홈"
         >
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-gray-700 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-lg font-semibold text-gray-900">나의 할 일</h1>
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-dark-text">나의 할 일</h1>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
-          <span className="text-sm font-normal text-gray-600">{currentUser?.name || '사용자'}</span>
+          <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">{currentUser?.name || '사용자'}</span>
+          <AIAssistantButton />
           <Button
             type="button"
             variant="ghost"
@@ -80,6 +83,7 @@ function MyTasksContent() {
           >
             로그아웃
           </Button>
+          <ThemeToggle />
         </div>
       </header>
 

@@ -3,6 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/common/Button';
+import { AIAssistantButton } from '@/components/common/AIAssistantButton';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 interface TeamPageHeaderProps {
   teamName: string;
@@ -27,29 +29,29 @@ export function TeamPageHeader({
 }: TeamPageHeaderProps) {
   if (isDesktop) {
     return (
-      <header className="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 sticky top-0 z-30">
+      <header className="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onNavigateHome}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
             aria-label="홈"
           >
-            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-700 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </button>
-          <h1 className="text-lg font-semibold text-gray-900 truncate">{teamName}</h1>
+          <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">{teamName}</h1>
         </div>
         <Link href="/" className="absolute left-1/2 -translate-x-1/2 select-none flex items-center gap-2 cursor-pointer">
           <img src="/partner.png" alt="partner" className="w-[50px] h-[50px] opacity-70" />
-          <span className="text-xl font-bold tracking-widest text-gray-900">TEAM WORKS</span>
+          <span className="text-xl font-bold tracking-widest text-gray-900 dark:text-dark-text">TEAM WORKS</span>
         </Link>
         <div className="flex items-center gap-2">
           <div className="relative">
             <div className="flex items-center gap-1.5">
               <img src="/user.png" alt="user" className="w-5 h-5 opacity-50" />
-              <span className="text-sm font-normal text-gray-600">{currentUserName}</span>
+              <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">{currentUserName}</span>
             </div>
             {isLeader && pendingCount > 0 && (
               <button
@@ -62,6 +64,7 @@ export function TeamPageHeader({
               </button>
             )}
           </div>
+          <AIAssistantButton />
           <Button
             type="button"
             variant="ghost"
@@ -75,6 +78,7 @@ export function TeamPageHeader({
               로그아웃
             </span>
           </Button>
+          <ThemeToggle />
         </div>
       </header>
     );
@@ -82,29 +86,32 @@ export function TeamPageHeader({
 
   // Mobile header
   return (
-    <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30">
+    <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={onNavigateHome}
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
           aria-label="홈"
         >
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-gray-700 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-lg font-semibold text-gray-900 truncate">{teamName}</h1>
+        <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">{teamName}</h1>
       </div>
-      <button
-        type="button"
-        className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-150"
-        aria-label="메뉴"
-      >
-        <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-        </svg>
-      </button>
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <button
+          type="button"
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
+          aria-label="메뉴"
+        >
+          <svg className="w-6 h-6 text-gray-700 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+          </svg>
+        </button>
+      </div>
     </header>
   );
 }
