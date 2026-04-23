@@ -5,5 +5,5 @@ export const metadata: Metadata = {
 };
 
 export default function AIAssistantLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-gray-50">{children}</div>;
+  return <div className="min-h-screen bg-gray-50 dark:bg-dark-base">{children}</div>;
 }
