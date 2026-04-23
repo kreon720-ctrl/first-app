@@ -42,8 +42,8 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
   const roleLabel = team.myRole;
   const roleBadgeClass =
     team.myRole === 'LEADER'
-      ? 'bg-amber-100 text-amber-800'
-      : 'bg-indigo-100 text-indigo-800';
+      ? 'bg-amber-100 text-amber-800 dark:bg-white dark:text-amber-800'
+      : 'bg-indigo-100 text-indigo-800 dark:bg-white dark:text-indigo-800';
 
   const handleUpdate = () => {
     if (!editName.trim()) return;
@@ -123,7 +123,7 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
               </span>
               <span className="text-xs font-normal text-gray-500 dark:text-dark-text-muted">{formattedDate}</span>
               {team.isPublic && (
-                <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800">
+                <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800 dark:bg-white dark:text-green-800">
                   공개
                 </span>
               )}
