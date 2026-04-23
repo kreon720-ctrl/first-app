@@ -1011,26 +1011,29 @@ className="w-full border border-gray-300 rounded-xl bg-white px-4 py-2.5
 
 #### Button
 
-**Primary (다크 모드)**
+**Primary (다크 모드)** — 앰버 골드 채움 + 어두운 텍스트 (이미지 참조: "Deploy Now" 스타일)
 
 ```
-기본: "dark:bg-dark-accent-strong dark:text-gray-900"
+기본:  "dark:bg-dark-accent-strong dark:text-gray-900 dark:shadow-none"
 hover: "dark:hover:brightness-110"
-비활성: "dark:disabled:bg-dark-surface dark:disabled:text-dark-text-disabled"
+active:"dark:active:brightness-95"
+비활성:"dark:disabled:bg-dark-elevated dark:disabled:text-dark-text-disabled"
 ```
 
-**Secondary (다크 모드)**
+**Secondary (다크 모드)** — 투명 배경 + 흰색 테두리 + 흰색 텍스트 Outline 스타일 (이미지 참조: "Request Executive Briefing" 스타일)
 
 ```
-기본: "dark:bg-dark-surface dark:border-dark-accent dark:text-dark-accent"
-hover: "dark:hover:bg-dark-elevated"
+기본:  "dark:bg-transparent dark:border-dark-text dark:text-dark-text dark:shadow-none"
+hover: "dark:hover:bg-dark-surface dark:hover:border-dark-text-muted"
+active:"dark:active:bg-dark-elevated"
 ```
 
 **Ghost (다크 모드)**
 
 ```
 기본: "dark:text-dark-text-muted"
-hover: "dark:hover:bg-dark-elevated dark:hover:text-dark-text"
+hover: "dark:hover:bg-dark-surface dark:hover:text-dark-text"
+active:"dark:active:bg-dark-elevated"
 ```
 
 **Danger (다크 모드)**
