@@ -139,6 +139,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
     return (
       <div className="h-[calc(100vh-4rem)] flex flex-col bg-white dark:bg-dark-base">
         <TeamPageHeader
+          teamId={teamId}
           teamName={team.name}
           currentUserName={currentUser?.name}
           isLeader={isLeader}
@@ -225,6 +226,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-base flex flex-col">
       <TeamPageHeader
+        teamId={teamId}
         teamName={team.name}
         currentUserName={currentUser?.name}
         isLeader={isLeader}

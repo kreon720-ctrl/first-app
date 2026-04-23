@@ -4,16 +4,19 @@ import React from 'react';
 
 interface AIAssistantButtonProps {
   className?: string;
+  teamId: string;
+  teamName: string;
 }
 
-export function AIAssistantButton({ className = '' }: AIAssistantButtonProps) {
+export function AIAssistantButton({ className = '', teamId, teamName }: AIAssistantButtonProps) {
   const openAssistant = () => {
     const width = 480;
     const height = 720;
     const left = Math.max(0, window.screen.availWidth - width - 40);
     const top = 80;
     const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no`;
-    window.open('/ai-assistant', 'teamworks-ai-assistant', features);
+    const url = `/ai-assistant?teamId=${encodeURIComponent(teamId)}&teamName=${encodeURIComponent(teamName)}`;
+    window.open(url, 'teamworks-ai-assistant', features);
   };
 
   return (
@@ -21,7 +24,7 @@ export function AIAssistantButton({ className = '' }: AIAssistantButtonProps) {
       type="button"
       onClick={openAssistant}
       aria-label="AI 버틀러"
-      title="AI 버틀러 찰떡 — TEAM WORKS 사용법 물어보기"
+      title={`AI 버틀러 찰떡 — ${teamName} 팀 컨텍스트`}
       className={`inline-flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 dark:text-dark-text-muted dark:hover:bg-dark-surface dark:hover:text-dark-text dark:active:bg-dark-elevated transition-colors duration-150 cursor-pointer ${className}`}
     >
       <svg

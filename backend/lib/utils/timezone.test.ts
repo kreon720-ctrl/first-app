@@ -166,46 +166,53 @@ describe('BE-04: Timezone Utilities (KST/UTC)', () => {
     })
   })
 
-  describe('getKstDateRange - month view', () => {
-    it('should return correct range for mid-month date', () => {
+  describe('getKstDateRange - month view (6-week calendar grid)', () => {
+    it('should cover the 6-week grid for April 2026 (starts Wed)', () => {
+      // April 1, 2026 is Wednesday → grid starts Sunday March 29, 2026
+      // End = March 29 + 42 days = May 10, 2026 (midnight KST)
       const result = getKstDateRange('month', '2026-04-15')
 
-      // April 1, 2026 00:00 KST = March 31, 2026 15:00 UTC
-      expect(result.start.toISOString()).toBe('2026-03-31T15:00:00.000Z')
-      // May 1, 2026 00:00 KST = April 30, 2026 15:00 UTC
-      expect(result.end.toISOString()).toBe('2026-04-30T15:00:00.000Z')
+      // Sunday March 29 00:00 KST = March 28, 2026 15:00 UTC
+      expect(result.start.toISOString()).toBe('2026-03-28T15:00:00.000Z')
+      // May 10, 2026 00:00 KST = May 9, 2026 15:00 UTC
+      expect(result.end.toISOString()).toBe('2026-05-09T15:00:00.000Z')
     })
 
-    it('should handle January (first month)', () => {
+    it('should handle January 2026 (starts Thu → grid starts prev Sunday Dec 28)', () => {
       const result = getKstDateRange('month', '2026-01-15')
 
-      // January 1, 2026 00:00 KST = December 31, 2025 15:00 UTC
-      expect(result.start.toISOString()).toBe('2025-12-31T15:00:00.000Z')
-      // February 1, 2026 00:00 KST = January 31, 2026 15:00 UTC
-      expect(result.end.toISOString()).toBe('2026-01-31T15:00:00.000Z')
+      // Sunday Dec 28, 2025 00:00 KST = Dec 27, 2025 15:00 UTC
+      expect(result.start.toISOString()).toBe('2025-12-27T15:00:00.000Z')
+      // Dec 28 + 42 days = Feb 8, 2026 00:00 KST = Feb 7, 2026 15:00 UTC
+      expect(result.end.toISOString()).toBe('2026-02-07T15:00:00.000Z')
     })
 
-    it('should handle December (last month)', () => {
+    it('should handle December 2026 (starts Tue → grid starts Sun Nov 29)', () => {
       const result = getKstDateRange('month', '2026-12-25')
 
-      expect(result.start.toISOString()).toBe('2026-11-30T15:00:00.000Z')
-      expect(result.end.toISOString()).toBe('2026-12-31T15:00:00.000Z')
+      // Sunday Nov 29, 2026 00:00 KST = Nov 28, 2026 15:00 UTC
+      expect(result.start.toISOString()).toBe('2026-11-28T15:00:00.000Z')
+      // Nov 29 + 42 days = Jan 10, 2027 00:00 KST = Jan 9, 2027 15:00 UTC
+      expect(result.end.toISOString()).toBe('2027-01-09T15:00:00.000Z')
     })
 
-    it('should handle leap year February', () => {
+    it('should handle leap-year February 2024 (starts Thu → grid starts Sun Jan 28)', () => {
       const result = getKstDateRange('month', '2024-02-15')
 
-      // February has 29 days in 2024
-      expect(result.start.toISOString()).toBe('2024-01-31T15:00:00.000Z')
-      expect(result.end.toISOString()).toBe('2024-02-29T15:00:00.000Z')
+      // Sunday Jan 28, 2024 00:00 KST = Jan 27, 2024 15:00 UTC
+      expect(result.start.toISOString()).toBe('2024-01-27T15:00:00.000Z')
+      // Jan 28 + 42 days = Mar 10, 2024 00:00 KST = Mar 9, 2024 15:00 UTC
+      expect(result.end.toISOString()).toBe('2024-03-09T15:00:00.000Z')
     })
 
-    it('should handle non-leap year February', () => {
+    it('should handle February 2026 (starts Sun → grid starts on the 1st)', () => {
       const result = getKstDateRange('month', '2026-02-15')
 
-      // February has 28 days in 2026
+      // Feb 1, 2026 is Sunday → grid starts on the 1st
+      // Feb 1, 2026 00:00 KST = Jan 31, 2026 15:00 UTC
       expect(result.start.toISOString()).toBe('2026-01-31T15:00:00.000Z')
-      expect(result.end.toISOString()).toBe('2026-02-28T15:00:00.000Z')
+      // Feb 1 + 42 days = Mar 15, 2026 00:00 KST = Mar 14, 2026 15:00 UTC
+      expect(result.end.toISOString()).toBe('2026-03-14T15:00:00.000Z')
     })
   })
 

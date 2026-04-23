@@ -281,9 +281,135 @@ curl -X POST http://127.0.0.1:8787/chat \
 
 ---
 
-## 10. 참고
+## 10. 원격 AI 모델 서버로 분리하는 경우
+
+로컬 PC의 Ollama 를 **GPU 전용 서버**나 **사내 공유 추론 서버**로 분리할 때의 조치와 주의점. RAG 파이프라인은 Ollama 에 두 가지 작업(chat + embed)을 맡기므로 Agent 단독 경로보다 고려할 포인트가 조금 더 있다.
+
+동일 주제의 Agent 경로 버전은 [`docs/18-mcp-server-and-agent-guide.md` §12](./18-mcp-server-and-agent-guide.md) 참고.
+
+### 10.1 RAG 가 Ollama 에 하는 두 가지 호출
+
+1. **인덱싱 — `/api/embed` (배치)** — `rag/index.js` 가 모든 문서 청크를 한 번에 임베딩해 `chunks.json` 에 저장. 수백 회 호출. 오프라인 1회성.
+2. **질의 — `/api/embed` 1회 + `/api/chat` 1회** — 질문을 nomic-embed-text 로 임베딩 → retriever → gemma2:9b 로 답변.
+
+→ **두 모델 모두 원격 서버에 설치돼 있어야** 한다. 어느 하나만 빠져도 전체 경로가 죽는다.
+
+### 10.2 영향 파일: 단 한 곳 — `rag/config.js`
+
+```js
+export const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
+```
+
+모든 Ollama 호출이 `rag/ollamaClient.js` 의 `postJson` 한 함수를 거치므로, `OLLAMA_HOST` 한 변수만 바꾸면 기본 동작은 그대로다.
+
+### 10.3 배치 방식 3가지
+
+| 방식 | 설명 | 장점 | 단점 |
+|------|------|------|------|
+| **전체 원격** | embed·chat 모두 원격 | 로컬 리소스 0, GPU 집중 | 인덱싱 배치가 네트워크 bound |
+| **분할 배치** | embed 로컬, chat 원격 | 질의 지연 일부 절약, 작은 모델은 로컬 유지 | `ollamaClient` 가 호스트 2개를 다뤄야 해 코드 확장 필요 |
+| **전체 로컬** (현재) | 둘 다 로컬 | 네트워크 지연 0 | 개인 PC 사양 한계 |
+
+대부분 **전체 원격**이 단순하고 충분하다. 분할은 `embed` 호출이 초당 수십 회 이상 빈번할 때만 검토.
+
+### 10.4 인덱싱 파일(`chunks.json`) 재사용 가능성
+
+| 상황 | 재인덱싱 필요? |
+|------|---------------|
+| 원격 서버에 **동일 버전** `nomic-embed-text` 설치 | **불필요** — 기존 `chunks.json` 그대로 재사용. 벡터 값은 모델 가중치만 같으면 동일하게 재현된다. |
+| 원격이 다른 버전의 임베딩 모델 사용 | **필요** — 쿼리 임베딩과 저장 임베딩이 다른 분포를 가져 검색 품질이 붕괴한다. |
+| 원격 지연이 커서 미리 만들어두고 싶음 | **선택** — 로컬 Ollama 로 한 번 인덱싱한 후 `chunks.json` 을 원격 환경에 배포. 단 모델이 일치해야 한다. |
+
+### 10.5 `ollamaClient.js` 확장 예시 (인증·타임아웃·모델 상주)
+
+원격 분리 시 최소 수정:
+
+```js
+// rag/ollamaClient.js
+import { OLLAMA_HOST } from "./config.js";
+
+const OLLAMA_AUTH = process.env.OLLAMA_AUTH; // "Bearer xxx" 또는 "Basic base64(u:p)"
+
+async function postJson(pathname, body, timeoutMs = 60_000) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const headers = { "content-type": "application/json" };
+    if (OLLAMA_AUTH) headers.authorization = OLLAMA_AUTH;
+    const res = await fetch(`${OLLAMA_HOST}${pathname}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Ollama ${pathname} ${res.status}: ${text}`);
+    }
+    return res.json();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+// chat 호출에 keep_alive 를 붙여 콜드 스타트 완화
+export async function chat(model, messages, options = {}) {
+  return postJson("/api/chat", {
+    model, messages, stream: false, options, keep_alive: "30m",
+  });
+}
+```
+
+### 10.6 지연 성능 영향
+
+| 구간 | 로컬 | 원격 |
+|------|------|------|
+| 질문 임베딩 | 50~150ms | 100~300ms (네트워크 + 임베딩) |
+| top-k 검색 | <10ms | 동일 — **`chunks.json` 이 RAG 서버 메모리에 있음** |
+| 답변 생성 | 5~15초 | 5~20초 (네트워크 오버헤드 미미) |
+| 인덱싱 (수백 청크) | 30~120초 | 2~10배 느려질 수 있음 |
+
+검색은 로컬 파일 기반이라 영향 없음. 실시간 질의는 차이가 작음. **인덱싱만 체감 느려진다**. 원격에서 인덱싱할 때는 `index.js` 에 동시 호출 수 제한(`p-limit` 등)을 붙여 원격 서버 GPU 큐가 막히지 않도록 관리.
+
+### 10.7 RAG 서버 자체는 어디에 두나
+
+- **계속 로컬** — 가장 단순. RAG 서버는 Ollama 외엔 `chunks.json`(디스크)와 프론트 프록시 말고는 의존이 없다.
+- **RAG 서버도 원격** — 프론트 프록시의 `RAG_SERVER_URL` 만 바꾸면 되지만, `chunks.json` 배포·재인덱싱 플로우가 복잡해진다. 권장하지 않음.
+
+### 10.8 인증·보안
+
+Ollama 는 기본 인증이 없다. 원격 분리 시 **반드시** 다음 중 하나 이상:
+
+- 리버스 프록시(Caddy/nginx)에서 TLS 종료 + Basic Auth 또는 JWT 검증
+- 프라이빗 망(VPN/Tailscale/WireGuard) 배치
+- 방화벽에서 RAG 서버 IP 만 화이트리스트
+
+**인덱싱 중 대량 요청**이 발생하므로 인증 비용을 줄이려면 `OLLAMA_AUTH` 같은 고정 문자열 방식이 편리(요청별 토큰 갱신 불필요). Node `fetch`(Undici)는 keep-alive 로 TCP/TLS 연결을 재사용해준다.
+
+### 10.9 장애 시 거동
+
+- **원격 Ollama 미도달** → `server.js` 의 `/chat` 이 500 응답 → 프론트 프록시(`frontend/app/api/ai-assistant/chat/route.ts`)가 `ECONNREFUSED` / `fetch failed` 를 잡아 "RAG 서버 연결 실패" 안내. 기존 에러 경로를 그대로 재사용.
+- **임베딩만 장애** → 질의는 실패하지만 `chunks.json` 은 안전. 복구 후 즉시 재사용 가능.
+- **인덱싱 중 중단** → `index.js` 는 재진입 안전(전체 재생성). 재실행만 하면 됨.
+
+### 10.10 마이그레이션 체크리스트
+
+- [ ] 원격 서버에 `gemma2:9b` 와 `nomic-embed-text` **둘 다** pull
+- [ ] `ollama serve` 가 외부 바인딩(`0.0.0.0:11434` 또는 리버스 프록시 뒤)
+- [ ] 리버스 프록시/VPN/방화벽 중 하나로 인증 계층 구성
+- [ ] `rag/` 의 `OLLAMA_HOST` 환경변수 변경
+- [ ] 인증 필요 시 `rag/ollamaClient.js` 에 `OLLAMA_AUTH`·타임아웃·`keep_alive` 추가
+- [ ] 임베딩 모델 버전이 동일하면 `chunks.json` 재사용, 다르면 재인덱싱
+- [ ] CLI 검증 — `node ask.js "업무보고 어떻게 보내?"` 통과 확인
+- [ ] 프론트 팝업에서 실제 질문 1건 이상 성공 확인
+- [ ] Agent 쪽도 같이 쓰는 Ollama 라면 [`agent/` 의 `OLLAMA_HOST` 동기화](./18-mcp-server-and-agent-guide.md)
+
+---
+
+## 11. 참고
 
 - [docs/15-ai-review.md](./15-ai-review.md) — Modelfile 단독 방식의 한계 (환각 발생 이유)
 - [docs/16-rag-plan.md](./16-rag-plan.md) — 초기 RAG 설계안
+- [docs/18-mcp-server-and-agent-guide.md](./18-mcp-server-and-agent-guide.md) — Agent 경로 구현·운영 가이드 (원격 Ollama §12)
 - [rag/README.md](../rag/README.md) — 엔진 단독 사용 설명
 - nomic-embed-text task prefixes: https://huggingface.co/nomic-ai/nomic-embed-text-v1.5

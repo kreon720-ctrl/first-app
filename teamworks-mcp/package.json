@@ -1,0 +1,14 @@
+{
+  "name": "teamworks-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TEAM WORKS MCP server — exposes team/schedule/postit tools backed by the app's REST API",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  }
+}

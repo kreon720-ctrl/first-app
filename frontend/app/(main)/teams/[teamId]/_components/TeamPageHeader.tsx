@@ -7,6 +7,7 @@ import { AIAssistantButton } from '@/components/common/AIAssistantButton';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 interface TeamPageHeaderProps {
+  teamId: string;
   teamName: string;
   currentUserName: string | undefined;
   isLeader: boolean;
@@ -18,6 +19,7 @@ interface TeamPageHeaderProps {
 }
 
 export function TeamPageHeader({
+  teamId,
   teamName,
   currentUserName,
   isLeader,
@@ -86,7 +88,7 @@ export function TeamPageHeader({
               </button>
             )}
           </div>
-          <AIAssistantButton />
+          <AIAssistantButton teamId={teamId} teamName={teamName} />
           <Button
             type="button"
             variant="ghost"

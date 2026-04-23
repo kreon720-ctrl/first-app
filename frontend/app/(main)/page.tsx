@@ -6,8 +6,9 @@ import { useMyTeams, useUpdateTeam, useDeleteTeam } from '@/hooks/query/useTeams
 import { useMyTasks } from '@/hooks/query/useMyTasks';
 import { useAuthStore } from '@/store/authStore';
 import { TeamList } from '@/components/team/TeamList';
+import { TeamCreateForm } from '@/components/team/TeamCreateForm';
+import { TeamExplorePanel } from '@/components/team/TeamExplorePanel';
 import { Button } from '@/components/common/Button';
-import { AIAssistantButton } from '@/components/common/AIAssistantButton';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 export default function HomePage() {
@@ -20,6 +21,8 @@ export default function HomePage() {
   const logout = useAuthStore((state) => state.logout);
 
   const [toast, setToast] = useState<string | null>(null);
+  const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
+  const [showExploreTeamModal, setShowExploreTeamModal] = useState(false);
 
   // 팀별 승인 대기 건수 계산
   const pendingCountByTeam: Record<string, number> = {};
@@ -95,7 +98,6 @@ export default function HomePage() {
             <img src="/user.png" alt="user" className="w-5 h-5 opacity-50 dark:invert dark:opacity-75" />
             <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">{currentUser?.name}</span>
           </div>
-          <AIAssistantButton />
           <Button
             type="button"
             variant="ghost"
@@ -167,7 +169,7 @@ export default function HomePage() {
             type="button"
             variant="primary"
             size="md"
-            onClick={() => router.push('/teams/new')}
+            onClick={() => setShowCreateTeamModal(true)}
             className="w-32"
           >
             + 팀 생성
@@ -176,7 +178,7 @@ export default function HomePage() {
             type="button"
             variant="secondary"
             size="md"
-            onClick={() => router.push('/teams/explore')}
+            onClick={() => setShowExploreTeamModal(true)}
             className="w-32"
           >
             팀 검색
@@ -184,6 +186,56 @@ export default function HomePage() {
         </div>
 
       </main>
+
+      {/* 팀 생성 모달 */}
+      {showCreateTeamModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 dark:bg-black/70 px-4 py-8 overflow-y-auto">
+          <div className="w-full max-w-md bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text">팀 생성</h2>
+              <button
+                type="button"
+                onClick={() => setShowCreateTeamModal(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors duration-150"
+                aria-label="닫기"
+              >
+                <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <TeamCreateForm
+              onSuccess={(teamId) => {
+                setShowCreateTeamModal(false);
+                router.push(`/teams/${teamId}`);
+              }}
+              onCancel={() => setShowCreateTeamModal(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 팀 검색 모달 */}
+      {showExploreTeamModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 dark:bg-black/70 px-4 py-8 overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text">팀 검색</h2>
+              <button
+                type="button"
+                onClick={() => setShowExploreTeamModal(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors duration-150"
+                aria-label="닫기"
+              >
+                <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <TeamExplorePanel onSuccess={() => { refetch(); }} />
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -7,7 +7,14 @@ import { ApiError } from '@/lib/apiClient';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 
-export function TeamCreateForm() {
+interface TeamCreateFormProps {
+  /** Called with the newly created team id. If omitted, the form navigates to the team page itself. */
+  onSuccess?: (teamId: string) => void;
+  /** Optional cancel handler — renders a secondary button next to the submit. */
+  onCancel?: () => void;
+}
+
+export function TeamCreateForm({ onSuccess, onCancel }: TeamCreateFormProps = {}) {
   const router = useRouter();
   const createTeam = useCreateTeam();
 
@@ -44,7 +51,11 @@ export function TeamCreateForm() {
         description: description.trim() || undefined,
         isPublic,
       });
-      router.push(`/teams/${newTeam.id}`);
+      if (onSuccess) {
+        onSuccess(newTeam.id);
+      } else {
+        router.push(`/teams/${newTeam.id}`);
+      }
     } catch (err: unknown) {
       const msg = err instanceof ApiError || err instanceof Error ? err.message : undefined;
       setErrors({ name: msg || '팀 생성 중 오류가 발생했습니다.' });
@@ -146,16 +157,39 @@ export function TeamCreateForm() {
         </div>
       </div>
 
-      <Button
-        type="submit"
-        variant="primary"
-        size="md"
-        fullWidth
-        disabled={!isValid || createTeam.isPending}
-        loading={createTeam.isPending}
-      >
-        {createTeam.isPending ? '생성 중...' : '팀 생성'}
-      </Button>
+      {onCancel ? (
+        <div className="flex justify-center gap-3">
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={!isValid || createTeam.isPending}
+            loading={createTeam.isPending}
+          >
+            {createTeam.isPending ? '생성 중...' : '팀 생성'}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            onClick={onCancel}
+            disabled={createTeam.isPending}
+          >
+            취소
+          </Button>
+        </div>
+      ) : (
+        <Button
+          type="submit"
+          variant="primary"
+          size="md"
+          fullWidth
+          disabled={!isValid || createTeam.isPending}
+          loading={createTeam.isPending}
+        >
+          {createTeam.isPending ? '생성 중...' : '팀 생성'}
+        </Button>
+      )}
     </form>
   );
 }

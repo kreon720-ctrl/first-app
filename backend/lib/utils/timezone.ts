@@ -89,10 +89,11 @@ export type CalendarView = 'month' | 'week' | 'day'
  * @returns Object with start and end Date objects in UTC
  * 
  * @example
- * // Get month range for April 2026
+ * // Get month-grid range for April 2026 (6-week calendar grid, Sunday..Saturday)
+ * // April 1, 2026 is Wednesday → grid starts on Sunday March 29.
  * getKstDateRange('month', '2026-04-15')
- * // Returns: { start: 2026-03-31T15:00:00.000Z, end: 2026-04-30T15:00:00.000Z }
- * 
+ * // Returns: { start: 2026-03-28T15:00:00.000Z, end: 2026-05-09T15:00:00.000Z }
+ *
  * @example
  * // Get week range (Sunday to Saturday) for April 15, 2026
  * getKstDateRange('week', '2026-04-15')
@@ -120,9 +121,13 @@ export function getKstDateRange(
 
   switch (view) {
     case 'month': {
-      // First day of month to first day of next month (KST midnight)
-      const start = kstMidnight(year, month, 1)
-      const end = kstMidnight(year, month + 1, 1)
+      // Month calendar grid: the frontend (CalendarMonthView) renders a fixed
+      // 6-week grid starting on the Sunday on or before the 1st. Return the
+      // same range so schedules on overflow days (prev/next month) appear in
+      // their grid cells.
+      const firstOfMonthDow = new Date(Date.UTC(year, month, 1)).getUTCDay()
+      const start = kstMidnight(year, month, 1 - firstOfMonthDow)
+      const end = new Date(start.getTime() + 42 * 24 * 60 * 60 * 1000)
       return { start, end }
     }
 

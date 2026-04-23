@@ -134,7 +134,7 @@ export function CalendarView({
               <button
                 type="button"
                 onClick={() => navigateDate('prev')}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors duration-150"
+                className="p-2 rounded-lg text-gray-700 dark:text-dark-text-muted hover:bg-gray-100 dark:hover:bg-dark-elevated hover:text-gray-900 dark:hover:text-dark-text transition-colors duration-150"
                 aria-label="이전"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@ export function CalendarView({
               <button
                 type="button"
                 onClick={() => navigateDate('next')}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors duration-150"
+                className="p-2 rounded-lg text-gray-700 dark:text-dark-text-muted hover:bg-gray-100 dark:hover:bg-dark-elevated hover:text-gray-900 dark:hover:text-dark-text transition-colors duration-150"
                 aria-label="다음"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

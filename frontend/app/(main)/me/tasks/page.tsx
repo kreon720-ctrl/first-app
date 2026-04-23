@@ -7,7 +7,6 @@ import { useUpdateJoinRequestFromTasks } from '@/hooks/query/useUpdateJoinReques
 import { useAuthStore } from '@/store/authStore';
 import { JoinRequestActions } from '@/components/team/JoinRequestActions';
 import { Button } from '@/components/common/Button';
-import { AIAssistantButton } from '@/components/common/AIAssistantButton';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 function MyTasksContent() {
@@ -74,7 +73,6 @@ function MyTasksContent() {
         <div className="flex-1" />
         <div className="flex items-center gap-2">
           <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">{currentUser?.name || '사용자'}</span>
-          <AIAssistantButton />
           <Button
             type="button"
             variant="ghost"
