@@ -22,7 +22,7 @@ export function AIAssistantButton({ className = '' }: AIAssistantButtonProps) {
       onClick={openAssistant}
       aria-label="AI 버틀러"
       title="AI 버틀러 찰떡 — TEAM WORKS 사용법 물어보기"
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors duration-150 cursor-pointer ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-3 text-sm font-medium text-[#FFB800] hover:bg-amber-50 hover:text-[#CC9200] active:bg-amber-100 dark:hover:bg-dark-surface dark:hover:text-[#E6A600] transition-colors duration-150 cursor-pointer ${className}`}
     >
       <svg
         className="w-4 h-4"
