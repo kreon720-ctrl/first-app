@@ -17,10 +17,10 @@ export function ChatMessageItem({ message, isLeader = false, rightSlot }: ChatMe
 
   if (isScheduleRequest) {
     return (
-      <div className="w-full bg-teal-50 border border-teal-300 rounded-xl p-3 my-1">
+      <div className="w-full bg-teal-50 border border-teal-300 dark:bg-[rgba(16,185,129,0.15)] dark:border-[rgba(16,185,129,0.40)] rounded-xl p-3 my-1">
         {/* Message header with type badge */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold bg-teal-100 text-teal-700">
+          <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold bg-teal-100 text-teal-700 dark:bg-[rgba(16,185,129,0.20)] dark:text-[#10B981]">
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -30,16 +30,16 @@ export function ChatMessageItem({ message, isLeader = false, rightSlot }: ChatMe
             </svg>
             업무보고
           </span>
-          <span className="text-xs font-semibold text-teal-700">
+          <span className="text-xs font-semibold text-teal-700 dark:text-[#10B981]">
             {message.senderName}
           </span>
-          <span className="text-xs text-teal-600">
+          <span className="text-xs text-teal-600 dark:text-[#10B981]/70">
             {timeString}
           </span>
         </div>
 
         {/* Message content */}
-        <p className="text-sm font-normal text-teal-900 leading-relaxed">
+        <p className="text-sm font-normal text-teal-900 dark:text-[#10B981] leading-relaxed">
           {message.content}
         </p>
       </div>

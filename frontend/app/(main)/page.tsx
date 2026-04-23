@@ -73,10 +73,28 @@ export default function HomePage() {
       {/* Header */}
       <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
         <div className="flex items-center gap-2">
+          <svg className="w-6 h-6 text-gray-500 dark:text-[#FFB800] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="2.2" />
+            <circle cx="12" cy="3.5" r="1.3" />
+            <line x1="12" y1="4.8" x2="12" y2="9.8" />
+            <circle cx="19.5" cy="6.5" r="1.3" />
+            <line x1="18.5" y1="7.5" x2="13.8" y2="10.8" />
+            <circle cx="19.5" cy="17.5" r="1.3" />
+            <line x1="18.5" y1="16.5" x2="13.8" y2="13.2" />
+            <circle cx="12" cy="20.5" r="1.3" />
+            <line x1="12" y1="19.2" x2="12" y2="14.2" />
+            <circle cx="4.5" cy="17.5" r="1.3" />
+            <line x1="5.5" y1="16.5" x2="10.2" y2="13.2" />
+            <circle cx="4.5" cy="6.5" r="1.3" />
+            <line x1="5.5" y1="7.5" x2="10.2" y2="10.8" />
+          </svg>
           <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">TEAM WORKS</h1>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">{currentUser?.name}</span>
+          <div className="flex items-center gap-1.5">
+            <img src="/user.png" alt="user" className="w-5 h-5 opacity-50 dark:invert dark:opacity-75" />
+            <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">{currentUser?.name}</span>
+          </div>
           <AIAssistantButton />
           <Button
             type="button"
@@ -84,7 +102,12 @@ export default function HomePage() {
             size="sm"
             onClick={handleLogout}
           >
-            로그아웃
+            <span className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              로그아웃
+            </span>
           </Button>
           <ThemeToggle />
         </div>

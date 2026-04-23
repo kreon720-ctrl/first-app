@@ -141,7 +141,7 @@ function ProjectScheduleDetailModalBody({
                         <div className="h-2 rounded-full"
                           style={{ width: `${schedule.progress}%`, backgroundColor: colorInfo.border }} />
                       </div>
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-gray-700 dark:text-dark-text">
                         {schedule.progress}%
                         {schedule.isDelayed && <span className="ml-1 text-red-500 text-xs">(지연)</span>}
                       </span>
@@ -151,7 +151,7 @@ function ProjectScheduleDetailModalBody({
                 {schedule.leader && <DetailRow label="일정 담당자" value={schedule.leader} />}
                 {schedule.description && (
                   <DetailRow label="설명"
-                    value={<span className="whitespace-pre-wrap text-sm text-gray-700">{schedule.description}</span>} />
+                    value={<span className="whitespace-pre-wrap text-sm text-gray-700 dark:text-dark-text">{schedule.description}</span>} />
                 )}
                 <DetailRow
                   label="색상"
@@ -171,7 +171,7 @@ function ProjectScheduleDetailModalBody({
                 {isOwner ? (
                   <>
                     <button type="button" onClick={() => onEdit(schedule)}
-                      className="flex-1 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors">
+                      className="flex-1 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 dark:bg-[#FFB800] dark:text-gray-900 dark:hover:bg-[#E6A600] transition-colors">
                       수정
                     </button>
                     <button type="button" onClick={handleDeleteSchedule}

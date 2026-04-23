@@ -138,7 +138,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
               await store.loadTeamProjects(teamId);
               modals.openCreateSchedule();
             }}
-            className="px-2 py-1 rounded-lg bg-primary-500 text-white text-xs font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-2 py-1 rounded-lg bg-primary-500 text-white text-xs font-medium hover:bg-primary-600 active:bg-primary-700 dark:bg-[#FFB800] dark:text-gray-900 dark:hover:bg-[#E6A600] dark:active:bg-[#CC9200] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             +일정
           </button>

@@ -124,17 +124,17 @@ export function CalendarSection({
 
       {/* 일정 등록 모달 */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 dark:bg-black/70 px-4 py-8 overflow-y-auto">
+          <div className="w-full max-w-md bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">일정 등록</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text">일정 등록</h2>
               <button
                 type="button"
                 onClick={onCreateModalClose}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors duration-150"
                 aria-label="닫기"
               >
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -167,17 +167,17 @@ export function CalendarSection({
       />
 
       {showEditModal && selectedSchedule && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 dark:bg-black/70 px-4 py-8 overflow-y-auto">
+          <div className="w-full max-w-md bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">일정 수정</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text">일정 수정</h2>
               <button
                 type="button"
                 onClick={onEditModalClose}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors duration-150"
                 aria-label="닫기"
               >
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

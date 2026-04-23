@@ -44,12 +44,35 @@ export function TeamPageHeader({
           <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">{teamName}</h1>
         </div>
         <Link href="/" className="absolute left-1/2 -translate-x-1/2 select-none flex items-center gap-2 cursor-pointer">
+          {/* AI brain / neural network icon */}
+          <svg className="w-6 h-6 text-gray-500 dark:text-[#FFB800] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            {/* 중앙 코어 */}
+            <circle cx="12" cy="12" r="2.2" />
+            {/* 상단 노드 */}
+            <circle cx="12" cy="3.5" r="1.3" />
+            <line x1="12" y1="4.8" x2="12" y2="9.8" />
+            {/* 우상단 노드 */}
+            <circle cx="19.5" cy="6.5" r="1.3" />
+            <line x1="18.5" y1="7.5" x2="13.8" y2="10.8" />
+            {/* 우하단 노드 */}
+            <circle cx="19.5" cy="17.5" r="1.3" />
+            <line x1="18.5" y1="16.5" x2="13.8" y2="13.2" />
+            {/* 하단 노드 */}
+            <circle cx="12" cy="20.5" r="1.3" />
+            <line x1="12" y1="19.2" x2="12" y2="14.2" />
+            {/* 좌하단 노드 */}
+            <circle cx="4.5" cy="17.5" r="1.3" />
+            <line x1="5.5" y1="16.5" x2="10.2" y2="13.2" />
+            {/* 좌상단 노드 */}
+            <circle cx="4.5" cy="6.5" r="1.3" />
+            <line x1="5.5" y1="7.5" x2="10.2" y2="10.8" />
+          </svg>
           <span className="text-xl font-bold tracking-widest text-gray-900 dark:text-dark-text">TEAM WORKS</span>
         </Link>
         <div className="flex items-center gap-2">
           <div className="relative">
             <div className="flex items-center gap-1.5">
-              <img src="/user.png" alt="user" className="w-5 h-5 opacity-50" />
+              <img src="/user.png" alt="user" className="w-5 h-5 opacity-50 dark:invert dark:opacity-75" />
               <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">{currentUserName}</span>
             </div>
             {isLeader && pendingCount > 0 && (

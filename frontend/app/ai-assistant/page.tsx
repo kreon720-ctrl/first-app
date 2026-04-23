@@ -100,7 +100,7 @@ export default function AIAssistantPage() {
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-dark-base">
       {/* Header */}
       <header className="flex items-center justify-center gap-2 h-14 px-4 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border shrink-0">
-        <div className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-50 dark:bg-dark-elevated text-[#FFB800] shrink-0">
+        <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-dark-elevated text-gray-900 dark:text-[#FFB800] shrink-0">
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {/* 안테나 */}
             <line x1="12" y1="6" x2="12" y2="3" />
@@ -117,7 +117,7 @@ export default function AIAssistantPage() {
           </svg>
         </div>
         <div className="flex items-baseline gap-2 whitespace-nowrap">
-          <h1 className="text-base font-semibold text-[#FFB800]">AI 버틀러 찰떡이</h1>
+          <h1 className="text-base font-semibold text-gray-900 dark:text-[#FFB800]">AI 버틀러 찰떡이</h1>
           <span className="text-xs text-gray-400 dark:text-dark-text-disabled">TEAM WORKS 사용 안내</span>
         </div>
       </header>
@@ -165,18 +165,23 @@ export default function AIAssistantPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            rows={3}
+            rows={4}
             placeholder="TEAM WORKS 사용법을 물어보세요. (Enter 전송, Shift+Enter 줄바꿈)"
-            className="flex-1 resize-none max-h-56 min-h-[88px] rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3 py-2 text-sm text-gray-900 dark:text-dark-text leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary-400 dark:focus:ring-dark-accent focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled"
+            className="flex-1 resize-none max-h-56 min-h-[88px] rounded-xl border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-base px-4 py-2.5 text-sm font-normal text-gray-800 dark:text-dark-text leading-relaxed shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled transition-colors duration-150 disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
             disabled={isLoading}
           />
           <button
             type="button"
             onClick={() => sendQuestion(input)}
             disabled={!input.trim() || isLoading}
-            className="inline-flex items-center justify-center self-stretch px-5 rounded-lg bg-primary-500 dark:bg-dark-accent-strong text-white dark:text-gray-900 text-sm font-medium shadow-sm hover:bg-primary-600 dark:hover:brightness-110 active:bg-primary-700 disabled:bg-gray-200 dark:disabled:bg-dark-surface disabled:text-gray-400 dark:disabled:text-dark-text-disabled disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-1 rounded-lg py-[9px] px-3 text-xs font-medium transition-colors duration-150 bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:bg-dark-accent-strong dark:text-gray-900 dark:hover:bg-white dark:disabled:bg-dark-elevated dark:disabled:text-dark-text-disabled self-start"
           >
-            전송
+            {isLoading ? (
+              <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : '전송'}
           </button>
         </div>
         <p className="mt-1.5 text-[11px] text-gray-400 dark:text-dark-text-disabled text-center">

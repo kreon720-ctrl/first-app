@@ -190,7 +190,7 @@ export function ProjectScheduleModal({
                 onChange={(e) => setStartDate(e.target.value)}
                 min={project.startDate}
                 max={project.endDate}
-                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent"
+                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent dark:[color-scheme:dark]"
               />
               <span className="text-gray-500 dark:text-dark-text-muted text-sm">~</span>
               <input
@@ -199,7 +199,7 @@ export function ProjectScheduleModal({
                 onChange={(e) => setEndDate(e.target.value)}
                 min={project.startDate}
                 max={project.endDate}
-                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent"
+                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent dark:[color-scheme:dark]"
               />
             </div>
             {errors.startDate && <p className="mt-1 text-xs text-red-500">{errors.startDate}</p>}

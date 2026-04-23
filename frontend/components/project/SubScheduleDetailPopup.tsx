@@ -57,7 +57,7 @@ export function SubScheduleDetailPopup({ sub, isOwner, onEdit, onDelete, onClose
               <div className="flex-1 rounded-full h-2" style={{ backgroundColor: c.outer }}>
                 <div className="h-2 rounded-full" style={{ width: `${sub.progress}%`, backgroundColor: c.progress }} />
               </div>
-              <span className="text-xs text-gray-700 dark:text-dark-text-muted w-8 text-right">{sub.progress}%</span>
+              <span className="text-xs text-gray-700 dark:text-dark-text w-8 text-right">{sub.progress}%</span>
               {sub.isDelayed && (
                 <span className="text-xs font-semibold text-red-500">지연</span>
               )}

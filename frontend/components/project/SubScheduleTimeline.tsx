@@ -128,7 +128,7 @@ export function SubScheduleTimeline({
       {/* [+일정] 버튼 */}
       <div className="flex justify-end mb-2 flex-none">
         <button type="button" onClick={onAddClick}
-          className="flex items-center gap-1 px-3 py-1 bg-primary-500 text-white text-xs font-medium rounded-lg hover:bg-primary-600 transition-colors">
+          className="flex items-center gap-1 px-3 py-1 bg-primary-500 text-white text-xs font-medium rounded-lg hover:bg-primary-600 dark:bg-[#FFB800] dark:text-gray-900 dark:hover:bg-[#E6A600] transition-colors">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
