@@ -75,16 +75,16 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
     : undefined;
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-dark-base">
       {/* Header toolbar */}
-      <div className="flex items-center px-4 py-2 border-b border-gray-200 flex-none">
+      <div className="flex items-center px-4 py-2 border-b border-gray-200 dark:border-dark-border flex-none">
         {/* Left: project action buttons */}
         <div className="flex items-center gap-1.5 flex-none">
           <button
             type="button"
             onClick={modals.openCreateProject}
             title="프로젝트 생성"
-            className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="p-1.5 rounded-lg text-gray-600 dark:text-dark-text-muted hover:bg-gray-100 dark:hover:bg-dark-elevated hover:text-gray-900 dark:hover:text-dark-text transition-colors"
           >
             <PlusSquare className="w-5 h-5" />
           </button>
@@ -93,7 +93,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
               type="button"
               onClick={() => modals.openEditProject(selectedProject)}
               title="프로젝트 수정"
-              className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="p-1.5 rounded-lg text-gray-600 dark:text-dark-text-muted hover:bg-gray-100 dark:hover:bg-dark-elevated hover:text-gray-900 dark:hover:text-dark-text transition-colors"
             >
               <Edit2 className="w-3.5 h-3.5" />
             </button>
@@ -103,7 +103,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
               type="button"
               onClick={projectActions.handleDeleteProject}
               title="프로젝트 삭제"
-              className="p-1.5 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+              className="p-1.5 rounded-lg text-gray-600 dark:text-dark-text-muted hover:bg-red-50 hover:text-red-600 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -113,17 +113,17 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
         {/* Center: project name + period & progress */}
         <div className="flex-1 flex items-center justify-center gap-1.5">
           {selectedProject && (
-            <span className="text-sm text-gray-400 whitespace-nowrap">
+            <span className="text-sm text-gray-400 dark:text-dark-text-muted whitespace-nowrap">
               {selectedProject.name}
             </span>
           )}
           {selectedProject && (
-            <span className="text-xs text-gray-400 whitespace-nowrap">
+            <span className="text-xs text-gray-400 dark:text-dark-text-muted whitespace-nowrap">
               {selectedProject.startDate} ~ {selectedProject.endDate}
             </span>
           )}
           {selectedProject && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-dark-text-muted">
               ({selectedProject.progress}%)
             </span>
           )}
@@ -155,8 +155,8 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
             onBarClick={modals.openDetailModal}
           />
         ) : (
-          <div className="h-full flex flex-col items-center justify-center gap-3">
-            <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="h-full flex flex-col items-center justify-center gap-3 dark:bg-dark-base">
+            <svg className="w-12 h-12 text-gray-300 dark:text-dark-text-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -164,7 +164,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
                 d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
               />
             </svg>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 dark:text-dark-text-muted">
               프로젝트를 생성하세요. 우측 상단의{' '}
               <PlusSquare className="inline w-4 h-4 text-gray-500" /> 아이콘을 클릭하세요.
             </p>

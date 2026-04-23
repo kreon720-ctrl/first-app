@@ -223,27 +223,27 @@ export function CalendarDayView({
   return (
     <div className="w-full">
       {/* 날짜 헤더 */}
-      <div className="mb-4 pb-3 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">{formatDateKorean(currentDate)}</h3>
-        <p className="text-sm text-gray-500 mt-1">일정 {timedSchedules.length}개</p>
+      <div className="mb-4 pb-3 border-b border-gray-200 dark:border-dark-border">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">{formatDateKorean(currentDate)}</h3>
+        <p className="text-sm text-gray-500 dark:text-dark-text-muted mt-1">일정 {timedSchedules.length}개</p>
       </div>
 
       {/* 타임라인 세로 스크롤 */}
       <div
         ref={timelineRef}
-        className="border border-gray-200 rounded-lg bg-white overflow-y-auto"
+        className="border border-gray-200 dark:border-dark-border rounded-lg bg-white dark:bg-dark-surface overflow-y-auto"
         style={{ maxHeight: 'calc(100vh - 260px)' }}
       >
         <div className="flex" style={{ height: `${totalHeight}px` }}>
           {/* 시간 레이블 컬럼 */}
-          <div className="flex-shrink-0 w-14 border-r border-gray-200 relative">
+          <div className="flex-shrink-0 w-14 border-r border-gray-200 dark:border-dark-border relative">
             {Array.from({ length: 24 }, (_, hour) => (
               <div
                 key={hour}
-                className="absolute left-0 right-0 border-b border-gray-100 flex items-start px-1 pt-1"
+                className="absolute left-0 right-0 border-b border-gray-100 dark:border-dark-border flex items-start px-1 pt-1"
                 style={{ top: `${rowTops[hour]}px`, height: `${rowHeights[hour]}px` }}
               >
-                <span className="text-xs text-gray-400 leading-none">
+                <span className="text-xs text-gray-400 dark:text-dark-text-disabled leading-none">
                   {String(hour).padStart(2, '0')}:00
                 </span>
               </div>
@@ -260,7 +260,7 @@ export function CalendarDayView({
             {Array.from({ length: 24 }, (_, hour) => (
               <div
                 key={hour}
-                className="absolute left-0 right-0 border-b border-gray-100 pointer-events-none"
+                className="absolute left-0 right-0 border-b border-gray-100 dark:border-dark-border pointer-events-none"
                 style={{ top: `${rowTops[hour]}px`, height: `${rowHeights[hour]}px` }}
               />
             ))}

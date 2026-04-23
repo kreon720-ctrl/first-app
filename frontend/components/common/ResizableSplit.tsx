@@ -64,14 +64,14 @@ export function ResizableSplit({
       {/* Divider */}
       <div
         onMouseDown={onMouseDown}
-        className="w-1 flex-shrink-0 bg-gray-200 hover:bg-primary-400 active:bg-primary-500 cursor-col-resize transition-colors duration-150 relative group"
+        className="w-1 flex-shrink-0 bg-gray-200 dark:bg-dark-border hover:bg-primary-400 dark:hover:bg-dark-accent active:bg-primary-500 dark:active:bg-dark-accent-strong cursor-col-resize transition-colors duration-150 relative group"
       >
         {/* 드래그 핸들 표시 */}
         <div className="absolute inset-y-0 -left-1 -right-1" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-60 transition-opacity pointer-events-none">
-          <div className="w-0.5 h-3 bg-gray-500 rounded-full" />
-          <div className="w-0.5 h-3 bg-gray-500 rounded-full" />
-          <div className="w-0.5 h-3 bg-gray-500 rounded-full" />
+          <div className="w-0.5 h-3 bg-gray-500 dark:bg-dark-text-muted rounded-full" />
+          <div className="w-0.5 h-3 bg-gray-500 dark:bg-dark-text-muted rounded-full" />
+          <div className="w-0.5 h-3 bg-gray-500 dark:bg-dark-text-muted rounded-full" />
         </div>
       </div>
 

@@ -214,7 +214,7 @@ export function CalendarMonthView({
           <div
             key={day}
             className={`text-center text-sm font-medium py-1 ${
-              index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-600'
+              index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-600 dark:text-dark-text-muted'
             }`}
           >
             {day}
@@ -282,24 +282,24 @@ export function CalendarMonthView({
                         ${isToday(date)
                           ? 'border-orange-500'
                           : isSelected(date)
-                            ? 'bg-white border-primary-500 ring-2 ring-primary-500'
+                            ? 'bg-white dark:bg-dark-surface border-primary-500 ring-2 ring-primary-500'
                             : !isCurrentMonth(date)
-                              ? 'bg-gray-50 border-gray-200'
-                              : 'bg-white border-gray-200'
+                              ? 'bg-gray-50 dark:bg-dark-base border-gray-200 dark:border-dark-border'
+                              : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border'
                         }
-                        hover:border-gray-300 hover:shadow-sm
+                        hover:border-gray-300 dark:hover:border-dark-border hover:shadow-sm
                       `}
                     >
                       {/* 날짜 숫자 */}
                       <div className={`
                         text-sm font-medium mb-1 flex-shrink-0
                         ${!isCurrentMonth(date)
-                          ? 'text-gray-400'
+                          ? 'text-gray-400 dark:text-dark-text-disabled'
                           : dayIndex === 0
                             ? 'text-error-500'
                             : dayIndex === 6
                               ? 'text-primary-500'
-                              : 'text-gray-700'
+                              : 'text-gray-700 dark:text-dark-text-muted'
                         }
                       `}>
                         {date.getUTCDate()}

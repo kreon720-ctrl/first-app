@@ -126,11 +126,11 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
         };
 
         return (
-          <div className="border border-gray-200 rounded-lg bg-gray-50 mb-2 overflow-hidden">
-            <div className="grid grid-cols-[auto_repeat(7,1fr)] border-b border-gray-200">
-              <div className={`${TIME_COL_W} p-2 text-xs text-gray-400 text-right`}>종일</div>
+          <div className="border border-gray-200 dark:border-dark-border rounded-lg bg-gray-50 dark:bg-dark-base mb-2 overflow-hidden">
+            <div className="grid grid-cols-[auto_repeat(7,1fr)] border-b border-gray-200 dark:border-dark-border">
+              <div className={`${TIME_COL_W} p-2 text-xs text-gray-400 dark:text-dark-text-disabled text-right`}>종일</div>
               {weekDays.map(date => (
-                <div key={date.toISOString()} className="border-l border-gray-200 min-h-[28px]" />
+                <div key={date.toISOString()} className="border-l border-gray-200 dark:border-dark-border min-h-[28px]" />
               ))}
             </div>
             {allDaySchedules.map(schedule => {
@@ -141,7 +141,7 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
               const colStart  = startIdx + 2;
               const colEnd    = endIdx + 3;
               return (
-                <div key={schedule.id} className="grid grid-cols-[auto_repeat(7,1fr)] border-b border-gray-100 last:border-b-0">
+                <div key={schedule.id} className="grid grid-cols-[auto_repeat(7,1fr)] border-b border-gray-100 dark:border-dark-border last:border-b-0">
                   <div className={TIME_COL_W} />
                   <div className="px-1 py-0.5" style={{ gridColumn: `${colStart} / ${colEnd}` }}>
                     <div
@@ -162,11 +162,11 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
       {/* ── 시간별 타임라인 (요일 헤더 sticky 포함) ───────────────────────────── */}
       <div
         ref={timelineRef}
-        className="border border-gray-200 rounded-lg bg-white overflow-y-auto"
+        className="border border-gray-200 dark:border-dark-border rounded-lg bg-white dark:bg-dark-surface overflow-y-auto"
         style={{ maxHeight: 'calc(100vh - 240px)' }}
       >
         {/* 요일 헤더 — 스크롤 컨테이너와 동일한 너비로 sticky */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 flex" style={{ paddingTop: 3, paddingBottom: 3, paddingRight: 3 }}>
+        <div className="sticky top-0 z-10 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border flex" style={{ paddingTop: 3, paddingBottom: 3, paddingRight: 3 }}>
           <div className={`${TIME_COL_W} flex-shrink-0`} />
           {weekDays.map((date, index) => {
             const today = isToday(date);
@@ -183,10 +183,10 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
                   hover:bg-gray-50
                 `}
               >
-                <span className={`text-xs font-medium mb-1 ${index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-600'}`}>
+                <span className={`text-xs font-medium mb-1 ${index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-600 dark:text-dark-text-muted'}`}>
                   {weekdays[index]}
                 </span>
-                <span className={`text-lg font-semibold ${index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-800'}`}>
+                <span className={`text-lg font-semibold ${index === 0 ? 'text-error-500' : index === 6 ? 'text-primary-500' : 'text-gray-800 dark:text-dark-text'}`}>
                   {date.getUTCDate()}
                 </span>
               </button>
@@ -201,16 +201,16 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
           {Array.from({ length: 24 }, (_, hour) => (
             <div
               key={hour}
-              className="absolute left-0 right-0 flex border-b border-gray-100 pointer-events-none"
+              className="absolute left-0 right-0 flex border-b border-gray-100 dark:border-dark-border pointer-events-none"
               style={{ top: `${hour * HOUR_PX}px`, height: `${HOUR_PX}px` }}
             >
-              <div className={`${TIME_COL_W} flex-shrink-0 border-r border-gray-200 px-1 pt-1 text-xs text-gray-400`}>
+              <div className={`${TIME_COL_W} flex-shrink-0 border-r border-gray-200 dark:border-dark-border px-1 pt-1 text-xs text-gray-400 dark:text-dark-text-disabled`}>
                 {String(hour).padStart(2, '0')}:00
               </div>
               {weekDays.map(date => (
                 <div
                   key={date.toISOString()}
-                  className={`flex-1 border-l border-gray-100 ${isToday(date) ? 'bg-primary-50/30' : ''}`}
+                  className={`flex-1 border-l border-gray-100 dark:border-dark-border ${isToday(date) ? 'bg-primary-50/30' : ''}`}
                 />
               ))}
             </div>

@@ -59,17 +59,17 @@ export function GanttChart({ project, schedules, onBarClick }: GanttChartProps) 
       <div style={{ minWidth: `${LABEL_W + weeks.length * MIN_CELL_WIDTH}px` }}>
 
         {/* ── Month header row (sticky top-0) ────────────────────────── */}
-        <div className="flex h-7 border-b border-gray-200 sticky top-0 z-20 bg-white">
+        <div className="flex h-7 border-b border-gray-200 dark:border-dark-border sticky top-0 z-20 bg-white dark:bg-dark-base">
           {/* Top-left corner: sticky left too */}
           <div
-            className="flex-none border-r border-gray-300 bg-white sticky left-0 z-30"
+            className="flex-none border-r border-gray-300 dark:border-dark-border bg-white dark:bg-dark-base sticky left-0 z-30"
             style={{ width: LABEL_W }}
           />
           {monthGroups.map((group) => (
             <div
               key={`${group.year}-${group.month}`}
               style={{ flex: group.weeks.length }}
-              className="border-l-2 border-gray-500 text-center text-xs font-semibold py-1 text-gray-700 overflow-hidden"
+              className="border-l-2 border-gray-500 dark:border-dark-border text-center text-xs font-semibold py-1 text-gray-700 dark:text-dark-text-muted overflow-hidden"
             >
               {group.month}월
             </div>
@@ -77,13 +77,13 @@ export function GanttChart({ project, schedules, onBarClick }: GanttChartProps) 
         </div>
 
         {/* ── Week number header row (sticky top-7) ──────────────────── */}
-        <div className="flex h-7 border-b border-gray-300 sticky top-7 z-20 bg-white">
+        <div className="flex h-7 border-b border-gray-300 dark:border-dark-border sticky top-7 z-20 bg-white dark:bg-dark-base">
           {/* Label column spacer */}
           <div
-            className="flex-none border-r border-gray-300 bg-white sticky left-0 z-30 flex items-center justify-center"
+            className="flex-none border-r border-gray-300 dark:border-dark-border bg-white dark:bg-dark-base sticky left-0 z-30 flex items-center justify-center"
             style={{ width: LABEL_W }}
           >
-            <span className="text-xs text-gray-500 font-medium">단계</span>
+            <span className="text-xs text-gray-500 dark:text-dark-text-muted font-medium">단계</span>
           </div>
           {(() => {
             // Build index→sequential week number map from monthGroups (avoids Thursday-convention artifacts)
@@ -95,10 +95,10 @@ export function GanttChart({ project, schedules, onBarClick }: GanttChartProps) 
               <div
                 key={i}
                 style={{ flex: 1 }}
-                className={`text-center text-xs text-gray-500 py-1 ${
+                className={`text-center text-xs text-gray-500 dark:text-dark-text-muted py-1 ${
                   isMonthBoundary(monthGroups, i)
-                    ? 'border-l-2 border-gray-500'
-                    : 'border-l border-gray-200'
+                    ? 'border-l-2 border-gray-500 dark:border-dark-border'
+                    : 'border-l border-gray-200 dark:border-dark-border'
                 }`}
               >
                 {weekNumMap.get(i) ?? ''}
@@ -111,20 +111,20 @@ export function GanttChart({ project, schedules, onBarClick }: GanttChartProps) 
         {project.phases.map((phase, phaseIdx) => {
           const phaseSchedules = sortedByPhase.get(phase.id) ?? [];
           const totalWeeks = weeks.length;
-          const rowBg = phaseIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+          const rowBg = phaseIdx % 2 === 0 ? 'bg-white dark:bg-dark-base' : 'bg-gray-50 dark:bg-dark-surface';
 
           return (
             <div
               key={phase.id ?? `phase-${phaseIdx}`}
-              className={`flex border-b border-gray-200 ${rowBg}`}
+              className={`flex border-b border-gray-200 dark:border-dark-border ${rowBg}`}
               style={{ minHeight: MIN_ROW_HEIGHT }}
             >
               {/* Phase label — sticky left */}
               <div
-                className={`flex-none border-r border-gray-300 sticky left-0 z-10 flex items-center justify-center px-2 ${rowBg}`}
+                className={`flex-none border-r border-gray-300 dark:border-dark-border sticky left-0 z-10 flex items-center justify-center px-2 ${rowBg}`}
                 style={{ width: LABEL_W }}
               >
-                <span className="text-xs text-gray-700 text-center break-words leading-tight line-clamp-3">
+                <span className="text-xs text-gray-700 dark:text-dark-text-muted text-center break-words leading-tight line-clamp-3">
                   {phase.name}
                 </span>
               </div>
@@ -139,8 +139,8 @@ export function GanttChart({ project, schedules, onBarClick }: GanttChartProps) 
                       style={{ flex: 1 }}
                       className={
                         isMonthBoundary(monthGroups, wIdx)
-                          ? 'border-l-2 border-gray-500'
-                          : 'border-l border-gray-200'
+                          ? 'border-l-2 border-gray-500 dark:border-dark-border'
+                          : 'border-l border-gray-200 dark:border-dark-border'
                       }
                     />
                   ))}

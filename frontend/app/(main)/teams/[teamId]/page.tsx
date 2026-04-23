@@ -98,9 +98,9 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-base flex items-center justify-center">
         <div className="animate-pulse">
-          <p className="text-sm text-gray-500">로딩 중...</p>
+          <p className="text-sm text-gray-500 dark:text-dark-text-muted">로딩 중...</p>
         </div>
       </div>
     );
@@ -108,7 +108,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
 
   if (isError || !team) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-base flex items-center justify-center">
         <div className="flex flex-col items-center py-16 px-6 text-center">
           <svg className="w-12 h-12 text-error-500 mb-4" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -137,7 +137,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
   // Desktop layout: side-by-side split
   if (isDesktop) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex flex-col bg-white">
+      <div className="h-[calc(100vh-4rem)] flex flex-col bg-white dark:bg-dark-base">
         <TeamPageHeader
           teamName={team.name}
           currentUserName={currentUser?.name}
@@ -154,7 +154,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
           minLeftPercent={30}
           maxLeftPercent={80}
           left={
-            <div className="border-r border-gray-200 overflow-hidden flex flex-col h-full">
+            <div className="border-r border-gray-200 dark:border-dark-border overflow-hidden flex flex-col h-full">
               <CalendarSection
                 teamId={teamId}
                 currentDate={currentDate}
@@ -196,8 +196,8 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
           }
           right={
             <>
-              <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                <h2 className="text-sm font-medium text-gray-700">
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
+                <h2 className="text-sm font-medium text-gray-700 dark:text-dark-text-muted">
                   {new Date(selectedDate).toLocaleDateString('ko-KR', {
                     year: 'numeric',
                     month: 'long',
@@ -223,7 +223,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
 
   // Mobile layout: tab-based switching
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-base flex flex-col">
       <TeamPageHeader
         teamName={team.name}
         currentUserName={currentUser?.name}

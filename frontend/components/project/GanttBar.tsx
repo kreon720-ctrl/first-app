@@ -62,11 +62,11 @@ export function GanttBar({ schedule, onClick }: GanttBarProps) {
           className="pointer-events-none"
           style={{ position: 'fixed', left: tooltip.x + 12, top: tooltip.y + 12, zIndex: 2147483647 }}
         >
-          <div className="bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 px-3 py-2 max-w-xs">
-            <p className="font-semibold leading-snug mb-1 text-gray-900">{schedule.title}</p>
-            <p className="text-gray-500">{fmtDate(schedule.startDate)} ~ {fmtDate(schedule.endDate)}</p>
+          <div className="bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text text-xs rounded-lg shadow-xl border border-gray-200 dark:border-dark-border px-3 py-2 max-w-xs">
+            <p className="font-semibold leading-snug mb-1 text-gray-900 dark:text-dark-text">{schedule.title}</p>
+            <p className="text-gray-500 dark:text-dark-text-muted">{fmtDate(schedule.startDate)} ~ {fmtDate(schedule.endDate)}</p>
             {schedule.description && (
-              <p className="text-gray-600 mt-1 whitespace-pre-wrap">{schedule.description}</p>
+              <p className="text-gray-600 dark:text-dark-text-muted mt-1 whitespace-pre-wrap">{schedule.description}</p>
             )}
           </div>
         </div>,

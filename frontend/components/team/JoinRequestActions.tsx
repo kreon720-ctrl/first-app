@@ -29,15 +29,15 @@ export function JoinRequestActions({
   };
 
   return (
-    <div className="w-full bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+    <div className="w-full bg-white dark:bg-dark-surface rounded-xl border border-gray-200 dark:border-dark-border p-4 shadow-sm">
       {/* Applicant Info */}
       <div className="mb-3">
-        <h3 className="text-lg font-semibold text-gray-800">{request.requesterName}</h3>
-        <p className="text-sm font-normal text-gray-500">{request.requesterEmail}</p>
-        <p className="text-sm font-normal text-gray-600 mt-1">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text">{request.requesterName}</h3>
+        <p className="text-sm font-normal text-gray-500 dark:text-dark-text-muted">{request.requesterEmail}</p>
+        <p className="text-sm font-normal text-gray-600 dark:text-dark-text-muted mt-1">
           신청 팀: <span className="font-medium">{request.teamName}</span>
         </p>
-        <p className="text-xs font-normal text-gray-400 mt-1">
+        <p className="text-xs font-normal text-gray-400 dark:text-dark-text-disabled mt-1">
           {formatRequestedAt(request.requestedAt)}
         </p>
       </div>

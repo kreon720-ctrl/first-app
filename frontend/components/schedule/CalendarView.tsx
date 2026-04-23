@@ -124,7 +124,7 @@ export function CalendarView({
   };
 
   return (
-    <div className="w-full bg-white flex flex-col flex-1 min-h-0">
+    <div className="w-full bg-white dark:bg-dark-surface flex flex-col flex-1 min-h-0">
       {/* Navigation header */}
       <div className="flex items-center justify-between mb-4 px-2">
         {/* Navigation buttons (hidden in project view) */}
@@ -134,7 +134,7 @@ export function CalendarView({
               <button
                 type="button"
                 onClick={() => navigateDate('prev')}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors duration-150"
                 aria-label="이전"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,7 +143,7 @@ export function CalendarView({
               </button>
 
               <h2
-                className={`font-semibold text-gray-900 text-center ${
+                className={`font-semibold text-gray-900 dark:text-dark-text text-center ${
                   compact ? 'text-xs min-w-[100px]' : 'text-lg min-w-[150px]'
                 }`}
               >
@@ -153,7 +153,7 @@ export function CalendarView({
               <button
                 type="button"
                 onClick={() => navigateDate('next')}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors duration-150"
                 aria-label="다음"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +168,7 @@ export function CalendarView({
             <button
               type="button"
               onClick={() => onViewChange?.('project')}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text-muted text-sm font-medium hover:bg-gray-50 dark:hover:bg-dark-surface active:bg-gray-100 dark:active:bg-dark-elevated transition-colors duration-150"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -212,7 +212,7 @@ export function CalendarView({
           )}
 
           {/* View tabs */}
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-gray-200 dark:border-dark-border">
             {/* 프로젝트 탭 (PC only, 프로젝트 있을 때만) */}
             {!compact && teamProjects.map((project) => (
               <button
@@ -222,8 +222,8 @@ export function CalendarView({
                 className={`
                   py-2 px-4 text-sm font-medium border-b-2 transition-colors duration-150
                   ${view === 'project' && selectedProjectId === project.id
-                    ? 'text-primary-600 border-primary-500'
-                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+                    ? 'text-primary-600 border-primary-500 dark:text-dark-accent dark:border-dark-accent'
+                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300 dark:text-dark-text-muted dark:hover:text-dark-text'
                   }
                 `}
               >
@@ -240,8 +240,8 @@ export function CalendarView({
                   py-2 font-medium border-b-2 transition-colors duration-150
                   ${compact ? 'px-3 text-xs' : 'px-4 text-sm'}
                   ${view === tab.id
-                    ? 'text-primary-600 border-primary-500'
-                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+                    ? 'text-primary-600 border-primary-500 dark:text-dark-accent dark:border-dark-accent'
+                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300 dark:text-dark-text-muted dark:hover:text-dark-text'
                   }
                 `}
               >

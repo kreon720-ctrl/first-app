@@ -108,20 +108,20 @@ export function ProjectCreateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 overflow-y-auto">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 dark:bg-black/70 px-4 py-8 overflow-y-auto">
+      <div className="w-full max-w-lg bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text">
             {mode === 'create' ? '프로젝트 생성' : '프로젝트 수정'}
           </h2>
           <button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
             aria-label="닫기"
           >
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -130,7 +130,7 @@ export function ProjectCreateModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 프로젝트명 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">
               프로젝트명 <span className="text-red-500">*</span>
             </label>
             <input
@@ -138,14 +138,14 @@ export function ProjectCreateModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="프로젝트명을 입력하세요"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent"
             />
             {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
           </div>
 
           {/* 기간 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">
               기간 <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center gap-2">
@@ -153,14 +153,14 @@ export function ProjectCreateModal({
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent"
               />
-              <span className="text-gray-500 text-sm">~</span>
+              <span className="text-gray-500 dark:text-dark-text-muted text-sm">~</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent"
               />
             </div>
             {errors.startDate && <p className="mt-1 text-xs text-red-500">{errors.startDate}</p>}
@@ -169,7 +169,7 @@ export function ProjectCreateModal({
 
           {/* 프로젝트 설명 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">
               프로젝트 설명
             </label>
             <textarea
@@ -177,13 +177,13 @@ export function ProjectCreateModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="프로젝트 설명을 입력하세요"
               rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              className="w-full border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent resize-none"
             />
           </div>
 
           {/* 진행률 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">
               진행률
             </label>
             <div className="flex items-center gap-3">
@@ -202,9 +202,9 @@ export function ProjectCreateModal({
                   max={100}
                   value={progress}
                   onChange={(e) => setProgress(Math.min(100, Math.max(0, Number(e.target.value))))}
-                  className="w-16 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-16 border border-gray-300 dark:border-dark-border rounded-lg px-2 py-1.5 text-sm text-center bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent"
                 />
-                <span className="text-sm text-gray-500">%</span>
+                <span className="text-sm text-gray-500 dark:text-dark-text-muted">%</span>
               </div>
             </div>
             {errors.progress && <p className="mt-1 text-xs text-red-500">{errors.progress}</p>}
@@ -212,7 +212,7 @@ export function ProjectCreateModal({
 
           {/* 관리자 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">
               관리자
             </label>
             <input
@@ -220,14 +220,14 @@ export function ProjectCreateModal({
               value={manager}
               onChange={(e) => setManager(e.target.value)}
               placeholder="관리자명을 입력하세요"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent"
             />
           </div>
 
           {/* 프로젝트 단계 */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">프로젝트 단계</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-dark-text-muted">프로젝트 단계</label>
               <button
                 type="button"
                 onClick={addPhase}
@@ -241,7 +241,7 @@ export function ProjectCreateModal({
             </div>
 
             {phases.length === 0 && (
-              <p className="text-xs text-gray-400 text-center py-2 border border-dashed border-gray-200 rounded-lg">
+              <p className="text-xs text-gray-400 dark:text-dark-text-disabled text-center py-2 border border-dashed border-gray-200 dark:border-dark-border rounded-lg">
                 단계를 추가하세요.
               </p>
             )}
@@ -249,13 +249,13 @@ export function ProjectCreateModal({
             <div className="space-y-2">
               {phases.map((phase, idx) => (
                 <div key={phase.tempId} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 w-5 text-right flex-none">{idx + 1}.</span>
+                  <span className="text-xs text-gray-500 dark:text-dark-text-muted w-5 text-right flex-none">{idx + 1}.</span>
                   <input
                     type="text"
                     value={phase.name}
                     onChange={(e) => updatePhase(phase.tempId, e.target.value)}
                     placeholder={`단계 ${idx + 1} 이름`}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent"
                   />
                   <button
                     type="button"
@@ -284,7 +284,7 @@ export function ProjectCreateModal({
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex-1 py-2 bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-dark-text-muted text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-dark-elevated transition-colors"
             >
               취소
             </button>

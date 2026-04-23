@@ -141,10 +141,10 @@ export function SubScheduleTimeline({
         <div className="flex flex-col flex-1" style={{ minWidth: totalWidth }}>
 
           {/* 월 행 */}
-          <div className="flex border border-gray-300 flex-none">
+          <div className="flex border border-gray-300 dark:border-dark-border flex-none">
             {monthSpans.map((span, i) => (
               <div key={i}
-                className={`text-center text-xs font-bold text-gray-700 bg-gray-200 border-b border-b-gray-300 py-1 overflow-hidden ${BORDER_RIGHT[span.borderKey]}`}
+                className={`text-center text-xs font-bold text-gray-700 dark:text-dark-text-muted bg-gray-200 dark:bg-dark-surface border-b border-b-gray-300 dark:border-b-dark-border py-1 overflow-hidden ${BORDER_RIGHT[span.borderKey]}`}
                 style={{ width: span.count * effectiveDayW, minWidth: span.count * effectiveDayW }}>
                 {span.label}
               </div>
@@ -152,10 +152,10 @@ export function SubScheduleTimeline({
           </div>
 
           {/* 주 행 */}
-          <div className="flex border-x border-gray-300 flex-none">
+          <div className="flex border-x border-gray-300 dark:border-dark-border flex-none">
             {weekSpans.map((span, i) => (
               <div key={i}
-                className={`text-center text-xs font-medium text-gray-600 bg-gray-100 border-b border-b-gray-200 py-1 overflow-hidden ${BORDER_RIGHT[span.borderKey]}`}
+                className={`text-center text-xs font-medium text-gray-600 dark:text-dark-text-muted bg-gray-100 dark:bg-dark-surface border-b border-b-gray-200 dark:border-b-dark-border py-1 overflow-hidden ${BORDER_RIGHT[span.borderKey]}`}
                 style={{ width: span.count * effectiveDayW, minWidth: span.count * effectiveDayW }}>
                 {span.label}
               </div>
@@ -163,10 +163,10 @@ export function SubScheduleTimeline({
           </div>
 
           {/* 일 행 */}
-          <div className="flex border-x border-gray-300 flex-none">
+          <div className="flex border-x border-gray-300 dark:border-dark-border flex-none">
             {dayInfos.map((info, i) => (
               <div key={i}
-                className={`text-center text-[10px] text-gray-400 bg-white border-b border-b-gray-200 py-1 overflow-hidden ${BORDER_RIGHT[info.borderKey]}`}
+                className={`text-center text-[10px] text-gray-400 dark:text-dark-text-disabled bg-white dark:bg-dark-base border-b border-b-gray-200 dark:border-b-dark-border py-1 overflow-hidden ${BORDER_RIGHT[info.borderKey]}`}
                 style={{ width: effectiveDayW, minWidth: effectiveDayW }}>
                 {info.d.getDate()}
               </div>
@@ -174,14 +174,14 @@ export function SubScheduleTimeline({
           </div>
 
           {/* 세부일정 행 영역 */}
-          <div className="overflow-y-auto overflow-x-hidden border-x border-b border-gray-300 flex-1">
+          <div className="overflow-y-auto overflow-x-hidden border-x border-b border-gray-300 dark:border-dark-border flex-1">
             {subSchedules.length === 0 ? (
-              <div className="relative border-b border-gray-100" style={{ minHeight: 36 + ROW_PAD * 2 }}>
+              <div className="relative border-b border-gray-100 dark:border-dark-border" style={{ minHeight: 36 + ROW_PAD * 2 }}>
                 <GridLines />
               </div>
             ) : (
               subSchedules.map((sub) => (
-                <div key={sub.id} className="relative border-b border-gray-100"
+                <div key={sub.id} className="relative border-b border-gray-100 dark:border-dark-border"
                   style={{ minHeight: BAR_MIN_H + ROW_PAD * 2, paddingTop: ROW_PAD, paddingBottom: ROW_PAD }}>
                   <GridLines />
                   <SubBar

@@ -51,7 +51,7 @@ export function ChatMessageItem({ message, isLeader = false, rightSlot }: ChatMe
     <div className="w-full my-1">
       {/* Message header */}
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-sm font-semibold text-gray-900">
+        <span className="text-sm font-semibold text-gray-900 dark:text-dark-text">
           {message.senderName}
         </span>
         {isLeader && (
@@ -59,15 +59,15 @@ export function ChatMessageItem({ message, isLeader = false, rightSlot }: ChatMe
             LEADER
           </span>
         )}
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-400 dark:text-dark-text-disabled">
           {timeString}
         </span>
         {rightSlot && <div className="ml-auto">{rightSlot}</div>}
       </div>
 
       {/* Message content */}
-      <div className="bg-white rounded-lg p-3 border border-gray-200">
-        <p className="text-sm font-normal text-gray-800 leading-relaxed">
+      <div className="bg-white dark:bg-dark-surface rounded-lg p-3 border border-gray-200 dark:border-dark-border">
+        <p className="text-sm font-normal text-gray-800 dark:text-dark-text leading-relaxed">
           {message.content}
         </p>
       </div>

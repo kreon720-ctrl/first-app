@@ -31,9 +31,9 @@ interface ProjectScheduleDetailModalProps {
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex gap-3 py-2 border-b border-gray-100 last:border-b-0">
-      <span className="w-24 flex-none text-xs font-medium text-gray-500 pt-0.5">{label}</span>
-      <span className="flex-1 text-sm text-gray-800">{value}</span>
+    <div className="flex gap-3 py-2 border-b border-gray-100 dark:border-dark-border last:border-b-0">
+      <span className="w-24 flex-none text-xs font-medium text-gray-500 dark:text-dark-text-muted pt-0.5">{label}</span>
+      <span className="flex-1 text-sm text-gray-800 dark:text-dark-text">{value}</span>
     </div>
   );
 }
@@ -107,19 +107,19 @@ function ProjectScheduleDetailModalBody({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-        <div className="w-[90vw] max-w-5xl bg-white rounded-2xl shadow-xl flex flex-col h-[63vh] overflow-x-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-4">
+        <div className="w-[90vw] max-w-5xl bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl flex flex-col h-[63vh] overflow-x-hidden">
 
           {/* 타이틀 */}
           <div className="flex items-start justify-between px-6 pt-5 pb-0 flex-none">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full flex-none"
                 style={{ backgroundColor: colorInfo.bg, border: `2px solid ${colorInfo.border}` }} />
-              <h2 className="text-lg font-semibold text-gray-900 leading-snug">{schedule.title}</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text leading-snug">{schedule.title}</h2>
             </div>
             <button type="button" onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-none ml-2" aria-label="닫기">
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors flex-none ml-2" aria-label="닫기">
+              <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -137,7 +137,7 @@ function ProjectScheduleDetailModalBody({
                   label="진행률"
                   value={
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-[120px]">
+                      <div className="flex-1 bg-gray-200 dark:bg-dark-surface rounded-full h-2 max-w-[120px]">
                         <div className="h-2 rounded-full"
                           style={{ width: `${schedule.progress}%`, backgroundColor: colorInfo.border }} />
                       </div>
@@ -179,13 +179,13 @@ function ProjectScheduleDetailModalBody({
                       삭제
                     </button>
                     <button type="button" onClick={onClose}
-                      className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                      className="flex-1 py-2 bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-dark-text-muted text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-dark-elevated transition-colors">
                       닫기
                     </button>
                   </>
                 ) : (
                   <button type="button" onClick={onClose}
-                    className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                    className="flex-1 py-2 bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-dark-text-muted text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-dark-elevated transition-colors">
                     닫기
                   </button>
                 )}
@@ -193,7 +193,7 @@ function ProjectScheduleDetailModalBody({
             </div>
 
             {/* 구분선 */}
-            <div className="w-px bg-gray-200 flex-none my-2" />
+            <div className="w-px bg-gray-200 dark:bg-dark-border flex-none my-2" />
 
             {/* 우측: 타임라인 */}
             <SubScheduleTimeline

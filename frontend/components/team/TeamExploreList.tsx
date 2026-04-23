@@ -63,8 +63,8 @@ export function TeamExploreList({ teams, onSuccess }: TeamExploreListProps) {
             d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2 2 2 0 002 2v1a2 2 0 01-2 2H3.055M15 11a3 3 0 11-6 0 3 3 0 016 0z"
           />
         </svg>
-        <h3 className="text-lg font-semibold text-gray-600 mb-2">공개된 팀이 없습니다.</h3>
-        <p className="text-sm font-normal text-gray-400 max-w-xs">
+        <h3 className="text-lg font-semibold text-gray-600 dark:text-dark-text-muted mb-2">공개된 팀이 없습니다.</h3>
+        <p className="text-sm font-normal text-gray-400 dark:text-dark-text-disabled max-w-xs">
           새로운 팀을 만들어보세요.
         </p>
       </div>
@@ -82,19 +82,19 @@ export function TeamExploreList({ teams, onSuccess }: TeamExploreListProps) {
           return (
             <div
               key={team.id}
-              className="w-full bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
+              className="w-full bg-white dark:bg-dark-surface rounded-xl border border-gray-200 dark:border-dark-border p-4 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-800 truncate">{team.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text truncate">{team.name}</h3>
                   {team.description && (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{team.description}</p>
+                    <p className="text-sm text-gray-500 dark:text-dark-text-muted mt-1 line-clamp-2">{team.description}</p>
                   )}
                   <div className="flex items-center gap-3 mt-2">
-                    <span className="text-sm font-normal text-gray-600">
+                    <span className="text-sm font-normal text-gray-600 dark:text-dark-text-muted">
                       팀장: {team.leaderName}
                     </span>
-                    <span className="text-sm font-normal text-gray-500">
+                    <span className="text-sm font-normal text-gray-500 dark:text-dark-text-muted">
                       {team.memberCount}명
                     </span>
                   </div>
@@ -134,11 +134,11 @@ export function TeamExploreList({ teams, onSuccess }: TeamExploreListProps) {
 
       {/* 가입 확인 다이얼로그 */}
       {confirmTeam && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">가입 신청</h2>
-            <p className="text-sm text-gray-600 mb-6">
-              <span className="font-medium text-gray-900">{confirmTeam.name}</span>에 가입 신청하시겠습니까?
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-4">
+          <div className="w-full max-w-sm bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text mb-1">가입 신청</h2>
+            <p className="text-sm text-gray-600 dark:text-dark-text-muted mb-6">
+              <span className="font-medium text-gray-900 dark:text-dark-text">{confirmTeam.name}</span>에 가입 신청하시겠습니까?
             </p>
             <div className="flex gap-3">
               <Button

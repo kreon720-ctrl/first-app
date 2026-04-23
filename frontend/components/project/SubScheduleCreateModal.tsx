@@ -102,16 +102,16 @@ export function SubScheduleCreateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 dark:bg-black/70 px-4">
+      <div className="w-full max-w-md bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text">
             {mode === 'create' ? '세부일정 생성' : '세부일정 수정'}
           </h2>
           <button type="button" onClick={onCancel}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" aria-label="닫기">
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors" aria-label="닫기">
+            <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -120,18 +120,18 @@ export function SubScheduleCreateModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 일정명 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">
               일정명 <span className="text-red-500">*</span>
             </label>
             <input type="text" value={title} onChange={e => setTitle(e.target.value)}
               placeholder="세부 일정명을 입력하세요"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              className="w-full border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent" />
             {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
           </div>
 
           {/* 색상 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">색상</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-2">색상</label>
             <div className="flex items-center gap-3">
               {GANTT_BAR_COLORS.map(c => (
                 <button key={c} type="button" onClick={() => setColor(c)}
@@ -145,17 +145,17 @@ export function SubScheduleCreateModal({
 
           {/* 기간 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">
               기간 <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center gap-2">
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
                 min={parentSchedule.startDate} max={parentSchedule.endDate}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-              <span className="text-gray-500 text-sm">~</span>
+                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent" />
+              <span className="text-gray-500 dark:text-dark-text-muted text-sm">~</span>
               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                 min={parentSchedule.startDate} max={parentSchedule.endDate}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent" />
             </div>
             {errors.startDate && <p className="mt-1 text-xs text-red-500">{errors.startDate}</p>}
             {errors.endDate && <p className="mt-1 text-xs text-red-500">{errors.endDate}</p>}
@@ -163,39 +163,39 @@ export function SubScheduleCreateModal({
 
           {/* 설명 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">설명</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)}
               placeholder="세부 일정 설명을 입력하세요" rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
+              className="w-full border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent resize-none" />
           </div>
 
           {/* 일정 담당자 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">일정 담당자</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">일정 담당자</label>
             <div className="relative flex gap-2" ref={pickerRef}>
               <input type="text" value={leader} onChange={e => setLeader(e.target.value)}
                 placeholder="담당자명을 입력하세요"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                className="flex-1 border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent" />
               <button
                 type="button"
                 onClick={() => setShowMemberPicker((v) => !v)}
-                className="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors whitespace-nowrap"
+                className="px-3 py-2 text-sm font-medium border border-gray-300 dark:border-dark-border rounded-lg bg-gray-50 dark:bg-dark-surface hover:bg-gray-100 dark:hover:bg-dark-elevated text-gray-700 dark:text-dark-text-muted transition-colors whitespace-nowrap"
               >
                 찾기
               </button>
               {showMemberPicker && (
-                <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white dark:bg-dark-elevated border border-gray-200 dark:border-dark-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {members.length === 0 ? (
-                    <p className="px-3 py-2 text-sm text-gray-400">팀원이 없습니다.</p>
+                    <p className="px-3 py-2 text-sm text-gray-400 dark:text-dark-text-muted">팀원이 없습니다.</p>
                   ) : (
                     members.map((m) => (
                       <button
                         key={m.userId}
                         type="button"
                         onClick={() => { setLeader(m.name); setShowMemberPicker(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-dark-surface transition-colors"
                       >
-                        <span className="font-medium text-gray-800">{m.name}</span>
+                        <span className="font-medium text-gray-800 dark:text-dark-text">{m.name}</span>
                         <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                           m.role === 'LEADER'
                             ? 'bg-amber-100 text-amber-800'
@@ -211,15 +211,15 @@ export function SubScheduleCreateModal({
 
           {/* 진행률 + 지연 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">진행률</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1">진행률</label>
             <div className="flex items-center gap-3">
               <input type="range" min={0} max={100} value={progress}
                 onChange={e => setProgress(Number(e.target.value))} className="flex-1" />
               <div className="flex items-center gap-1">
                 <input type="number" min={0} max={100} value={progress}
                   onChange={e => setProgress(Math.min(100, Math.max(0, Number(e.target.value))))}
-                  className="w-16 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                <span className="text-sm text-gray-500">%</span>
+                  className="w-16 border border-gray-300 dark:border-dark-border rounded-lg px-2 py-1.5 text-sm text-center bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent" />
+                <span className="text-sm text-gray-500 dark:text-dark-text-muted">%</span>
               </div>
               <label className="flex items-center gap-1.5 cursor-pointer select-none">
                 <input
@@ -240,7 +240,7 @@ export function SubScheduleCreateModal({
               {mode === 'create' ? '생성' : '수정'}
             </button>
             <button type="button" onClick={onCancel}
-              className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+              className="flex-1 py-2 bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-dark-text-muted text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-dark-elevated transition-colors">
               취소
             </button>
           </div>

@@ -153,10 +153,10 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
 
   return (
     <div className="relative">
-      <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+      <label className="text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1.5 block">
         {label} <span className="text-error-500">*</span>
       </label>
-      
+
       {/* 표시 필드 */}
       <div className="flex gap-2">
         <input
@@ -171,10 +171,10 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
           }}
           placeholder="날짜와 시간을 선택하세요"
           disabled={disabled}
-          className={`flex-1 border rounded-xl bg-white px-4 py-2.5 text-base font-normal text-gray-900 shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer ${
+          className={`flex-1 border rounded-xl bg-white dark:bg-dark-surface px-4 py-2.5 text-base font-normal text-gray-900 dark:text-dark-text shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer ${
             error
               ? 'border-error-500 focus:ring-error-500 bg-error-50'
-              : 'border-gray-300 focus:ring-primary-500 focus:border-transparent'
+              : 'border-gray-300 dark:border-dark-border focus:ring-primary-500 dark:focus:ring-dark-accent focus:border-transparent'
           }`}
         />
         <button
@@ -186,9 +186,9 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
             }
           }}
           disabled={disabled}
-          className="px-3 py-2.5 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-2.5 border border-gray-300 dark:border-dark-border rounded-xl bg-white dark:bg-dark-surface hover:bg-gray-50 dark:hover:bg-dark-elevated disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
         >
-          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </button>
@@ -206,7 +206,7 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
           />
           
           {/* 날짜/시간 선택기 */}
-          <div className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl p-4 w-80">
+          <div className="absolute z-50 mt-2 bg-white dark:bg-dark-elevated border border-gray-200 dark:border-dark-border rounded-2xl shadow-2xl p-4 w-80">
             {/* 월 이동 */}
             <div className="flex items-center justify-between mb-3">
               <button
@@ -216,13 +216,13 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
                   newDate.setMonth(newDate.getMonth() - 1);
                   setSelectedDate(newDate);
                 }}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <h3 className="text-base font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-dark-text">
                 {year}년 {month + 1}월
               </h3>
               <button
@@ -232,7 +232,7 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
                   newDate.setMonth(newDate.getMonth() + 1);
                   setSelectedDate(newDate);
                 }}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -280,15 +280,15 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
             </div>
 
             {/* 시간 선택 */}
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-gray-200 dark:border-dark-border pt-4">
               <div className="flex items-center justify-center gap-3">
                 <div className="flex flex-col items-center">
-                  <label className="text-xs text-gray-500 mb-1">시간</label>
+                  <label className="text-xs text-gray-500 dark:text-dark-text-muted mb-1">시간</label>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleTimeChange('hours', (hours + 1) % 24)}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -303,12 +303,12 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
                           handleTimeChange('hours', val);
                         }
                       }}
-                      className="w-14 text-center text-2xl font-semibold border border-gray-300 rounded-lg py-1"
+                      className="w-14 text-center text-2xl font-semibold border border-gray-300 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text rounded-lg py-1"
                     />
                     <button
                       type="button"
                       onClick={() => handleTimeChange('hours', (hours + 23) % 24)}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -317,15 +317,15 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
                   </div>
                 </div>
 
-                <span className="text-2xl font-semibold text-gray-400 mt-5">:</span>
+                <span className="text-2xl font-semibold text-gray-400 dark:text-dark-text-muted mt-5">:</span>
 
                 <div className="flex flex-col items-center">
-                  <label className="text-xs text-gray-500 mb-1">분</label>
+                  <label className="text-xs text-gray-500 dark:text-dark-text-muted mb-1">분</label>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleTimeChange('minutes', (minutes + 1) % 60)}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -340,12 +340,12 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
                           handleTimeChange('minutes', val);
                         }
                       }}
-                      className="w-14 text-center text-2xl font-semibold border border-gray-300 rounded-lg py-1"
+                      className="w-14 text-center text-2xl font-semibold border border-gray-300 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text rounded-lg py-1"
                     />
                     <button
                       type="button"
                       onClick={() => handleTimeChange('minutes', (minutes + 59) % 60)}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -357,7 +357,7 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
             </div>
 
             {/* 버튼 */}
-            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
+            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-dark-border">
               <button
                 type="button"
                 onClick={handleApply}
@@ -368,7 +368,7 @@ function DateTimePicker({ value, onChange, disabled, error, label }: DateTimePic
               <button
                 type="button"
                 onClick={handleClose}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-dark-border rounded-xl text-gray-700 dark:text-dark-text-muted hover:bg-gray-50 dark:hover:bg-dark-surface transition-colors font-medium"
               >
                 닫기
               </button>
@@ -467,10 +467,10 @@ export function ScheduleForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full bg-white">
+    <form onSubmit={handleSubmit} className="w-full bg-white dark:bg-dark-elevated">
       {/* Title */}
       <div className="flex flex-col gap-1.5 mb-5">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-gray-700 dark:text-dark-text-muted">
           제목 <span className="text-error-500">*</span>
         </label>
         <input
@@ -480,10 +480,10 @@ export function ScheduleForm({
           placeholder="일정 제목을 입력하세요"
           maxLength={MAX_TITLE_LENGTH}
           disabled={isPending}
-          className={`w-full border rounded-xl bg-white px-4 py-2.5 text-base font-normal text-gray-900 placeholder:text-gray-400 shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
+          className={`w-full border rounded-xl bg-white dark:bg-dark-surface px-4 py-2.5 text-base font-normal text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:border-transparent focus:dark:ring-dark-accent disabled:bg-gray-100 disabled:cursor-not-allowed ${
             errors.title
               ? 'border-error-500 focus:ring-error-500 bg-error-50'
-              : 'border-gray-300 focus:ring-primary-500 focus:border-transparent'
+              : 'border-gray-300 dark:border-dark-border focus:ring-primary-500 focus:border-transparent'
           }`}
         />
         <div className="flex items-center justify-between">
@@ -507,7 +507,7 @@ export function ScheduleForm({
 
       {/* Color Palette */}
       <div className="flex flex-col gap-2 mb-5">
-        <label className="text-sm font-medium text-gray-700">색상</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-dark-text-muted">색상</label>
         <div className="flex items-center gap-3">
           {SCHEDULE_COLORS.map((colorOption) => {
             const isSelected = color === colorOption;
@@ -532,14 +532,14 @@ export function ScheduleForm({
 
       {/* Description */}
       <div className="flex flex-col gap-1.5 mb-5">
-        <label className="text-sm font-medium text-gray-700">설명</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-dark-text-muted">설명</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="설명을 입력하세요 (선택)"
           rows={3}
           disabled={isPending}
-          className="w-full border border-gray-300 rounded-xl bg-white px-4 py-2.5 text-sm font-normal text-gray-800 placeholder:text-gray-400 shadow-sm resize-none transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="w-full border border-gray-300 dark:border-dark-border rounded-xl bg-white dark:bg-dark-surface px-4 py-2.5 text-sm font-normal text-gray-800 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled shadow-sm resize-none transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
         />
       </div>
 

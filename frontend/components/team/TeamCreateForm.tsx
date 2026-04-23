@@ -53,7 +53,7 @@ export function TeamCreateForm() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-4">
-      <p className="text-base font-normal text-gray-600">
+      <p className="text-base font-normal text-gray-600 dark:text-dark-text-muted">
         새 팀을 만들어보세요. 생성 후 팀원의 가입 신청을 승인할 수 있습니다.
       </p>
 
@@ -75,7 +75,7 @@ export function TeamCreateForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="team-description" className="text-sm font-medium text-gray-700">
+        <label htmlFor="team-description" className="text-sm font-medium text-gray-700 dark:text-dark-text-muted">
           팀 업무
         </label>
         <textarea
@@ -90,10 +90,10 @@ export function TeamCreateForm() {
           maxLength={500}
           rows={3}
           className={[
-            'w-full border rounded-xl bg-white px-4 py-2.5 text-base font-normal text-gray-900 placeholder:text-gray-400 shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:border-transparent resize-none disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed',
+            'w-full border rounded-xl bg-white dark:bg-dark-surface px-4 py-2.5 text-base font-normal text-gray-900 dark:text-dark-text placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:border-transparent resize-none disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed',
             errors.description
               ? 'border-error-500 bg-error-50 focus:ring-error-500'
-              : 'border-gray-300 focus:ring-primary-500',
+              : 'border-gray-300 dark:border-dark-border focus:ring-primary-500 dark:focus:ring-dark-accent',
           ].join(' ')}
         />
         {errors.description && (
@@ -106,7 +106,7 @@ export function TeamCreateForm() {
 
       {/* 공개/비공개 선택 */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">팀 공개 설정</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-dark-text-muted">팀 공개 설정</label>
         <div className="flex gap-3">
           <button
             type="button"
@@ -114,7 +114,7 @@ export function TeamCreateForm() {
             className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-150 ${
               isPublic
                 ? 'border-primary-500 bg-primary-50 text-primary-700'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                : 'border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-muted hover:border-gray-300'
             }`}
           >
             <div className="flex items-center justify-center gap-1.5">
@@ -132,7 +132,7 @@ export function TeamCreateForm() {
             className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-150 ${
               !isPublic
                 ? 'border-primary-500 bg-primary-50 text-primary-700'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                : 'border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-muted hover:border-gray-300'
             }`}
           >
             <div className="flex items-center justify-center gap-1.5">

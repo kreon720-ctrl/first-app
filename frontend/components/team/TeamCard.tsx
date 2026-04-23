@@ -58,11 +58,11 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
 
   if (isEditing) {
     return (
-      <div className="w-full bg-white rounded-xl border border-primary-300 p-4 shadow-sm">
-        <h3 className="text-base font-semibold text-gray-900 mb-3">팀 수정</h3>
+      <div className="w-full bg-white dark:bg-dark-surface rounded-xl border border-primary-300 p-4 shadow-sm">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-dark-text mb-3">팀 수정</h3>
         <div className="space-y-3 mb-4">
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
+            <label className="text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1 block">
               팀 이름 <span className="text-error-500">*</span>
             </label>
             <input
@@ -71,17 +71,17 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
               onChange={(e) => setEditName(e.target.value)}
               placeholder="팀 이름을 입력하세요"
               maxLength={50}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent focus:border-transparent"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">설명</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-dark-text-muted mb-1 block">설명</label>
             <textarea
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               placeholder="팀 설명을 입력하세요 (선택)"
               rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full border border-gray-300 dark:border-dark-border rounded-lg px-3 py-2 text-sm resize-none bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent focus:border-transparent"
             />
           </div>
         </div>
@@ -108,7 +108,7 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
 
   return (
     <>
-      <div className="w-full bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all duration-150">
+      <div className="w-full bg-white dark:bg-dark-surface rounded-xl border border-gray-200 dark:border-dark-border p-4 shadow-sm hover:shadow-md transition-all duration-150">
         <div className="flex items-start justify-between">
           {/* 팀 정보 (클릭 → 팀 상세 이동) */}
           <button
@@ -116,12 +116,12 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
             onClick={() => onClick?.(team.id)}
             className="flex-1 min-w-0 text-left cursor-pointer"
           >
-            <h3 className="text-lg font-semibold text-gray-800 truncate">{team.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text truncate">{team.name}</h3>
             <div className="flex items-center gap-2 mt-2">
               <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${roleBadgeClass}`}>
                 {roleLabel}
               </span>
-              <span className="text-xs font-normal text-gray-500">{formattedDate}</span>
+              <span className="text-xs font-normal text-gray-500 dark:text-dark-text-muted">{formattedDate}</span>
               {team.isPublic && (
                 <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800">
                   공개
@@ -129,7 +129,7 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
               )}
             </div>
             {team.description && (
-              <p className="text-sm text-gray-500 mt-1 line-clamp-1">{team.description}</p>
+              <p className="text-sm text-gray-500 dark:text-dark-text-muted mt-1 line-clamp-1">{team.description}</p>
             )}
           </button>
 
@@ -172,7 +172,7 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors"
                   aria-label="수정"
                   title="팀 수정"
                 >
@@ -200,24 +200,24 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
       {/* 팀원 조회 모달 */}
       {showMembers && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-4"
           onClick={() => setShowMembers(false)}
         >
           <div
-            className="w-full max-w-sm bg-white rounded-2xl shadow-xl flex flex-col max-h-[70vh]"
+            className="w-full max-w-sm bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl flex flex-col max-h-[70vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 헤더 */}
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-dark-border flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-gray-800">{team.name} 팀원 목록</h2>
+                <h2 className="text-sm font-semibold text-gray-800 dark:text-dark-text">{team.name} 팀원 목록</h2>
                 {!membersLoading && (
-                  <p className="text-xs text-gray-400 mt-0.5">총 {members.length}명</p>
+                  <p className="text-xs text-gray-400 dark:text-dark-text-disabled mt-0.5">총 {members.length}명</p>
                 )}
               </div>
               <button
                 onClick={() => setShowMembers(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-400 dark:text-dark-text-muted hover:text-gray-600 p-1"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -241,7 +241,7 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
                     return (
                       <div
                         key={member.userId}
-                        className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-gray-50"
+                        className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-surface"
                       >
                         {/* 아바타 */}
                         <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
@@ -270,12 +270,12 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
                               className="w-full text-sm border border-indigo-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                             />
                           ) : (
-                            <p className="text-sm font-medium text-gray-800">
+                            <p className="text-sm font-medium text-gray-800 dark:text-dark-text">
                               {member.name}
                               {isMe && <span className="ml-1 text-xs text-indigo-400">(나)</span>}
                             </p>
                           )}
-                          <p className="text-xs text-gray-400 truncate">{member.email}</p>
+                          <p className="text-xs text-gray-400 dark:text-dark-text-disabled truncate">{member.email}</p>
                         </div>
 
                         {/* 역할 배지 + 본인 수정 버튼 + 팀장의 팀원 탈퇴 버튼 */}
@@ -355,10 +355,10 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
             </div>
 
             {/* 닫기 버튼 */}
-            <div className="px-5 py-4 border-t border-gray-100">
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-dark-border">
               <button
                 onClick={() => setShowMembers(false)}
-                className="w-full py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                className="w-full py-2 text-sm font-medium bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-dark-text-muted rounded-lg hover:bg-gray-200 dark:hover:bg-dark-elevated"
               >
                 닫기
               </button>
@@ -370,16 +370,16 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
       {/* 팀원 탈퇴 확인 다이얼로그 */}
       {confirmKickUserId && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 dark:bg-black/70 px-4"
           onClick={() => setConfirmKickUserId(null)}
         >
           <div
-            className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6"
+            className="w-full max-w-sm bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6"
             onClick={e => e.stopPropagation()}
           >
-            <h2 className="text-base font-semibold text-gray-900 mb-1">팀원 탈퇴</h2>
-            <p className="text-sm text-gray-600 mb-6">
-              <span className="font-medium text-gray-900">{confirmKickName}</span>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-dark-text mb-1">팀원 탈퇴</h2>
+            <p className="text-sm text-gray-600 dark:text-dark-text-muted mb-6">
+              <span className="font-medium text-gray-900 dark:text-dark-text">{confirmKickName}</span>
               님을 팀에서 탈퇴시키겠습니까?
             </p>
             <div className="flex justify-center gap-3">
@@ -410,16 +410,16 @@ export function TeamCard({ team, pendingCount = 0, onClick, onApprove, onUpdate,
       {/* 삭제 확인 팝업 */}
       {showDeleteConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/70 px-4"
           onClick={() => setShowDeleteConfirm(false)}
         >
           <div
-            className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6"
+            className="w-full max-w-sm bg-white dark:bg-dark-elevated dark:border dark:border-dark-border rounded-2xl shadow-xl p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">팀 삭제</h2>
-            <p className="text-sm text-gray-600 mb-6">
-              <span className="font-medium text-gray-900">{team.name}</span>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text mb-1">팀 삭제</h2>
+            <p className="text-sm text-gray-600 dark:text-dark-text-muted mb-6">
+              <span className="font-medium text-gray-900 dark:text-dark-text">{team.name}</span>
               {' '}팀을 정말 삭제하시겠습니까?
             </p>
             <div className="flex gap-3">

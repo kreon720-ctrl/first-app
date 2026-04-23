@@ -28,7 +28,7 @@ const COLOR_BORDER: Record<ScheduleColor, string> = {
 export function PostItColorPalette({ selectedColor, onSelect }: PostItColorPaletteProps) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-sm text-gray-500 mr-0.5 whitespace-nowrap">
+      <span className="text-sm text-gray-500 dark:text-dark-text-muted mr-0.5 whitespace-nowrap">
         {selectedColor ? '날짜클릭' : '포스트잇'}
       </span>
       {SCHEDULE_COLORS.map(color => (

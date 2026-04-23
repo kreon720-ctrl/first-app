@@ -60,7 +60,7 @@ export function ChatPanel({ teamId, date, isLeader = false }: ChatPanelProps) {
       )}
       <button
         onClick={handleOpenModal}
-        className="px-2.5 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50 text-gray-700 bg-white"
+        className="px-2.5 py-1 text-xs font-medium border border-gray-300 dark:border-dark-border rounded hover:bg-gray-50 dark:hover:bg-dark-surface text-gray-700 dark:text-dark-text-muted bg-white dark:bg-dark-surface"
       >
         관리자
       </button>
@@ -81,7 +81,7 @@ export function ChatPanel({ teamId, date, isLeader = false }: ChatPanelProps) {
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <div className="animate-pulse">
-              <p className="text-sm text-gray-500">메시지 로딩 중...</p>
+              <p className="text-sm text-gray-500 dark:text-dark-text-muted">메시지 로딩 중...</p>
             </div>
           </div>
         ) : isError ? (
@@ -112,8 +112,8 @@ export function ChatPanel({ teamId, date, isLeader = false }: ChatPanelProps) {
       />
 
       {/* Polling indicator */}
-      <div className="px-4 py-2 bg-gray-50 border-t border-gray-200">
-        <p className="text-xs text-gray-400 text-center">
+      <div className="px-4 py-2 bg-gray-50 dark:bg-dark-base border-t border-gray-200 dark:border-dark-border">
+        <p className="text-xs text-gray-400 dark:text-dark-text-disabled text-center">
           * 3초마다 자동 갱신
         </p>
       </div>

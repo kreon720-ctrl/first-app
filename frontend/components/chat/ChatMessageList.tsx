@@ -27,8 +27,8 @@ export function ChatMessageList({ messages, isLeader = false, adminSlot }: ChatM
               d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
             />
           </svg>
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">아직 메시지가 없습니다.</h3>
-          <p className="text-sm font-normal text-gray-400 max-w-xs">
+          <h3 className="text-lg font-semibold text-gray-600 dark:text-dark-text-muted mb-2">아직 메시지가 없습니다.</h3>
+          <p className="text-sm font-normal text-gray-400 dark:text-dark-text-disabled max-w-xs">
             첫 번째 메시지를 보내보세요.
           </p>
         </div>
@@ -63,11 +63,11 @@ export function ChatMessageList({ messages, isLeader = false, adminSlot }: ChatM
         <div key={groupIndex} className="mb-6">
           {/* Date divider */}
           <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+            <div className="flex-1 h-px bg-gray-200 dark:bg-dark-border" />
+            <span className="text-xs font-medium text-gray-500 dark:text-dark-text-muted whitespace-nowrap">
               {group.date}
             </span>
-            <div className="flex-1 h-px bg-gray-200" />
+            <div className="flex-1 h-px bg-gray-200 dark:bg-dark-border" />
           </div>
 
           {/* Messages for this date */}
