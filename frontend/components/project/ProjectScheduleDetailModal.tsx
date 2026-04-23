@@ -214,6 +214,7 @@ function ProjectScheduleDetailModalBody({
           parentSchedule={schedule}
           subSchedule={editingSub}
           currentUserName={currentUserName}
+          teamId={teamId}
           onSubmit={editingSub ? handleUpdateSub : handleCreateSub}
           onCancel={closeCreate}
         />

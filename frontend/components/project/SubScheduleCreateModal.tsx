@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { ProjectSchedule, SubSchedule, SubScheduleCreateInput, GanttBarColor } from '@/types/project';
 import { GANTT_BAR_COLORS } from '@/types/project';
+import { useTeamDetail } from '@/hooks/query/useTeams';
 
 // Static swatch classes (Tailwind v4)
 const SWATCH: Record<GanttBarColor, string> = {
@@ -18,6 +19,7 @@ interface Props {
   parentSchedule: ProjectSchedule;
   subSchedule?: SubSchedule | null;
   currentUserName: string;
+  teamId: string;
   onSubmit: (input: SubScheduleCreateInput) => void;
   onCancel: () => void;
 }
@@ -27,9 +29,13 @@ export function SubScheduleCreateModal({
   parentSchedule,
   subSchedule,
   currentUserName,
+  teamId,
   onSubmit,
   onCancel,
 }: Props) {
+  const { data: teamDetail } = useTeamDetail(teamId);
+  const members = teamDetail?.members ?? [];
+
   const [title, setTitle]           = useState('');
   const [color, setColor]           = useState<GanttBarColor>('indigo');
   const [startDate, setStartDate]   = useState(parentSchedule.startDate);
@@ -39,6 +45,19 @@ export function SubScheduleCreateModal({
   const [progress, setProgress]     = useState(0);
   const [isDelayed, setIsDelayed]   = useState(false);
   const [errors, setErrors]         = useState<Record<string, string>>({});
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showMemberPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowMemberPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showMemberPicker]);
 
   useEffect(() => {
     if (mode === 'edit' && subSchedule) {
@@ -153,9 +172,41 @@ export function SubScheduleCreateModal({
           {/* 일정 담당자 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">일정 담당자</label>
-            <input type="text" value={leader} onChange={e => setLeader(e.target.value)}
-              placeholder="담당자명을 입력하세요"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <div className="relative flex gap-2" ref={pickerRef}>
+              <input type="text" value={leader} onChange={e => setLeader(e.target.value)}
+                placeholder="담당자명을 입력하세요"
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              <button
+                type="button"
+                onClick={() => setShowMemberPicker((v) => !v)}
+                className="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors whitespace-nowrap"
+              >
+                찾기
+              </button>
+              {showMemberPicker && (
+                <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {members.length === 0 ? (
+                    <p className="px-3 py-2 text-sm text-gray-400">팀원이 없습니다.</p>
+                  ) : (
+                    members.map((m) => (
+                      <button
+                        key={m.userId}
+                        type="button"
+                        onClick={() => { setLeader(m.name); setShowMemberPicker(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="font-medium text-gray-800">{m.name}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                          m.role === 'LEADER'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-indigo-100 text-indigo-800'
+                        }`}>{m.role === 'LEADER' ? '리더' : '멤버'}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 진행률 + 지연 */}

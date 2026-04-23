@@ -191,6 +191,7 @@ export function ProjectGanttView({ teamId, currentUserId }: ProjectGanttViewProp
           mode={modals.editingSchedule ? 'edit' : 'create'}
           project={selectedProject}
           schedule={modals.editingSchedule}
+          teamId={teamId}
           onSubmit={modals.editingSchedule
             ? (input) => scheduleActions.handleUpdateSchedule(modals.editingSchedule!, input)
             : scheduleActions.handleCreateSchedule

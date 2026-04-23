@@ -163,8 +163,8 @@ export function CalendarView({
             </>
           )}
 
-          {/* 프로젝트 관리 버튼 (PC only, 프로젝트 없을 때만 표시) */}
-          {!compact && teamProjects.length === 0 && (
+          {/* 프로젝트 관리 버튼 (PC only) */}
+          {!compact && (
             <button
               type="button"
               onClick={() => onViewChange?.('project')}
