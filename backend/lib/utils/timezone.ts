@@ -108,10 +108,11 @@ export function getKstDateRange(
   view: CalendarView,
   baseDate: string
 ): { start: Date; end: Date } {
-  const baseKst = new Date(`${baseDate}T00:00:00+09:00`)
-  const year = baseKst.getFullYear()
-  const month = baseKst.getMonth()
-  const date = baseKst.getDate()
+  // baseDate 는 항상 KST 캘린더의 'YYYY-MM-DD'. 컨테이너 로컬 TZ 영향을 받지 않도록
+  // 문자열을 직접 파싱해 KST 좌표(year/month/date) 추출. (예전: baseKst.getDate() 가
+  // 컨테이너 TZ=UTC 일 때 KST 4/29 → UTC 4/28 로 1일 어긋나는 버그가 있었음.)
+  const [year, monthOneBased, date] = baseDate.split('-').map(Number)
+  const month = monthOneBased - 1
 
   // Helper: build a UTC Date from a KST calendar date (y, m=0-indexed, d)
   // Date.UTC handles overflow/underflow (e.g. d=-4 correctly wraps to previous month)
@@ -132,8 +133,9 @@ export function getKstDateRange(
     }
 
     case 'week': {
-      // Sunday to Saturday (KST)
-      const dayOfWeek = baseKst.getDay() // 0=Sunday, 6=Saturday
+      // Sunday to Saturday (KST). dayOfWeek 는 KST 캘린더 날짜의 요일이며,
+      // 같은 KST 자정 시각의 UTC 표현에서 추출하면 TZ 무관.
+      const dayOfWeek = new Date(Date.UTC(year, month, date)).getUTCDay()
       const start = kstMidnight(year, month, date - dayOfWeek)
       const end = kstMidnight(year, month, date + (7 - dayOfWeek))
       return { start, end }

@@ -221,31 +221,35 @@ flowchart TD
 ```mermaid
 flowchart LR
     User["사용자 브라우저"]
-    Btn["헤더 AI 비서 버튼\n(amber-500)"]
-    Pop["팝업 /ai-assistant\nReact UI"]
-    Proxy["Next.js API 라우트\n/api/ai-assistant/chat\nmode 분기 + 에러 정규화"]
-    RAG["rag/server.js  :8787\nRRF (cosine + BM25)\nParent-Document Retrieval\nMAX_CTX 22000"]
-    Agent["agent/server.js  :8788\nReAct + JSON schema\nMAX_STEPS 4"]
-    MCP["teamworks-mcp\n(stdio)\n팀·일정 도구"]
-    Backend["Backend API\n/api/teams/...\n/api/me/tasks"]
+    Tab["우측 탭 — AI 버틀러\n(팀 페이지 통합)"]
+    Proxy["Next.js API 라우트\n/api/ai-assistant/chat\n4-way intent 분기 + SSE"]
+    RAG["rag/server.js  :8787\nRRF (cosine + BM25)\nParent-Document Retrieval\n/classify · /parse-schedule-args\n/parse-schedule-query"]
+    OpenWebUI["open-webui  :8081\nOpenAI 호환 게이트웨이"]
+    SearxNG["searxng  :8080\n메타검색"]
+    Backend["Backend API\n/api/teams/.../schedules\n/api/me/tasks"]
     Ollama[("Ollama  :11434\ngemma4:26b  (num_ctx 32768)\nnomic-embed-text")]
     Chunks["rag/data/chunks.json\n(청크 + 임베딩 + BM25 통계 + parents)"]
 
-    User --> Btn --> Pop --> Proxy
-    Proxy -- "mode=guide" --> RAG
-    Proxy -- "mode=agent (Bearer)" --> Agent
-    RAG -- "/api/embed (search_query:)\n/api/chat" --> Ollama
+    User --> Tab --> Proxy
+    Proxy -- "intent=usage" --> RAG
+    Proxy -- "intent=general (SearxNG inline)" --> OpenWebUI
+    Proxy -- "intent=schedule_query / _create" --> Backend
+    Proxy -- "intent=blocked → 거절 안내" --> User
+    Proxy -- "/classify · /parse-schedule-*" --> RAG
+    Proxy -- "검색 결과 직접 가져오기" --> SearxNG
+    RAG -- "/api/embed (search_query:)\n/api/chat (think:false)" --> Ollama
+    OpenWebUI -- "/api/chat (stream)" --> Ollama
     RAG -. "오프라인: rag/index.js" .-> Chunks
     RAG -- "load index" --> Chunks
-    Agent -- "/api/chat (format:schema)" --> Ollama
-    Agent -- "stdio JSON-RPC" --> MCP
-    MCP -- "팀·일정 CRUD" --> Backend
 ```
 
 흐름 핵심:
-- **안내 모드(`mode=guide`)** — `ollama/*.md` 공식 문서를 RAG 로 검색해 참고 자료를 동봉한 답변. 인증 불필요(프록시가 RAG 서버로 그대로 전달).
-- **실행 모드(`mode=agent`)** — 사용자 자연어를 JSON 도구 호출로 변환해 백엔드 API 를 실제로 호출. Bearer 토큰 필수(프록시가 헤더 검증).
-- **호출 옵션** — `rag/ollamaClient.js` · `agent/ollamaClient.js` 모두 `DEFAULT_CHAT_OPTIONS = { num_ctx: 32768, num_predict: 1024 }` 를 호출 시점에 병합. Modelfile(128K 기본) 은 변경하지 않아 다른 서비스가 같은 모델을 풀 컨텍스트로 호출하면 그쪽은 영향 없음.
+- **단일 진입점** — 모드 토글 없이 사용자 자연어를 RAG `/classify` 가 4-way 로 분류 (`usage` / `general` / `schedule_query` / `schedule_create` / `blocked`). 자세한 설계는 `docs/16-mcp-server-plan.md`.
+- **사용법(`usage`)** — `ollama/*.md` 공식 문서를 RAG 로 검색해 답변. 인증 불필요.
+- **일반 질문(`general`)** — frontend 가 SearxNG 직접 호출해 결과를 system prompt 에 inline 주입, Open WebUI 모델이 답변 생성 (web_search 비활성).
+- **일정 조회·등록(`schedule_query`/`schedule_create`)** — `frontend/lib/mcp/scheduleQueries.ts` 가 백엔드의 기존 `/api/teams/:teamId/schedules` API 호출 (Bearer 토큰 필수, 미들웨어가 권한 검증). 등록은 `pending-action` SSE 이벤트로 confirm 카드, 정보 부족 시 `awaiting-input` 으로 다중 턴.
+- **거절(`blocked`)** — 일정 수정/삭제·프로젝트·채팅 요청은 정중한 안내 (찰떡이는 일정 조회·등록만).
+- **호출 옵션** — `rag/ollamaClient.js` 의 `DEFAULT_CHAT_OPTIONS = { num_ctx: 32768, num_predict: 1024 }` + `think: false` (gemma4:26b thinking-mode 비활성).
 - **인덱스 산출물** — `rag/data/chunks.json` 은 `rag/index.js` 가 1회 생성. `ollama/*.md` 가 변경되면 재인덱싱 후 RAG 서버 재기동 필요(`docs/13-RAG-pipeline-guide.md §6.3·§6.4`).
 
 ---

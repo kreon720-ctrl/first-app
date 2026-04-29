@@ -207,14 +207,18 @@ export async function chat(model, messages, options = {}) {
 
 ### 4.6 Next.js 프록시가 필요한 이유
 
-브라우저에서 바로 `fetch('http://127.0.0.1:8787/chat')` 하면 CORS·프로토콜·보안 이슈가 많다. Next.js API 라우트가 프록시 역할 + 안내(guide)/실행(agent) 모드 분기까지 담당:
+브라우저에서 바로 `fetch('http://127.0.0.1:8787/chat')` 하면 CORS·프로토콜·보안 이슈가 많다. Next.js API 라우트가 프록시 역할 + **4-way intent 분기**(`usage` / `general` / `schedule_query` / `schedule_create` / `blocked`) 를 담당. 자체 MCP agent 서버(8788) 는 폐기됨 (`docs/16-mcp-server-plan.md` Phase 5):
 
 ```ts
 // frontend/app/api/ai-assistant/chat/route.ts
-const RAG_SERVER_URL   = process.env.RAG_SERVER_URL   || 'http://127.0.0.1:8787';
-const AGENT_SERVER_URL = process.env.AGENT_SERVER_URL || 'http://127.0.0.1:8788';
-// mode==='agent' → AGENT_SERVER_URL/chat (Bearer 토큰 필수)
-// 그 외      → RAG_SERVER_URL/chat
+const RAG_SERVER_URL = process.env.RAG_SERVER_URL || 'http://127.0.0.1:8787';
+// classify 응답의 intent 따라:
+//   'usage'           → RAG /chat (stream)
+//   'general'         → SearxNG 직접 호출 + Open WebUI (web_search 비활성)
+//   'schedule_query'  → backend GET /api/teams/:teamId/schedules
+//   'schedule_create' → /parse-schedule-args → confirm 카드 → backend POST
+//   'blocked'         → 정중한 거절 안내
+//   'unknown'         → RAG 시도 후 거절형이면 Open WebUI fallback
 // 502 발생 시 ECONNREFUSED/fetch failed 를 한국어 안내로 변환
 ```
 

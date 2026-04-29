@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { tokenManager } from '@/lib/tokenManager';
 
 interface Source {
@@ -11,9 +12,12 @@ interface Source {
   // Open WebUI 웹 검색 결과
   title?: string;
   url?: string;
+  // 일정(schedule) 결과 — startAt/endAt 은 ISO 8601
+  startAt?: string;
+  endAt?: string;
 }
 
-type AnswerSource = 'rag' | 'web';
+type AnswerSource = 'rag' | 'web' | 'schedule' | 'blocked';
 
 interface PendingAction {
   tool: string;
@@ -32,23 +36,17 @@ interface Message {
   // Once the user confirms or cancels, we flip this so the card stops
   // rendering its action buttons.
   actionResolved?: 'confirmed' | 'cancelled';
+  // 다중 턴 일정 등록 — 직전 user 질문이 정보 부족이라 후속 답변을 기다리는 상태.
+  // 다음 user 입력이 들어오면 previousQuestion 과 합쳐 재요청.
+  awaitingInput?: { needs: string; previousQuestion: string };
 }
 
-type Mode = 'guide' | 'agent';
-
-const EXAMPLE_QUESTIONS_GUIDE = [
-  '업무보고 어떻게 보내?',
-  '팀에 어떻게 가입해?',
+// 단일 진입점 — 사용자가 자유롭게 묻고, 시스템이 자동으로 의도를 분류.
+const EXAMPLE_QUESTIONS = [
   '포스트잇 색깔 종류 알려줘',
-  '오늘 서울 날씨 어때?',
   '오늘 뉴스 검색해줘',
-];
-
-const EXAMPLE_QUESTIONS_AGENT = [
-  '내 팀 목록 보여줘',
   '오늘 일정 알려줘',
-  '내일 오후 3시 주간회의 일정 등록해줘',
-  '다음 주 월요일 회의 일정 있는지 확인해줘',
+  '내일 오후 3시 주간회의 등록해줘',
 ];
 
 function newId(): string {
@@ -74,18 +72,18 @@ interface AIAssistantPanelProps {
 }
 
 export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAssistantPanelProps) {
+  const queryClient = useQueryClient();
   const userHint = useMemo(() => {
     if (!teamId) return undefined;
     return `현재 사용자가 선택한 기본 팀: "${teamName}" (teamId=${teamId}). 사용자가 별도의 팀을 지정하지 않으면 이 팀을 대상으로 조회/등록하세요.`;
   }, [teamId, teamName]);
 
-  const [mode, setMode] = useState<Mode>('guide');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
       content:
-        '안녕하세요! AI 버틀러 찰떡입니다. 팀웍스 사용법(📚 공식 문서)이든 일반 질문(🌐 웹 검색)이든 자유롭게 물어봐 주세요. 시스템이 자동으로 적절한 경로로 답변합니다. (실행 모드로 바꾸면 팀·일정 조회·등록도 부탁할 수 있어요.)',
+        '안녕하세요! AI 버틀러 찰떡입니다.\n팀웍스 사용법(📚 공식 문서)·일반 질문(🌐 웹 검색)·우리 팀 일정 조회·등록(📅) 모두 자유롭게 물어봐 주세요. 시스템이 자동으로 적절한 경로로 답변합니다.\n(일정 수정·삭제, 프로젝트·채팅 작업은 화면에서 직접 처리해 주세요.)',
     },
   ]);
   const [input, setInput] = useState('');
@@ -108,6 +106,15 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
     const trimmed = question.trim();
     if (!trimmed || isLoading) return;
 
+    // 다중 턴 — 직전 assistant 메시지가 awaitingInput 이면 두 turn 을 합쳐 재요청.
+    // (서버는 stateless — 합친 한 question 으로 새 parse 시도.)
+    const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+    const pendingTurn = lastAssistant?.awaitingInput;
+    const effectiveQuestion = pendingTurn
+      ? `${pendingTurn.previousQuestion}\n그리고 ${trimmed}`
+      : trimmed;
+
+    // 사용자 화면에는 사용자가 입력한 그대로 표시.
     const userMsg: Message = { id: newId(), role: 'user', content: trimmed };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
@@ -117,24 +124,23 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
       const headers: Record<string, string> = {
         'content-type': 'application/json',
       };
-      if (mode === 'agent') {
-        const token = tokenManager.getAccessToken();
-        if (!token) {
-          throw new Error(
-            '실행 모드는 로그인이 필요합니다. 메인 화면에서 먼저 로그인해 주세요.'
-          );
-        }
-        headers['authorization'] = `Bearer ${token}`;
-      }
+      // 일정 조회·등록 의도는 서버에서 JWT 강제. 토큰이 있으면 항상 동봉해 backend 권한 검증을 거치게 함.
+      const token = tokenManager.getAccessToken();
+      if (token) headers['authorization'] = `Bearer ${token}`;
 
-      // 안내 모드는 SSE 스트리밍으로 받아 첫 토큰부터 점진 표시.
-      // 실행 모드(agent)는 confirm 카드 메커니즘이 있어 stream 미사용 (기존 동작 유지).
-      const useStream = mode === 'guide';
+      // 모든 의도를 SSE 로 처리 — token / pending-action / blocked 모두 stream 안에서 분기.
+      const useStream = true;
 
       const res = await fetch('/api/ai-assistant/chat', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ question: trimmed, mode, userHint, stream: useStream }),
+        body: JSON.stringify({
+          question: effectiveQuestion,
+          teamId,
+          teamName,
+          userHint,
+          stream: useStream,
+        }),
       });
 
       if (!res.ok) {
@@ -143,119 +149,127 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
         throw new Error(data?.error || `요청 실패 (${res.status})`);
       }
 
-      if (!useStream) {
-        // === 실행 모드 — non-stream JSON ===
-        const data = await res.json();
-        if (data?.kind === 'confirm' && data.pendingAction) {
-          const assistantMsg: Message = {
-            id: newId(),
-            role: 'assistant',
-            content: data.answer || '아래 내용으로 실행할까요?',
-            pendingAction: data.pendingAction,
-            preview: data.preview,
-          };
-          setMessages((prev) => [...prev, assistantMsg]);
-        } else {
-          const assistantMsg: Message = {
-            id: newId(),
-            role: 'assistant',
-            content:
-              typeof data.answer === 'string' ? data.answer.trim() : '',
-            sources: Array.isArray(data.sources) ? data.sources : [],
-            answerSource: data?.source === 'web' ? 'web' : data?.source === 'rag' ? 'rag' : undefined,
-          };
-          setMessages((prev) => [...prev, assistantMsg]);
-        }
-      } else {
-        // === 안내 모드 — SSE stream ===
-        const msgId = newId();
-        // placeholder 메시지 추가 (토큰 들어올 때마다 content 점진 갱신).
-        // 첫 토큰 도착 전까지 "Thinking..." 을 띄워 사용자가 빈 카드 만나는 시간 제거.
-        // 첫 실제 토큰이 들어오면 isPlaceholder 가 true 인 동안 swap.
-        setMessages((prev) => [
-          ...prev,
-          { id: msgId, role: 'assistant', content: THINKING_PLACEHOLDER },
-        ]);
+      // === SSE stream — 모든 의도(usage / general / schedule_query / schedule_create / blocked) ===
+      const msgId = newId();
+      // placeholder 메시지 추가. 첫 실제 토큰 도착 시 swap.
+      setMessages((prev) => [
+        ...prev,
+        { id: msgId, role: 'assistant', content: THINKING_PLACEHOLDER },
+      ]);
 
-        if (!res.body) throw new Error('스트림 응답을 받지 못했습니다.');
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-        let streamError: string | null = null;
+      if (!res.body) throw new Error('스트림 응답을 받지 못했습니다.');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let streamError: string | null = null;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop() || '';
-          for (const line of lines) {
-            const t = line.trim();
-            if (!t || !t.startsWith('data:')) continue;
-            const data = t.slice(5).trim();
-            if (!data || data === '[DONE]') continue;
-            try {
-              const evt = JSON.parse(data);
-              if (evt.type === 'meta') {
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === msgId
-                      ? { ...m, answerSource: evt.source === 'web' ? 'web' : evt.source === 'rag' ? 'rag' : undefined }
-                      : m
-                  )
-                );
-              } else if (evt.type === 'progress' && typeof evt.text === 'string') {
-                // thinking-mode 모델의 reasoning 시작 시 한 번 표시.
-                // placeholder 상태일 때만 갱신 (실제 토큰 들어온 뒤엔 무시).
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === msgId && isPlaceholderContent(m.content)
-                      ? { ...m, content: evt.text }
-                      : m
-                  )
-                );
-              } else if (evt.type === 'token' && typeof evt.text === 'string') {
-                setMessages((prev) =>
-                  prev.map((m) => {
-                    if (m.id !== msgId) return m;
-                    // placeholder("Thinking..." 또는 progress 🔎) 가 떠 있으면 첫 실제 토큰 도착 시 지우고 새로 시작
-                    const swap = isPlaceholderContent(m.content);
-                    return {
-                      ...m,
-                      content: swap ? evt.text : m.content + evt.text,
-                    };
-                  })
-                );
-              } else if (evt.type === 'sources' && Array.isArray(evt.sources)) {
-                setMessages((prev) =>
-                  prev.map((m) => (m.id === msgId ? { ...m, sources: evt.sources } : m))
-                );
-              } else if (evt.type === 'error') {
-                streamError = String(evt.message || '스트림 오류');
-              }
-            } catch {
-              // JSON 파싱 실패 라인 무시
+      // SSE meta 의 source(rag/web/schedule/blocked)를 메시지의 answerSource 로 매핑.
+      const mapSource = (s: unknown): AnswerSource | undefined => {
+        if (s === 'rag' || s === 'web' || s === 'schedule' || s === 'blocked') return s;
+        return undefined;
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() || '';
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t || !t.startsWith('data:')) continue;
+          const data = t.slice(5).trim();
+          if (!data || data === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(data);
+            if (evt.type === 'meta') {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === msgId ? { ...m, answerSource: mapSource(evt.source) } : m
+                )
+              );
+            } else if (evt.type === 'progress' && typeof evt.text === 'string') {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === msgId && isPlaceholderContent(m.content)
+                    ? { ...m, content: evt.text }
+                    : m
+                )
+              );
+            } else if (evt.type === 'token' && typeof evt.text === 'string') {
+              setMessages((prev) =>
+                prev.map((m) => {
+                  if (m.id !== msgId) return m;
+                  const swap = isPlaceholderContent(m.content);
+                  return {
+                    ...m,
+                    content: swap ? evt.text : m.content + evt.text,
+                  };
+                })
+              );
+            } else if (evt.type === 'sources' && Array.isArray(evt.sources)) {
+              setMessages((prev) =>
+                prev.map((m) => (m.id === msgId ? { ...m, sources: evt.sources } : m))
+              );
+            } else if (evt.type === 'awaiting-input' && typeof evt.previousQuestion === 'string') {
+              // 다중 턴 — 정보 부족. 다음 user 입력에서 합쳐 재요청.
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === msgId
+                    ? {
+                        ...m,
+                        awaitingInput: {
+                          needs: typeof evt.needs === 'string' ? evt.needs : 'unknown',
+                          previousQuestion: evt.previousQuestion,
+                        },
+                      }
+                    : m
+                )
+              );
+            } else if (evt.type === 'pending-action' && evt.pendingAction) {
+              // schedule_create — 사용자 승인 카드. content 는 evt.text(요약), pendingAction 부착.
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === msgId
+                    ? {
+                        ...m,
+                        content:
+                          typeof evt.text === 'string' && evt.text
+                            ? evt.text
+                            : '아래 내용으로 일정 등록할까요?',
+                        pendingAction: evt.pendingAction,
+                        preview: evt.preview,
+                      }
+                    : m
+                )
+              );
+            } else if (evt.type === 'error') {
+              streamError = String(evt.message || '스트림 오류');
             }
+          } catch {
+            // JSON 파싱 실패 라인 무시
           }
         }
+      }
 
-        if (streamError) {
-          // placeholder 메시지를 에러로 변환
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === msgId ? { ...m, role: 'error', content: streamError! } : m
-            )
-          );
-        } else {
-          // content 가 placeholder 인 채로 끝났으면(=실제 토큰 0개) 안내 문구로 교체
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === msgId && (isPlaceholderContent(m.content) || !m.content.trim())
-                ? { ...m, content: '(빈 응답)' }
-                : m
-            )
-          );
-        }
+      if (streamError) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === msgId ? { ...m, role: 'error', content: streamError! } : m
+          )
+        );
+      } else {
+        // content 가 placeholder 인 채로 끝났으면 안내 문구로 교체.
+        // 단 pendingAction 이 부착되어 있으면 content 가 placeholder 라도 그대로 둠 (confirm 카드).
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === msgId &&
+            !m.pendingAction &&
+            (isPlaceholderContent(m.content) || !m.content.trim())
+              ? { ...m, content: '(빈 응답)' }
+              : m
+          )
+        );
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -290,12 +304,17 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `실행 실패 (${res.status})`);
+      // 일정 등록 후 좌측 캘린더 자동 갱신 — 모든 schedules 쿼리(view×date 조합) 무효화.
+      // 도구가 createSchedule 인 경우만이지만, 향후 다른 도구도 같은 패턴으로 추가하면 됨.
+      if (target.pendingAction.tool === 'createSchedule' && teamId) {
+        queryClient.invalidateQueries({ queryKey: ['schedules', teamId] });
+      }
       setMessages((prev) => [
         ...prev,
         {
           id: newId(),
           role: 'assistant',
-          content: '완료했어요.',
+          content: '완료했어요. 캘린더에 반영됐어요. ✓',
         },
       ]);
     } catch (err) {
@@ -326,9 +345,6 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
     }
   }
 
-  const examples =
-    mode === 'agent' ? EXAMPLE_QUESTIONS_AGENT : EXAMPLE_QUESTIONS_GUIDE;
-
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-dark-base">
       {/* Header — 탭 임베드 시 비표시(showHeader=false), 직접 URL fallback 시 표시 */}
@@ -358,12 +374,6 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
         </header>
       )}
 
-      {/* Mode toggle */}
-      <div className="flex items-center justify-center gap-1 px-3 py-2 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border shrink-0">
-        <ModeTab label="안내 모드" desc="사용법 Q&A" active={mode === 'guide'} onClick={() => setMode('guide')} />
-        <ModeTab label="실행 모드" desc="팀·일정 조회/등록" active={mode === 'agent'} onClick={() => setMode('agent')} />
-      </div>
-
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((msg) => (
@@ -381,7 +391,7 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-dark-text-disabled animate-bounce [animation-delay:-0.15s]" />
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-dark-text-disabled animate-bounce" />
             </span>
-            <span>{mode === 'agent' ? '처리 중…' : '답변 생성 중…'}</span>
+            <span>답변 생성 중…</span>
           </div>
         )}
 
@@ -389,7 +399,7 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
           <div className="pt-2">
             <p className="text-xs font-medium text-gray-500 dark:text-dark-text-muted mb-2">예시 질문</p>
             <div className="flex flex-wrap gap-2">
-              {examples.map((q) => (
+              {EXAMPLE_QUESTIONS.map((q) => (
                 <button
                   key={q}
                   type="button"
@@ -413,11 +423,7 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={4}
-            placeholder={
-              mode === 'agent'
-                ? '팀·일정을 조회하거나 일정을 등록해 달라고 말씀해 주세요. (Enter 전송, Shift+Enter 줄바꿈)'
-                : 'TEAM WORKS 사용법 또는 일반 질문(날씨·뉴스·지식 등)을 자유롭게 물어보세요. (Enter 전송, Shift+Enter 줄바꿈)'
-            }
+            placeholder="사용법·일반 질문·우리 팀 일정 조회·등록 모두 자유롭게 물어보세요. (Enter 전송, Shift+Enter 줄바꿈)"
             className="flex-1 resize-none max-h-56 min-h-[88px] rounded-xl border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-base px-4 py-2.5 text-sm font-normal text-gray-800 dark:text-dark-text leading-relaxed shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled transition-colors duration-150 disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-dark-elevated dark:disabled:border-dark-border dark:disabled:text-dark-text-disabled"
             disabled={isLoading}
           />
@@ -436,9 +442,7 @@ export function AIAssistantPanel({ teamId, teamName, showHeader = false }: AIAss
           </button>
         </div>
         <p className="mt-1.5 text-[11px] text-gray-400 dark:text-dark-text-disabled text-center">
-          {mode === 'agent'
-            ? 'Powered by gemma4:26b + MCP · 등록·수정 전에 확인 카드로 알려드려요.'
-            : 'Answered by gemma4:26b · 사용법 질문은 공식 문서, 그 외엔 웹 검색으로 답해요.'}
+          Answered by gemma4:26b · 사용법은 공식 문서, 일정은 팀 DB, 그 외엔 웹 검색으로 답해요.
         </p>
       </div>
     </div>
@@ -480,6 +484,22 @@ function SourceBadge({ source, sources }: { source: AnswerSource; sources: Sourc
     );
   }
 
+  if (source === 'schedule') {
+    return (
+      <p className="text-[11px] text-emerald-700 dark:text-emerald-400 pl-1">
+        📅 우리 팀 일정 {sources.length}건
+      </p>
+    );
+  }
+
+  if (source === 'blocked') {
+    return (
+      <p className="text-[11px] text-gray-500 dark:text-dark-text-muted pl-1">
+        🚫 지원하지 않는 요청
+      </p>
+    );
+  }
+
   // source === 'web'
   if (sources.length === 0) {
     return (
@@ -512,33 +532,6 @@ function SourceBadge({ source, sources }: { source: AnswerSource; sources: Sourc
         ))}
       </ul>
     </details>
-  );
-}
-
-function ModeTab({
-  label,
-  desc,
-  active,
-  onClick,
-}: {
-  label: string;
-  desc: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex-1 max-w-[200px] flex flex-col items-center rounded-lg px-3 py-1.5 text-xs transition-colors ${
-        active
-          ? 'bg-primary-50 text-primary-700 dark:bg-dark-elevated dark:text-[#FFB800]'
-          : 'text-gray-500 dark:text-dark-text-muted hover:bg-gray-50 dark:hover:bg-dark-elevated'
-      }`}
-    >
-      <span className="font-semibold">{label}</span>
-      <span className="text-[10px] opacity-70">{desc}</span>
-    </button>
   );
 }
 

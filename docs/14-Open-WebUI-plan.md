@@ -8,6 +8,7 @@
 | 1.1 | 2026-04-28 | 구현 완료 후 갱신 — RRF 점수 임계값 가설이 데이터로 반박되어 **키워드 + RAG 답변 거절 fallback** 으로 전략 변경. nginx 라우팅 함정·Open WebUI v0.9 web_search 권한 함정 §9에 기록. sources 추출이 답변 본문 URL 정규식 fallback 사용 |
 | 1.2 | 2026-04-29 | 응답 시간 최적화 — `GENERAL_KEYWORDS` BLACKLIST 추가(§4.1)로 명백한 일반 질문은 RAG 답변(약 50초) 스킵. Next.js 16 의 API route `maxDuration` default 5분 함정 발견·해결(§9). 측정된 시간 분포 §9 명시 |
 | 1.3 | 2026-04-29 | **응답 스트리밍 도입(SSE) + Option 1 아키텍처 변경**. 두 경로 모두 첫 토큰까지 ~3~10초로 단축. Open WebUI 의 web_search 가 검색·로더를 직렬로 5분+ 소비해 stream 효과를 가리던 문제를 해결하기 위해 **frontend 가 SearxNG 를 직접 호출**해 결과를 system prompt 에 inline 주입하고 Open WebUI 의 web_search 는 비활성. §3·§5.2 갱신, §10 첫 항목 구현 완료로 전환 |
+| 1.4 | 2026-04-29 | **mode 토글 폐기 + 4-way 의도 분류**(`docs/16-mcp-server-plan.md` v1.1 적용). 안내/실행 모드 구분 없이 단일 입력창으로 통합. `usage`/`general`/`schedule_query`/`schedule_create`/`blocked` 5-way 분기. 본 문서의 "안내 모드" 표현은 모두 단일 진입점으로 해석 — 자세한 분기 설계는 docs/16 참고. Agent 서버(8788)/`mode=agent` 분기는 폐기 단계 |
 
 ---
 

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSchedules, createSchedule, type Schedule } from '@/lib/mcp/scheduleQueries';
+import { BackendError } from '@/lib/mcp/pgClient';
 
 // Next.js 16 의 API route default maxDuration 이 300초(5분) 라서
 // gemma4:26b + 검색 결과 컨텍스트의 답변 생성이 그 이상 걸리면 강제 종료된다.
@@ -6,7 +8,6 @@ import { NextRequest, NextResponse } from 'next/server';
 export const maxDuration = 600;
 
 const RAG_SERVER_URL = process.env.RAG_SERVER_URL || 'http://127.0.0.1:8787';
-const AGENT_SERVER_URL = process.env.AGENT_SERVER_URL || 'http://127.0.0.1:8788';
 const OPEN_WEBUI_BASE_URL =
   process.env.OPEN_WEBUI_BASE_URL || 'http://127.0.0.1:8081';
 const OPEN_WEBUI_API_KEY = process.env.OPEN_WEBUI_API_KEY || '';
@@ -14,8 +15,6 @@ const OPEN_WEBUI_MODEL = process.env.OPEN_WEBUI_MODEL || 'gemma4-web';
 // Open WebUI 의 OpenAI-compatible 응답은 URL 메타데이터를 노출하지 않음.
 // sources 보강용으로 SearxNG 를 같은 쿼리로 한 번 더 호출해 URL/title 을 직접 채운다.
 const SEARXNG_BASE_URL = process.env.SEARXNG_BASE_URL || '';
-
-type Mode = 'guide' | 'agent';
 
 interface WebSource {
   title?: string;
@@ -347,17 +346,201 @@ async function streamOpenWebUi(question: string, send: SendFn) {
   });
 }
 
-async function classify(question: string) {
-  const res = await fetch(`${RAG_SERVER_URL}/classify`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ question }),
-  });
-  if (!res.ok) {
-    // classify 실패 시 안전하게 RAG 로 라우팅
-    return { isTeamWorks: true, reason: 'classify-error' as const };
+// classify — RAG 서버 4-way 의도 분류기 호출.
+// 응답: { intent, reason?, subreason?, matched?, isTeamWorks }
+type Intent =
+  | 'usage'
+  | 'general'
+  | 'schedule_query'
+  | 'schedule_create'
+  | 'blocked'
+  | 'unknown';
+
+interface Classification {
+  intent: Intent;
+  reason?: string;
+  subreason?: string; // blocked 의 종류 — 'schedule_modify' | 'other_domain'
+  matched?: string;
+  isTeamWorks?: boolean;
+}
+
+async function classify(question: string): Promise<Classification> {
+  try {
+    const res = await fetch(`${RAG_SERVER_URL}/classify`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    if (!res.ok) return { intent: 'unknown', reason: 'classify-error' };
+    return (await res.json()) as Classification;
+  } catch {
+    return { intent: 'unknown', reason: 'classify-error' };
   }
-  return res.json();
+}
+
+// LLM 이 가끔 일반 명사를 keyword 로 추출 → 안전망으로 빈 문자열 강제.
+// (예: "지난주 일정 정리" → keyword="일정" 잘못 추출 → 제목에 "일정" 포함된 것만 살아남는 버그)
+const KEYWORD_STOPWORDS = new Set([
+  '일정', '회의', '미팅', '스케줄', '약속', '이벤트', '행사',
+  '정리', '알려', '보여', '확인', '조회', '찾아', '있어', '있나', '어떤', '뭐', '무엇',
+]);
+
+function sanitizeKeyword(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '';
+  if (KEYWORD_STOPWORDS.has(t)) return '';
+  return t;
+}
+
+// schedule 조회 자연어 → view+date+keyword 파싱 — RAG 서버의 /parse-schedule-query.
+// keyword 는 일정 제목 부분 매치용 (예: "디자인 리뷰"). 실패 시 default(month/오늘/no-keyword) fallback.
+async function parseScheduleQuery(question: string): Promise<{
+  view: 'day' | 'week' | 'month';
+  date: string;
+  keyword: string;
+}> {
+  try {
+    const res = await fetch(`${RAG_SERVER_URL}/parse-schedule-query`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question, nowIso: new Date().toISOString() }),
+    });
+    const data = await res.json();
+    return {
+      view: (data?.view ?? 'month') as 'day' | 'week' | 'month',
+      date: (data?.date ?? new Date().toISOString().slice(0, 10)) as string,
+      keyword: typeof data?.keyword === 'string' ? sanitizeKeyword(data.keyword) : '',
+    };
+  } catch {
+    return {
+      view: 'month',
+      date: new Date().toISOString().slice(0, 10),
+      keyword: '',
+    };
+  }
+}
+
+// keyword 가 있으면 title/description 부분 매치 (대소문자 무시). 빈 keyword 면 그대로 통과.
+function filterByKeyword<T extends { title: string; description: string | null }>(
+  schedules: T[],
+  keyword: string
+): T[] {
+  if (!keyword) return schedules;
+  const k = keyword.toLowerCase();
+  return schedules.filter(
+    (s) =>
+      s.title.toLowerCase().includes(k) ||
+      (s.description ? s.description.toLowerCase().includes(k) : false)
+  );
+}
+
+// schedule_query 본체 — 자연어 파싱 + DB 조회 + keyword 필터 + 0건이면 month 자동 확장.
+//
+// 확장 규칙: keyword 가 있고 첫 검색이 day/week 였는데 0건이면 month 로 재조회.
+//   사용자가 "디자인 리뷰 언제야?" 처럼 시점 모호한 keyword 질문을 던졌을 때
+//   LLM 이 day 로 떨어뜨려도 결과 0건이면 자동으로 더 넓은 범위로 fallback.
+async function runScheduleQuery(opts: {
+  question: string;
+  teamId: string;
+  jwt: string;
+}): Promise<{
+  schedules: Schedule[];
+  range: { view: 'day' | 'week' | 'month'; date: string; keyword: string };
+}> {
+  const { question, teamId, jwt } = opts;
+  const initial = await parseScheduleQuery(question);
+  const allInitial = await getSchedules({
+    teamId, jwt, view: initial.view, date: initial.date,
+  });
+  const filteredInitial = filterByKeyword(allInitial, initial.keyword);
+  if (filteredInitial.length || !initial.keyword || initial.view === 'month') {
+    return { schedules: filteredInitial, range: initial };
+  }
+  // keyword 매치 0건 + 좁은 범위 → month 로 확장 재조회
+  const expanded = await getSchedules({
+    teamId, jwt, view: 'month', date: initial.date,
+  });
+  const filteredExpanded = filterByKeyword(expanded, initial.keyword);
+  return {
+    schedules: filteredExpanded,
+    range: { view: 'month', date: initial.date, keyword: initial.keyword },
+  };
+}
+
+// schedule 인자 파싱 — RAG 서버의 /parse-schedule-args.
+// 반환:
+//  - ok:true → 인자 완성 → confirm 카드
+//  - ok:false + needs → 정보 부족 → 후속 질문 hint
+//  - ok:false + error → 파싱 실패 → 일반 에러
+async function parseScheduleArgs(question: string): Promise<
+  | { ok: true; args: { title: string; startAt: string; endAt: string; description?: string; color?: string } }
+  | { ok: false; needs: string; hint: string }
+  | { ok: false; error: string }
+> {
+  try {
+    const res = await fetch(`${RAG_SERVER_URL}/parse-schedule-args`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question, nowIso: new Date().toISOString() }),
+    });
+    const data = await res.json();
+    if (data?.ok && data.args) return { ok: true, args: data.args };
+    if (data?.ok === false && typeof data.needs === 'string') {
+      return { ok: false, needs: data.needs, hint: data.hint || '더 자세히 알려주세요.' };
+    }
+    return { ok: false, error: data?.error || '인자 파싱 실패' };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// 일정 목록을 자연어 답변 텍스트로 포맷. LLM 호출 0회 — 사용자에게 정확·즉시.
+// range 가 주어지면 답변 머리에 "(2026-04-22) 하루의" 등 조회 범위 명시.
+function formatSchedules(
+  schedules: Schedule[],
+  opts: {
+    teamName?: string;
+    range?: { view: 'day' | 'week' | 'month'; date: string; keyword?: string };
+  }
+): string {
+  const teamPrefix = opts.teamName ? `${opts.teamName} 팀의 ` : '';
+  const rangeLabel = (() => {
+    if (!opts.range) return '';
+    const r = opts.range;
+    if (r.view === 'day') return `${r.date} `;
+    if (r.view === 'week') return `${r.date} 주 `;
+    if (r.view === 'month') return `${r.date.slice(0, 7)} `;
+    return '';
+  })();
+  const keywordLabel = opts.range?.keyword ? `'${opts.range.keyword}' ` : '';
+  if (!schedules.length) {
+    return `${teamPrefix}${rangeLabel}${keywordLabel}일정이 없어요.`;
+  }
+  const lines = schedules.map((s) => {
+    const start = new Date(s.startAt);
+    const end = new Date(s.endAt);
+    const startStr = start.toLocaleString('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+    });
+    const endStr = end.toLocaleString('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    });
+    return `• ${startStr} ~ ${endStr}  ${s.title}${s.description ? ` — ${s.description}` : ''}`;
+  });
+  return `${teamPrefix}${rangeLabel}${keywordLabel}일정 ${schedules.length}건:\n${lines.join('\n')}`;
+}
+
+// 거절 안내 메시지.
+function blockedMessage(subreason?: string): string {
+  if (subreason === 'schedule_modify') {
+    return '찰떡이는 **일정 조회·등록** 만 도와드릴 수 있어요. 일정 수정·삭제는 캘린더에서 직접 처리해 주세요. 🙏';
+  }
+  if (subreason === 'other_domain') {
+    return '찰떡이는 **일정 조회·등록** 만 도와드릴 수 있어요. 프로젝트·채팅·공지·포스트잇 같은 작업은 화면에서 직접 처리해 주세요. 🙏';
+  }
+  return '찰떡이는 **일정 조회·등록** 만 도와드릴 수 있어요. 직접 처리해 주세요. 🙏';
 }
 
 // RAG 가드레일이 "참고 자료에 없어요" 류로 거절했는지 판정.
@@ -396,51 +579,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: '질문을 입력해 주세요.' }, { status: 400 });
     }
 
-    const mode: Mode = body?.mode === 'agent' ? 'agent' : 'guide';
+    const teamId: string = typeof body?.teamId === 'string' ? body.teamId : '';
+    const teamName: string = typeof body?.teamName === 'string' ? body.teamName : '';
+    const auth = request.headers.get('authorization') || '';
+    const jwt = /^Bearer\s+(.+)$/i.exec(auth)?.[1] || '';
 
-    // 실행 모드 — 기존 Agent 경로 그대로
-    if (mode === 'agent') {
-      const auth = request.headers.get('authorization') || '';
-      if (!/^Bearer\s+/i.test(auth)) {
-        return NextResponse.json(
-          { error: '실행 모드는 로그인 후 이용해 주세요.' },
-          { status: 401 }
-        );
-      }
-      const upstream = await fetch(`${AGENT_SERVER_URL}/chat`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: auth,
-        },
-        body: JSON.stringify({ question, userHint: body?.userHint }),
-      });
-      const text = await upstream.text();
-      if (!upstream.ok) {
-        return NextResponse.json(
-          { error: text || `Agent 서버 오류 (${upstream.status})` },
-          { status: upstream.status }
-        );
-      }
-      return new NextResponse(text, {
-        status: 200,
-        headers: { 'content-type': 'application/json; charset=utf-8' },
-      });
-    }
-
-    // 안내 모드 — 키워드 분류 + 답변 거절 폴백
-    //
-    // 라우팅 전략(2-stage):
-    //  1) classify 키워드 매치 → 즉시 RAG 답변 (확실한 사용법 질문)
-    //  2) 매치 없음 → 일단 RAG 시도 후, 거절형이면 Open WebUI 로 fallback
-    //
-    // 이유: RRF 점수가 모든 쿼리에 비슷한 분포로 나와 단일 임계값으로 분류 불가능.
-    // 답변 내용 자체가 가장 정확한 라우팅 신호다 (RAG 가드레일이 거절형을 표준화함).
     const cls = await classify(question);
     const topK = Number.isFinite(body?.topK) ? body.topK : undefined;
     const isStream = body?.stream === true;
 
-    // === Streaming response (SSE) — 사용자 체감 대기 시간 단축 ===
+    // schedule_* / blocked-other_domain(create 시) 는 로그인 + teamId 필수.
+    const needsAuth =
+      cls.intent === 'schedule_query' || cls.intent === 'schedule_create';
+    if (needsAuth && !jwt) {
+      return NextResponse.json(
+        { error: '일정 조회·등록은 로그인 후 이용해 주세요.' },
+        { status: 401 }
+      );
+    }
+    if (needsAuth && !teamId) {
+      return NextResponse.json(
+        { error: '활성 팀이 없습니다. 팀을 먼저 선택해 주세요.' },
+        { status: 400 }
+      );
+    }
+
+    // === Streaming response (SSE) ===
     if (isStream) {
       const stream = new ReadableStream({
         async start(controller) {
@@ -449,56 +613,115 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
           };
           try {
-            if (cls.isTeamWorks) {
-              // 분기 1: HARD_KEYWORDS 매치 → RAG 즉시 stream
-              send({ type: 'meta', source: 'rag', classification: cls });
-              await streamRag(question, topK, send);
-            } else if (cls.reason === 'general-keyword') {
-              // 분기 2: GENERAL_KEYWORDS 매치 → Open WebUI 즉시 stream
-              send({
-                type: 'meta',
-                source: 'web',
-                classification: { ...cls, fallback: 'general-keyword-direct' },
-              });
-              await streamOpenWebUi(question, send);
-              // sources 보강 — Open WebUI 응답엔 URL 없으니 SearxNG 직접 호출
-              const sources = await searxngQuery(question);
-              if (sources.length) send({ type: 'sources', sources });
-            } else {
-              // 분기 3: no-keyword — RAG 시도(non-stream) 후 거절형이면 Open WebUI stream
-              let ragData: Record<string, unknown> | null = null;
-              try {
-                ragData = await callRagChat(question, topK);
-              } catch {
-                ragData = null;
+            switch (cls.intent) {
+              case 'usage': {
+                send({ type: 'meta', source: 'rag', classification: cls });
+                await streamRag(question, topK, send);
+                break;
               }
-              const ragAnswer = typeof ragData?.answer === 'string' ? ragData.answer : '';
-              if (ragData && !isRefusal(ragAnswer)) {
-                // RAG 양호 답변 — 한 번에 보내기 (이미 완성)
-                send({
-                  type: 'meta',
-                  source: 'rag',
-                  classification: { ...cls, fallback: 'rag-answered' },
-                });
-                if (Array.isArray(ragData.sources)) {
-                  send({ type: 'sources', sources: ragData.sources as WebSource[] });
-                }
-                send({ type: 'token', text: ragAnswer });
-              } else {
-                // 거절 → Open WebUI stream
+              case 'general': {
                 send({
                   type: 'meta',
                   source: 'web',
-                  classification: { ...cls, fallback: 'rag-refused' },
+                  classification: { ...cls, fallback: 'general-keyword-direct' },
                 });
                 await streamOpenWebUi(question, send);
                 const sources = await searxngQuery(question);
                 if (sources.length) send({ type: 'sources', sources });
+                break;
+              }
+              case 'schedule_query': {
+                send({ type: 'meta', source: 'schedule', classification: cls });
+                const { schedules, range } = await runScheduleQuery({ question, teamId, jwt });
+                send({
+                  type: 'sources',
+                  sources: schedules.map((s) => ({
+                    title: s.title,
+                    startAt: s.startAt,
+                    endAt: s.endAt,
+                  })) as WebSource[],
+                });
+                send({ type: 'token', text: formatSchedules(schedules, { teamName, range }) });
+                break;
+              }
+              case 'schedule_create': {
+                send({ type: 'meta', source: 'schedule', classification: cls });
+                const parsed = await parseScheduleArgs(question);
+                if (parsed.ok) {
+                  // confirm 카드 — page.tsx 가 pendingAction 으로 처리.
+                  send({
+                    type: 'pending-action',
+                    pendingAction: {
+                      tool: 'createSchedule',
+                      args: { ...parsed.args, teamId },
+                    },
+                    preview: parsed.args,
+                    text: `다음 내용으로 일정 등록할까요?\n\n• 제목: ${parsed.args.title}\n• 시작: ${new Date(parsed.args.startAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}\n• 종료: ${new Date(parsed.args.endAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}${parsed.args.description ? `\n• 설명: ${parsed.args.description}` : ''}`,
+                  });
+                  break;
+                }
+                if ('needs' in parsed) {
+                  // 다중 턴 — 정보 부족. 후속 질문 + awaiting-input 이벤트.
+                  send({ type: 'token', text: parsed.hint });
+                  send({
+                    type: 'awaiting-input',
+                    needs: parsed.needs,
+                    previousQuestion: question,
+                  });
+                  break;
+                }
+                send({
+                  type: 'token',
+                  text: `일정 등록 인자를 이해하지 못했어요. 좀 더 구체적으로 말씀해 주시겠어요?\n(예: "내일 오후 3시 1시간 동안 주간 회의 등록해줘")`,
+                });
+                break;
+              }
+              case 'blocked': {
+                send({ type: 'meta', source: 'blocked', classification: cls });
+                send({ type: 'token', text: blockedMessage(cls.subreason) });
+                break;
+              }
+              case 'unknown':
+              default: {
+                // RAG 시도 후 거절형이면 Open WebUI fallback (기존 패턴 유지)
+                let ragData: Record<string, unknown> | null = null;
+                try {
+                  ragData = await callRagChat(question, topK);
+                } catch {
+                  ragData = null;
+                }
+                const ragAnswer = typeof ragData?.answer === 'string' ? ragData.answer : '';
+                if (ragData && !isRefusal(ragAnswer)) {
+                  send({
+                    type: 'meta',
+                    source: 'rag',
+                    classification: { ...cls, fallback: 'rag-answered' },
+                  });
+                  if (Array.isArray(ragData.sources)) {
+                    send({ type: 'sources', sources: ragData.sources as WebSource[] });
+                  }
+                  send({ type: 'token', text: ragAnswer });
+                } else {
+                  send({
+                    type: 'meta',
+                    source: 'web',
+                    classification: { ...cls, fallback: 'rag-refused' },
+                  });
+                  await streamOpenWebUi(question, send);
+                  const sources = await searxngQuery(question);
+                  if (sources.length) send({ type: 'sources', sources });
+                }
+                break;
               }
             }
             send({ type: 'done' });
           } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
+            const message =
+              err instanceof BackendError
+                ? `백엔드 오류 (${err.status}): ${err.message}`
+                : err instanceof Error
+                ? err.message
+                : String(err);
             send({ type: 'error', message });
           } finally {
             controller.close();
@@ -511,62 +734,102 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           'content-type': 'text/event-stream; charset=utf-8',
           'cache-control': 'no-cache, no-transform',
           connection: 'keep-alive',
-          'x-accel-buffering': 'no', // nginx 가 버퍼링 없이 흘려보내도록
+          'x-accel-buffering': 'no',
         },
       });
     }
-    // === Non-stream (기존 동작 유지) ===
 
-    if (cls.isTeamWorks) {
-      const data = await callRagChat(question, topK);
-      return NextResponse.json({
-        ...data,
-        source: 'rag',
-        classification: cls,
-      });
+    // === Non-stream ===
+    switch (cls.intent) {
+      case 'usage': {
+        const data = await callRagChat(question, topK);
+        return NextResponse.json({ ...data, source: 'rag', classification: cls });
+      }
+      case 'general': {
+        const ow = await callOpenWebUi(question);
+        return NextResponse.json({
+          answer: ow.answer,
+          sources: ow.sources,
+          source: 'web',
+          classification: { ...cls, fallback: 'general-keyword-direct' },
+        });
+      }
+      case 'schedule_query': {
+        const { schedules, range } = await runScheduleQuery({ question, teamId, jwt });
+        return NextResponse.json({
+          answer: formatSchedules(schedules, { teamName, range }),
+          sources: schedules,
+          source: 'schedule',
+          classification: cls,
+        });
+      }
+      case 'schedule_create': {
+        const parsed = await parseScheduleArgs(question);
+        if (!parsed.ok) {
+          return NextResponse.json({
+            answer: `일정 등록 인자를 이해하지 못했어요. 좀 더 구체적으로 말씀해 주시겠어요?`,
+            source: 'schedule',
+            classification: cls,
+          });
+        }
+        return NextResponse.json({
+          kind: 'confirm',
+          answer: `다음 내용으로 일정 등록할까요?`,
+          preview: parsed.args,
+          pendingAction: {
+            tool: 'createSchedule',
+            args: { ...parsed.args, teamId },
+          },
+          source: 'schedule',
+          classification: cls,
+        });
+      }
+      case 'blocked': {
+        return NextResponse.json({
+          answer: blockedMessage(cls.subreason),
+          source: 'blocked',
+          classification: cls,
+        });
+      }
+      default: {
+        // unknown — RAG 시도 + Open WebUI fallback
+        let ragData: Record<string, unknown> | null = null;
+        try {
+          ragData = await callRagChat(question, topK);
+        } catch {
+          ragData = null;
+        }
+        const ragAnswer = typeof ragData?.answer === 'string' ? ragData.answer : '';
+        if (ragData && !isRefusal(ragAnswer)) {
+          return NextResponse.json({
+            ...ragData,
+            source: 'rag',
+            classification: { ...cls, fallback: 'rag-answered' },
+          });
+        }
+        const ow = await callOpenWebUi(question);
+        return NextResponse.json({
+          answer: ow.answer,
+          sources: ow.sources,
+          source: 'web',
+          classification: { ...cls, fallback: 'rag-refused' },
+        });
+      }
     }
-
-    // 일반 질문 키워드 매치 — RAG 답변 시도(약 50초) 스킵하고 곧장 Open WebUI
-    if (cls.reason === 'general-keyword') {
-      const ow = await callOpenWebUi(question);
-      return NextResponse.json({
-        answer: ow.answer,
-        sources: ow.sources,
-        source: 'web',
-        classification: { ...cls, fallback: 'general-keyword-direct' },
-      });
-    }
-
-    // 키워드 매치 실패 — 일단 RAG 시도
-    let ragData: Record<string, unknown> | null = null;
-    try {
-      ragData = await callRagChat(question, topK);
-    } catch {
-      ragData = null;
-    }
-    const ragAnswer = typeof ragData?.answer === 'string' ? ragData.answer : '';
-    if (ragData && !isRefusal(ragAnswer)) {
-      // RAG 가 의미 있는 답변을 줬다 → 그대로 사용
-      return NextResponse.json({
-        ...ragData,
-        source: 'rag',
-        classification: { ...cls, fallback: 'rag-answered' },
-      });
-    }
-
-    // RAG 가 거절했거나 실패 → Open WebUI 로 fallback
-    const ow = await callOpenWebUi(question);
-    return NextResponse.json({
-      answer: ow.answer,
-      sources: ow.sources,
-      source: 'web',
-      classification: { ...cls, fallback: 'rag-refused' },
-    });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message =
+      err instanceof BackendError
+        ? err.status === 401
+          ? '로그인이 만료됐어요. 메인 화면에서 다시 로그인해 주세요.'
+          : err.status === 403
+          ? '이 팀에 대한 권한이 없어요.'
+          : `요청 처리 실패 (${err.status}): ${err.message}`
+        : err instanceof Error
+        ? err.message
+        : String(err);
     const hint =
       message.includes('ECONNREFUSED') || message.includes('fetch failed')
-        ? 'AI 서버에 연결할 수 없습니다. rag(8787) / agent(8788) / open-webui(8081) 중 어느 하나가 미응답입니다.'
+        ? 'AI 서버에 연결할 수 없습니다. rag(8787) / open-webui(8081) / backend 중 어느 하나가 미응답입니다.'
         : message;
     return NextResponse.json({ error: hint }, { status: 502 });
   }
