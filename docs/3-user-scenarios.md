@@ -9,6 +9,7 @@
 | 1.2 | 2026-04-08 | SC-03(일정 삭제) 신규 추가, 부록 API 목록에 DELETE 엔드포인트 추가 |
 | 1.3 | 2026-04-18 | 앱명 Team CalTalk → TEAM WORKS 반영. SCHEDULE_REQUEST → WORK_PERFORMANCE 변경 |
 | 1.4 | 2026-04-20 | 포스트잇(SC-10), 업무보고 조회 권한(SC-11), 프로젝트 관리(SC-12~SC-14), 공지사항(SC-15), 권한 기반 가시성 통합 검증(SC-16) 추가. 테스트 페르소나 5명 이상으로 확장. SC-03·SC-05·SC-06 일정 권한 오류 수정(LEADER 전용→생성자 본인) |
+| 1.5 | 2026-04-28 | 백엔드 구현 일치화: SC-17(팀 정보 수정·삭제), SC-18(팀원 강제 탈퇴), SC-19(내 프로필 수정) 추가. 부록 API 엔드포인트 요약 갱신 |
 
 ---
 
@@ -54,6 +55,9 @@
 | SC-14 | 세부 일정 생성·수정·삭제 | PB / PD | UC-11 |
 | SC-15 | 공지사항 작성·삭제 권한 검증 | PA / PB / PC | UC-12 |
 | SC-16 | 권한 기반 가시성 통합 검증 (핵심 테스트) | PA~PF 전원 | UC-04, UC-09~UC-13 |
+| SC-17 | 팀 정보 수정·삭제 (LEADER 전용) | PA / PB | UC-14 |
+| SC-18 | 팀원 강제 탈퇴 (LEADER 전용, 본인 제외) | PA / PB / PF | UC-15 |
+| SC-19 | 내 프로필(이름) 수정 | PA~PF 공통 | UC-16 |
 
 ---
 
@@ -667,6 +671,103 @@
 
 ---
 
+## SC-17 팀 정보 수정·삭제 (LEADER 전용)
+
+- **페르소나**: PA (김민준, LEADER), PB (이서연, MEMBER)
+- **목표**: 팀장이 팀 정보를 수정하거나 팀을 삭제할 수 있고, MEMBER는 둘 다 불가능함을 검증한다
+- **전제조건**: 전원 로그인 상태. 팀에 소속. 팀 메인 화면(S-05) 진입
+
+### 단계별 흐름 — 팀 정보 수정 / 삭제
+
+| # | 페르소나 | 사용자 행동 | 시스템 반응 | API |
+|---|----------|------------|-------------|-----|
+| 1 | PA | 팀 설정에서 [팀 정보 수정] 메뉴를 연다 | 현재 정보(name·description·isPublic) pre-fill 된 폼 렌더링 | — |
+| 2 | PA | 이름을 "프로젝트팀 알파 (리브랜딩)"으로 변경, isPublic을 false로 토글 후 [저장] | `PATCH /api/teams/[teamId]` 요청 (body: name, isPublic). 200 OK. 팀 목록·상세 즉시 갱신 | `PATCH /api/teams/[teamId]` |
+| 3 | PB | 동일 메뉴에 진입 시도 | UI에서 [팀 정보 수정] 메뉴 미표시. 직접 API 호출 시 403 Forbidden — "팀장만 접근할 수 있습니다." | `PATCH /api/teams/[teamId]` |
+| 4 | PA | [팀 삭제] 버튼 클릭 → 확인 다이얼로그에서 [삭제 확정] | `DELETE /api/teams/[teamId]` 요청. 200 OK | `DELETE /api/teams/[teamId]` |
+| 5 | — | — | DB CASCADE: TeamMember·TeamJoinRequest·Schedule·ChatMessage·Notice·Postit·Project·ProjectSchedule·SubSchedule·WorkPerformancePermission 일괄 정리 | — |
+| 6 | — | — | `/` (팀 목록 화면, S-03)으로 리다이렉트. 삭제된 팀이 목록에서 제거됨 | `GET /api/teams` 재조회 |
+| 4' | PB | API 직접 호출로 팀 삭제 시도 | 403 Forbidden — "팀장만 접근할 수 있습니다." | `DELETE /api/teams/[teamId]` |
+
+### 결과
+- 팀장만 팀 정보 수정·삭제가 가능하다
+- 팀 삭제 시 종속 데이터가 모두 정리되며 복구 불가 (BR-11)
+- MEMBER의 직접 API 호출은 403으로 차단된다
+
+### 예외 처리
+
+| 케이스 | 시스템 반응 |
+|--------|-------------|
+| name 100자 초과 | 클라이언트 유효성 검증. API 요청 미발생 |
+| 빈 body로 PATCH 호출 | 200 OK이지만 변경 사항 없음 (부분 갱신 의미상) |
+| 존재하지 않는 teamId | 404 Not Found — "팀을 찾을 수 없습니다." |
+| MEMBER의 PATCH/DELETE 직접 호출 | 403 Forbidden — "팀장만 접근할 수 있습니다." |
+
+---
+
+## SC-18 팀원 강제 탈퇴 (LEADER 전용)
+
+- **페르소나**: PA (김민준, LEADER), PF (한소율, 탈퇴 대상 MEMBER), PB (이서연, MEMBER)
+- **목표**: 팀장이 특정 팀원을 강제 탈퇴시킬 수 있고, 팀장 본인은 대상이 될 수 없으며, MEMBER는 강제 탈퇴 권한이 없음을 검증한다
+- **전제조건**: 전원 로그인 상태. PA·PB·PF 모두 동일 팀 소속. 팀 상세 화면(S-05)의 구성원 목록에 진입
+
+### 단계별 흐름
+
+| # | 페르소나 | 사용자 행동 | 시스템 반응 | API |
+|---|----------|------------|-------------|-----|
+| 1 | PA | 구성원 목록에서 PF의 [탈퇴 처리] 버튼을 클릭 → 확인 다이얼로그 [확정] | `DELETE /api/teams/[teamId]/members/[PF.userId]` 요청 | `DELETE /api/teams/[teamId]/members/[userId]` |
+| 2 | — | — | 200 OK — "팀원이 탈퇴 처리되었습니다." TeamMember 레코드 제거 | — |
+| 3 | — | — | 구성원 목록 갱신, PF가 제거됨 | `GET /api/teams/[teamId]` 재조회 |
+| 4 | PF | 다음 폴링 또는 화면 새로고침 시 | 팀 목록에서 해당 팀이 빠진 것을 확인. 직접 URL 접근 시 403 Forbidden | `GET /api/teams` |
+| 5 | PA | 본인(PA)을 강제 탈퇴 시도 | 400 Bad Request — "팀장은 탈퇴시킬 수 없습니다." | `DELETE /api/teams/[teamId]/members/[PA.userId]` |
+| 6 | PB | API 직접 호출로 다른 MEMBER를 탈퇴 시도 | 403 Forbidden — "팀장만 접근할 수 있습니다." | `DELETE /api/teams/[teamId]/members/[anyUserId]` |
+
+### 결과
+- 팀장이 일반 MEMBER만 강제 탈퇴시킬 수 있다 (BR-12)
+- 팀장 본인은 강제 탈퇴 대상이 될 수 없다 (자신을 지정 시 400)
+- MEMBER의 직접 API 호출은 403으로 차단된다
+
+### 예외 처리
+
+| 케이스 | 시스템 반응 |
+|--------|-------------|
+| 해당 팀의 멤버가 아닌 userId 지정 | 404 Not Found — "해당 팀원을 찾을 수 없습니다." |
+| 팀장 본인 userId 지정 | 400 Bad Request — "팀장은 탈퇴시킬 수 없습니다." |
+| MEMBER가 직접 API 호출 | 403 Forbidden |
+
+---
+
+## SC-19 내 프로필(이름) 수정
+
+- **페르소나**: PA~PF 공통 (LEADER·MEMBER 무관, 본인 한정)
+- **목표**: 로그인 사용자가 자신의 표시 이름을 수정하고, 변경 결과가 모든 화면(구성원 목록·일정 작성자·메시지 발신자 등)에 반영됨을 확인한다
+- **전제조건**: 로그인 상태. 토큰 유효
+
+### 단계별 흐름
+
+| # | 사용자 행동 | 시스템 반응 | API |
+|---|------------|-------------|-----|
+| 1 | 헤더 아바타 → [내 정보] 메뉴 클릭 | 현재 사용자 정보 조회: `GET /api/auth/me`. 응답의 id·email·name 으로 폼 pre-fill | `GET /api/auth/me` |
+| 2 | name 입력 필드를 새 값(예: "김민준 (팀장)")으로 변경 후 [저장] | 클라이언트 유효성 검증: trim 후 1~50자 | — |
+| 3 | — | `PATCH /api/me` 요청 (body: { name }) | `PATCH /api/me` |
+| 4 | — | 200 OK. 응답 body의 `{ id, email, name }`로 클라이언트 사용자 상태(Zustand) 갱신 | — |
+| 5 | — | 팀 상세·캘린더·채팅 등 사용자 이름이 표시되는 모든 영역 다음 조회 시 새 이름 반영 | 각 화면 자체 refetch |
+
+### 결과
+- User.name 이 갱신되어 모든 화면(creatorName / senderName / 구성원 목록)에 새 이름이 표시된다
+- email·id 는 변경되지 않는다
+
+### 예외 처리
+
+| 케이스 | 시스템 반응 |
+|--------|-------------|
+| 빈 문자열 또는 공백뿐인 name | 400 Bad Request — "이름은 필수입니다." |
+| trim 후 50자 초과 | 400 Bad Request — "이름은 최대 50자까지 입력 가능합니다." |
+| 토큰 만료 상태로 PATCH 호출 | 401 Unauthorized → 클라이언트가 `/auth/refresh`로 갱신 후 재시도 |
+| 토큰의 userId에 해당하는 사용자 부재(예: 동시 탈퇴) | 404 Not Found — "사용자를 찾을 수 없습니다." |
+
+---
+
 ## 부록: API 엔드포인트 요약 (업데이트)
 
 | 시나리오 | 메서드 | 엔드포인트 | 설명 |
@@ -674,7 +775,12 @@
 | SC-01 | POST | `/api/auth/signup` | 회원가입 |
 | SC-01 | POST | `/api/auth/login` | 로그인 |
 | SC-01 | POST | `/api/auth/refresh` | Access Token 재발급 |
+| SC-19 | GET | `/api/auth/me` | 내 정보 조회 (세션 복구) |
+| SC-19 | PATCH | `/api/me` | 내 프로필(이름) 수정 |
 | SC-02 | POST | `/api/teams` | 팀 생성 |
+| SC-17 | PATCH | `/api/teams/[teamId]` | 팀 정보 수정 (LEADER) |
+| SC-17 | DELETE | `/api/teams/[teamId]` | 팀 삭제 (LEADER) |
+| SC-18 | DELETE | `/api/teams/[teamId]/members/[userId]` | 팀원 강제 탈퇴 (LEADER) |
 | SC-02B | GET | `/api/teams/public` | 공개 팀 목록 조회 |
 | SC-02B | POST | `/api/teams/[teamId]/join-requests` | 팀 가입 신청 |
 | SC-02C | GET | `/api/me/tasks` | 나의 할 일 목록 |

@@ -461,6 +461,56 @@ if (refreshResponse.ok) {
 
 ---
 
+#### GET /api/auth/me
+
+현재 Access Token에 대응하는 로그인 사용자 정보를 반환 (세션 복구 / 부팅 시 사용자 식별)
+
+**인증**: 필수
+
+**Request Body**: 없음
+
+**Response (200 OK)**
+
+```json
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "email": "user@example.com",
+  "name": "홍길동"
+}
+```
+
+**필드 설명**
+- `id`: 사용자 UUID
+- `email`: 이메일
+- `name`: 표시 이름
+
+**에러 케이스**
+
+| 상태 | 메시지 | 원인 |
+|------|--------|------|
+| 401 | 인증이 필요합니다. | Authorization 헤더 없음 |
+| 401 | 유효하지 않은 토큰입니다. | Access Token 검증 실패 |
+| 404 | 사용자를 찾을 수 없습니다. | 토큰의 userId 가 DB에 없음(탈퇴 등) |
+
+**fetch 예시**
+
+```typescript
+const response = await fetch('http://localhost:3000/api/auth/me', {
+  method: 'GET',
+  headers: { 'Authorization': `Bearer ${accessToken}` },
+})
+
+if (response.ok) {
+  const me = await response.json()
+  // Zustand 등 전역 사용자 상태 hydration
+  setCurrentUser(me)
+}
+```
+
+> **사용 시점**: 앱 부팅 시 localStorage 의 Access Token 으로 본인 정보를 한 번 호출해 사용자 상태를 복구하는 패턴이 가장 흔합니다. JWT 페이로드를 직접 디코딩하지 말고 이 엔드포인트를 사용하세요(이름 변경 등이 토큰 재발급 없이 즉시 반영되어야 하므로).
+
+---
+
 ### 팀 (Teams)
 
 #### GET /api/teams
@@ -688,6 +738,167 @@ if (response.ok) {
   console.log('팀 구성원:', team.members)
 }
 ```
+
+---
+
+#### PATCH /api/teams/:teamId
+
+팀 정보 수정 (LEADER 전용)
+
+**인증**: 필수
+**권한**: LEADER만
+
+**URL Parameters**
+- `teamId` (string): 팀 ID
+
+**Request Body** (부분 수정 지원)
+
+```json
+{
+  "name": "개발팀 (리브랜딩)",
+  "description": "백엔드·프론트엔드 통합",
+  "isPublic": false
+}
+```
+
+**필드 설명**
+- `name` (string, 선택): 팀 이름 (최대 100자)
+- `description` (string \| null, 선택): 팀 설명
+- `isPublic` (boolean, 선택): 공개 팀 목록 노출 여부
+
+**Response (200 OK)**
+
+```json
+{
+  "id": "b1c2d3e4-f5a6-7890-bcde-fa1234567890",
+  "name": "개발팀 (리브랜딩)",
+  "description": "백엔드·프론트엔드 통합",
+  "isPublic": false,
+  "leaderId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "createdAt": "2026-04-01T00:00:00.000Z"
+}
+```
+
+**에러 케이스**
+
+| 상태 | 메시지 | 원인 |
+|------|--------|------|
+| 401 | 인증이 필요합니다. | 토큰 없음/만료 |
+| 403 | 팀장만 접근할 수 있습니다. | LEADER 가 아님 |
+| 404 | 팀을 찾을 수 없습니다. | 존재하지 않는 teamId |
+| 500 | 팀 수정에 실패했습니다. | DB 갱신 실패 |
+
+**fetch 예시**
+
+```typescript
+const response = await fetch(
+  `http://localhost:3000/api/teams/${teamId}`,
+  {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ isPublic: false }),
+  }
+)
+```
+
+---
+
+#### DELETE /api/teams/:teamId
+
+팀 삭제 (LEADER 전용). DB CASCADE 로 종속 데이터(구성원·일정·메시지·공지·포스트잇·프로젝트·서브일정·업무보고 권한)가 함께 정리됩니다.
+
+**인증**: 필수
+**권한**: LEADER만
+
+**URL Parameters**
+- `teamId` (string): 팀 ID
+
+**Response (200 OK)**
+
+```json
+{ "message": "팀이 삭제되었습니다." }
+```
+
+**에러 케이스**
+
+| 상태 | 메시지 |
+|------|--------|
+| 401 | 인증이 필요합니다. |
+| 403 | 팀장만 접근할 수 있습니다. |
+| 404 | 팀을 찾을 수 없습니다. |
+| 500 | 팀 삭제에 실패했습니다. |
+
+**fetch 예시**
+
+```typescript
+// 사용자 확인 다이얼로그를 반드시 거친 뒤 호출하세요.
+const response = await fetch(
+  `http://localhost:3000/api/teams/${teamId}`,
+  {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  }
+)
+
+if (response.ok) {
+  // 팀 목록(GET /api/teams)을 invalidate 후 홈으로 이동
+  navigate('/')
+}
+```
+
+> **주의**: 삭제 후 복구 불가. UI 에서 "삭제하시겠습니까?" 모달 + 팀명 재입력 같은 안전장치를 권장합니다.
+
+---
+
+#### DELETE /api/teams/:teamId/members/:userId
+
+팀원 강제 탈퇴 (LEADER 전용)
+
+**인증**: 필수
+**권한**: LEADER만. **팀장 본인은 대상이 될 수 없음** (요청 시 400)
+
+**URL Parameters**
+- `teamId` (string): 팀 ID
+- `userId` (string): 탈퇴 처리할 팀원의 사용자 ID
+
+**Request Body**: 없음
+
+**Response (200 OK)**
+
+```json
+{ "message": "팀원이 탈퇴 처리되었습니다." }
+```
+
+**에러 케이스**
+
+| 상태 | 메시지 | 원인 |
+|------|--------|------|
+| 400 | 팀장은 탈퇴시킬 수 없습니다. | 대상 userId 가 팀의 leader_id 와 동일 |
+| 401 | 인증이 필요합니다. | 토큰 없음/만료 |
+| 403 | 팀장만 접근할 수 있습니다. | LEADER 가 아님 |
+| 404 | 해당 팀원을 찾을 수 없습니다. | userId 가 해당 팀의 멤버가 아님 |
+
+**fetch 예시**
+
+```typescript
+// 구성원 목록(GET /api/teams/:teamId)에서 탈퇴 대상의 userId 를 받아 호출
+const response = await fetch(
+  `http://localhost:3000/api/teams/${teamId}/members/${userId}`,
+  {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  }
+)
+
+if (response.ok) {
+  // 팀 상세(GET /api/teams/:teamId) refetch → 구성원 목록 갱신
+}
+```
+
+> **UI 가이드**: 구성원 목록에서 본인(leaderId) 행에는 [탈퇴 처리] 버튼을 절대 노출하지 마세요. 잘못 누른 경우에도 서버가 400 으로 차단하지만, 클라이언트 단에서 미리 거르는 것이 UX 측면에서 자연스럽습니다.
 
 ---
 
@@ -1475,7 +1686,489 @@ if (response.status === 201) {
 
 ---
 
+### 공지사항 (Notices)
+
+팀 채팅 상단에 고정되는 알림. 팀 구성원이면 누구나 작성할 수 있고, 삭제는 작성자 본인 또는 LEADER만 가능합니다.
+
+#### GET /api/teams/:teamId/notices
+
+**인증**: 필수 / **권한**: 팀 소속 구성원
+
+**Response (200 OK)** — `createdAt` 오름차순
+
+```json
+{
+  "notices": [
+    {
+      "id": "c9d0e1f2-a3b4-5678-cdef-ab9012345678",
+      "teamId": "b1c2d3e4-f5a6-7890-bcde-fa1234567890",
+      "senderId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "senderName": "홍길동",
+      "content": "다음 주 월요일은 휴무입니다.",
+      "createdAt": "2026-04-20T01:00:00.000Z"
+    }
+  ]
+}
+```
+
+**에러**: 401 / 403(팀 소속 아님)
+
+---
+
+#### POST /api/teams/:teamId/notices
+
+**인증**: 필수 / **권한**: 팀 소속 구성원
+
+**Request Body**
+
+```json
+{ "content": "다음 주 월요일은 휴무입니다." }
+```
+
+- `content` (string, 필수, 최대 2000자)
+
+**Response (201 Created)**: GET 의 `notices[]` 단건
+
+**에러**: 400(content 누락/2000자 초과) / 401 / 403
+
+---
+
+#### DELETE /api/teams/:teamId/notices/:noticeId
+
+**인증**: 필수 / **권한**: 작성자 본인 또는 팀 LEADER
+
+**Response (200 OK)**: `{ "message": "공지사항이 삭제되었습니다." }`
+
+**에러**: 401 / 403(팀 소속 아님 또는 작성자·LEADER 아님) / 404
+
+> **UI 가이드**: 목록 렌더링 시 `senderId === currentUser.id || myRole === 'LEADER'` 일 때만 [삭제] 버튼을 노출하세요.
+
+---
+
+### 포스트잇 (Postits)
+
+날짜에 부착되는 컬러 메모. 팀 구성원이면 누구나 생성하지만, 수정·삭제는 작성자 본인만 가능합니다. **목록은 월(YYYY-MM) 단위 조회**입니다.
+
+#### GET /api/teams/:teamId/postits?month=YYYY-MM
+
+**인증**: 필수 / **권한**: 팀 소속 구성원
+
+**Query**: `month` (필수, `2026-04` 형식)
+
+**Response (200 OK)**
+
+```json
+{
+  "postits": [
+    {
+      "id": "d0e1f2a3-b4c5-6789-defa-bc0123456789",
+      "teamId": "...",
+      "createdBy": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "creatorName": "홍길동",
+      "date": "2026-04-12",
+      "color": "amber",
+      "content": "외부 미팅 자료 준비",
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ]
+}
+```
+
+- `color`: `indigo` | `blue` | `emerald` | `amber` | `rose`
+- `content`: 생성 직후 빈 문자열일 수 있음 (PATCH 로 채움)
+
+**에러**: 400(month 누락/형식 오류) / 401 / 403
+
+---
+
+#### POST /api/teams/:teamId/postits
+
+**인증**: 필수 / **권한**: 팀 소속 구성원
+
+**Request Body**
+
+```json
+{ "date": "2026-04-12", "color": "amber" }
+```
+
+- `date` (필수, YYYY-MM-DD)
+- `color` (필수, 위 5가지 중 하나)
+
+**Response (201 Created)**: GET 의 `postits[]` 단건. `content` 는 빈 문자열로 시작.
+
+---
+
+#### PATCH /api/teams/:teamId/postits/:postitId
+
+**인증**: 필수 / **권한**: 작성자 본인만
+
+**Request Body**
+
+```json
+{ "content": "외부 미팅 자료 작성 — 14시까지" }
+```
+
+- `content` (필수, 문자열, 빈 문자열 허용)
+
+**Response (200 OK)**: 업데이트된 단건 (응답에 `creatorName` 은 미포함, `updatedAt` 갱신됨)
+
+**에러**: 400(content가 문자열 아님) / 401 / 403(작성자 아님 또는 팀 소속 아님) / 404
+
+---
+
+#### DELETE /api/teams/:teamId/postits/:postitId
+
+**인증**: 필수 / **권한**: 작성자 본인만
+
+**Response (200 OK)**: `{ "message": "포스트잇이 삭제되었습니다." }`
+
+> **UI 가이드**: `createdBy === currentUser.id` 일 때만 [수정]·[삭제] 버튼 노출. 색상 선택은 5색 팔레트 컴포넌트로 통일하세요.
+
+---
+
+### 업무보고 조회 권한 (Work Permissions)
+
+`type=WORK_PERFORMANCE` 메시지를 어떤 MEMBER 가 열람할 수 있는지 제어합니다. **LEADER 는 항상 열람 가능**하며 권한 목록은 일괄 교체 방식.
+
+#### GET /api/teams/:teamId/work-permissions
+
+**인증**: 필수 / **권한**: 팀 소속 구성원
+
+**Response (200 OK)**
+
+```json
+{
+  "permittedUserIds": [
+    "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "d4e5f6a7-b8c9-0123-defa-bc3456789012"
+  ]
+}
+```
+
+- 빈 배열(`[]`) = **전체 구성원이 열람 가능**
+
+---
+
+#### PATCH /api/teams/:teamId/work-permissions
+
+**인증**: 필수 / **권한**: LEADER만
+
+**Request Body**
+
+```json
+{
+  "userIds": [
+    "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "d4e5f6a7-b8c9-0123-defa-bc3456789012"
+  ]
+}
+```
+
+- `userIds` (필수, string[]): 기존 권한을 **전부 교체**. 빈 배열 전달 시 전체 권한 해제(전 구성원 열람 허용)
+
+**Response (200 OK)**: GET 과 동일 형식의 갱신된 목록
+
+**에러**: 400(userIds 가 배열 아님) / 401 / 403(LEADER 아님) / 404
+
+> **UI 가이드**: 다중 선택 체크박스 + [전체 허용] 토글 패턴. `permittedUserIds.length === 0` 일 때 "전체 허용" 상태로 표시하고, 일부만 선택할 경우 그 userIds 배열을 그대로 PATCH 하면 됩니다.
+
+---
+
+### 프로젝트 (Projects)
+
+3계층 구조: **Project → ProjectSchedule → SubSchedule**. 각 계층은 팀 구성원 누구나 생성하고, **수정·삭제는 생성자 본인만** 가능합니다.
+
+**공통 규칙**
+- 색상 (`color`): `indigo` | `blue` | `emerald` | `amber` | `rose`
+- 날짜 (`startDate`, `endDate`): `YYYY-MM-DD`. **`endDate >= startDate`** 검증
+- 진행률 (`progress`): 0~100 정수
+- `isDelayed`: 지연 여부 boolean
+
+---
+
+#### GET /api/teams/:teamId/projects
+
+**인증**: 필수 / **권한**: 팀 소속 구성원
+
+**Response (200 OK)**
+
+```json
+{
+  "projects": [
+    {
+      "id": "e1f2a3b4-c5d6-7890-efab-cd1234567890",
+      "teamId": "...",
+      "createdBy": "...",
+      "name": "런칭 캠페인",
+      "description": "Q2 신규 서비스 런칭",
+      "startDate": "2026-04-01",
+      "endDate": "2026-06-30",
+      "progress": 35,
+      "manager": "홍길동",
+      "phases": [
+        { "id": "p1", "name": "기획", "order": 1 },
+        { "id": "p2", "name": "개발", "order": 2 }
+      ],
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ]
+}
+```
+
+- `phases`: 프로젝트 내부 단계 목록. 하위 ProjectSchedule 의 `phaseId` 가 이 배열의 `id` 를 참조합니다.
+
+---
+
+#### POST /api/teams/:teamId/projects
+
+**인증**: 필수 / **권한**: 팀 소속 구성원
+
+**Request Body**
+
+```json
+{
+  "name": "런칭 캠페인",
+  "description": "Q2 신규 서비스 런칭",
+  "startDate": "2026-04-01",
+  "endDate": "2026-06-30",
+  "progress": 0,
+  "manager": "홍길동",
+  "phases": [
+    { "name": "기획", "order": 1 },
+    { "name": "개발", "order": 2 }
+  ]
+}
+```
+
+- `name` 필수(최대 200자), `startDate`/`endDate` 필수
+- `phases[].id` 미지정 시 서버에서 UUID 자동 발급, `order` 미지정 시 1부터 자동 부여
+
+**Response (201 Created)**: GET 의 `projects[]` 단건
+
+**에러**: 400(name 누락/200자 초과·날짜 누락·endDate < startDate) / 401 / 403
+
+---
+
+#### GET /api/teams/:teamId/projects/:projectId
+
+**Response (200 OK)**: 단건 (`projects[]` 형식). 404 가능.
+
+---
+
+#### PATCH /api/teams/:teamId/projects/:projectId
+
+**권한**: **생성자 본인만**
+
+모든 필드 선택. **키 존재 여부**로 갱신 대상이 결정됩니다(undefined 는 무시, null 은 명시적 비우기).
+
+**Body 필드**: `name`, `description`, `startDate`, `endDate`, `progress`, `manager`, `phases`
+
+> `startDate` 또는 `endDate` 만 변경해도 서버가 기존 값과 합쳐 `startDate <= endDate` 를 검증합니다.
+
+**Response (200 OK)**: 업데이트된 단건
+
+**에러**: 400(name 200자 초과·날짜 역전) / 401 / 403(생성자 아님) / 404
+
+---
+
+#### DELETE /api/teams/:teamId/projects/:projectId
+
+**권한**: **생성자 본인만**. 하위 ProjectSchedule·SubSchedule 은 CASCADE 정리.
+
+**Response (200 OK)**: `{ "message": "프로젝트가 삭제되었습니다." }`
+
+---
+
+#### GET /api/teams/:teamId/projects/:projectId/schedules
+
+**인증**: 필수 / **권한**: 팀 소속 구성원
+
+**Response (200 OK)**
+
+```json
+{
+  "schedules": [
+    {
+      "id": "f1a2b3c4-d5e6-7890-fabc-de1234567890",
+      "projectId": "e1f2a3b4-c5d6-7890-efab-cd1234567890",
+      "teamId": "...",
+      "createdBy": "...",
+      "title": "프론트엔드 개발",
+      "description": null,
+      "color": "indigo",
+      "startDate": "2026-04-15",
+      "endDate": "2026-05-15",
+      "leader": "이영희",
+      "progress": 20,
+      "isDelayed": false,
+      "phaseId": "p2",
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ]
+}
+```
+
+---
+
+#### POST /api/teams/:teamId/projects/:projectId/schedules
+
+**Request Body**
+
+```json
+{
+  "title": "프론트엔드 개발",
+  "description": null,
+  "color": "indigo",
+  "startDate": "2026-04-15",
+  "endDate": "2026-05-15",
+  "leader": "이영희",
+  "progress": 0,
+  "isDelayed": false,
+  "phaseId": "p2"
+}
+```
+
+- `title`(필수, 최대 200자), `startDate`/`endDate`(필수)
+- `color` 미지정 시 `indigo`
+- `phaseId` (선택): UUID 형식. 부모 Project 의 `phases[].id` 와 매칭(서버는 형식만 검증)
+
+**Response (201 Created)**: 단건
+
+**에러**: 400(title·날짜·color 5색 외·phaseId UUID 형식 외) / 401 / 403 / 404(프로젝트 부재)
+
+---
+
+#### PATCH /api/teams/:teamId/projects/:projectId/schedules/:scheduleId
+
+**권한**: **생성자 본인만**. 모든 필드 선택. `startDate`/`endDate` 부분 변경 시 기존값과 결합 검증.
+
+**Response (200 OK)**: 단건
+
+---
+
+#### DELETE /api/teams/:teamId/projects/:projectId/schedules/:scheduleId
+
+**권한**: **생성자 본인만**. 하위 SubSchedule 은 CASCADE 정리.
+
+**Response (200 OK)**: `{ "message": "프로젝트 일정이 삭제되었습니다." }`
+
+---
+
+#### GET /api/teams/:teamId/projects/:projectId/schedules/:scheduleId/sub-schedules
+
+**Response (200 OK)**
+
+```json
+{
+  "subSchedules": [
+    {
+      "id": "a2b3c4d5-e6f7-8901-abcd-ef2345678901",
+      "scheduleId": "f1a2b3c4-d5e6-7890-fabc-de1234567890",
+      "projectId": "...",
+      "teamId": "...",
+      "createdBy": "...",
+      "title": "로그인 화면 구현",
+      "description": null,
+      "color": "blue",
+      "startDate": "2026-04-15",
+      "endDate": "2026-04-22",
+      "leader": "이영희",
+      "progress": 50,
+      "isDelayed": false,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ]
+}
+```
+
+> SubSchedule 은 `phaseId` 가 없습니다(상위 ProjectSchedule 에 종속).
+
+---
+
+#### POST /api/teams/:teamId/projects/:projectId/schedules/:scheduleId/sub-schedules
+
+**Request Body**: ProjectSchedule POST 와 동일 (단 `phaseId` 없음)
+
+**Response (201 Created)**: 단건
+
+---
+
+#### PATCH /api/teams/:teamId/projects/:projectId/schedules/:scheduleId/sub-schedules/:subId
+
+**권한**: **생성자 본인만**
+
+---
+
+#### DELETE /api/teams/:teamId/projects/:projectId/schedules/:scheduleId/sub-schedules/:subId
+
+**권한**: **생성자 본인만**. **Response (200 OK)**: `{ "message": "서브 일정이 삭제되었습니다." }`
+
+> **간트차트 UI 팁**: 계층 트리(Project → Schedule → Sub) 구조라 한 화면에서 다층을 그릴 때 `phaseId` 를 컬럼/스윔레인 키로 활용하면 단계별 그룹핑이 깔끔합니다. 진행률·`isDelayed` 는 막대 색상 강조용으로 자주 쓰입니다.
+
+---
+
 ### 내 정보 (Me)
+
+#### PATCH /api/me
+
+내 프로필(표시 이름) 수정. 본인 한정.
+
+**인증**: 필수
+
+**Request Body**
+
+```json
+{ "name": "홍길동" }
+```
+
+**필드 설명**
+- `name` (string, 필수): 새 표시 이름. 양 끝 공백은 trim 처리, **trim 후 1~50자**
+
+**Response (200 OK)**
+
+```json
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "email": "user@example.com",
+  "name": "홍길동"
+}
+```
+
+**에러 케이스**
+
+| 상태 | 메시지 | 원인 |
+|------|--------|------|
+| 400 | 이름은 필수입니다. | name 누락 또는 공백만 입력 |
+| 400 | 이름은 최대 50자까지 입력 가능합니다. | trim 후 50자 초과 |
+| 401 | 인증이 필요합니다. | 토큰 없음/만료 |
+| 404 | 사용자를 찾을 수 없습니다. | 토큰의 userId 에 해당하는 사용자 부재 |
+
+**fetch 예시**
+
+```typescript
+const response = await fetch('http://localhost:3000/api/me', {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${accessToken}`,
+  },
+  body: JSON.stringify({ name: trimmedName }),
+})
+
+if (response.ok) {
+  const updated = await response.json()
+  setCurrentUser(updated)               // 전역 사용자 상태 갱신
+  // 팀 상세·일정·메시지의 creatorName/senderName 은 다음 fetch 시 자동 갱신
+}
+```
+
+> **클라이언트 검증**: 서버가 trim·길이 검증을 다시 수행하지만, UX 를 위해 입력 직후 길이 카운터(예: `15/50`)와 trim 미리보기를 보여주는 것을 권장합니다.
+
+---
 
 #### GET /api/me/tasks
 
@@ -1566,17 +2259,28 @@ if (response.ok) {
 
 | 기능 | LEADER | MEMBER | 비회원 |
 |------|--------|--------|--------|
+| 내 정보 조회 / 프로필(이름) 수정 | ✓ | ✓ | ✗ |
 | 팀 생성 | ✓ | ✓ | ✗ |
-| 팀 상세 조회 | ✓ | ✓ | ✗ |
-| 팀 가입 신청 | ✗ | ✗ | ✓ |
+| 팀 상세 조회 | ✓ (소속) | ✓ (소속) | ✗ |
+| 팀 정보 수정 | ✓ | ✗ | ✗ |
+| 팀 삭제 | ✓ | ✗ | ✗ |
+| 팀원 강제 탈퇴 | ✓ (본인 제외) | ✗ | ✗ |
+| 팀 가입 신청 | ✓ (타 팀) | ✓ (타 팀) | ✗ |
 | 가입 신청 조회 | ✓ | ✗ | ✗ |
 | 가입 신청 처리 | ✓ | ✗ | ✗ |
-| 일정 생성 | ✓ | ✗ | ✗ |
-| 일정 수정 | ✓ | ✗ | ✗ |
-| 일정 삭제 | ✓ | ✗ | ✗ |
 | 일정 조회 | ✓ | ✓ | ✗ |
+| 일정 생성 | ✓ | ✓ | ✗ |
+| 일정 수정·삭제 | 생성자 본인 | 생성자 본인 | ✗ |
 | 메시지 송수신 | ✓ | ✓ | ✗ |
-| 내 할 일 조회 | ✓ | ✓ | ✗ |
+| 공지사항 조회·작성 | ✓ | ✓ | ✗ |
+| 공지사항 삭제 | ✓ (모두) | 작성자 본인 | ✗ |
+| 포스트잇 조회·생성 | ✓ | ✓ | ✗ |
+| 포스트잇 수정·삭제 | 생성자 본인 | 생성자 본인 | ✗ |
+| 업무보고 조회 권한 목록 조회 | ✓ | ✓ | ✗ |
+| 업무보고 조회 권한 설정 | ✓ | ✗ | ✗ |
+| 프로젝트·프로젝트 일정·서브 일정 조회·생성 | ✓ | ✓ | ✗ |
+| 프로젝트·프로젝트 일정·서브 일정 수정·삭제 | 생성자 본인 | 생성자 본인 | ✗ |
+| 내 할 일 조회 | ✓ | (빈 배열) | ✗ |
 
 ### 권한 에러 처리 (403)
 
@@ -2036,7 +2740,7 @@ function handleApiError(status: number, error: any) {
 #### 1. 저장소 클론 및 설정
 
 ```bash
-cd C:\_vibe\team-works\backend
+cd ~/_vibe/team-works/backend
 
 # 의존성 설치
 npm install
@@ -2048,8 +2752,8 @@ npm install
 #### 2. 환경변수 (.env.local)
 
 ```env
-# 데이터베이스
-DATABASE_URL=postgresql://user:password@localhost:5432/calendar_db
+# 데이터베이스 (Docker 컨테이너 postgres-db — 자세한 설정은 docs/30-docker-container-gen.md §10 실행 절차 참고)
+DATABASE_URL=postgresql://teamworks-manager:Nts123%21%40%23@localhost:5432/teamworks
 
 # JWT 토큰
 JWT_ACCESS_SECRET=your-access-secret-key
@@ -2282,6 +2986,19 @@ class ApiClient {
     return !!this.accessToken
   }
 
+  // 내 정보 메서드들
+
+  async getMe() {
+    return this.get<{ id: string; email: string; name: string }>('/api/auth/me')
+  }
+
+  async updateMyName(name: string) {
+    return this.patch<{ id: string; email: string; name: string }>(
+      '/api/me',
+      { name }
+    )
+  }
+
   // 팀 메서드들
 
   async getMyTeams() {
@@ -2298,6 +3015,23 @@ class ApiClient {
 
   async getTeamDetail(teamId: string) {
     return this.get<any>(`/api/teams/${teamId}`)
+  }
+
+  async updateTeam(
+    teamId: string,
+    payload: { name?: string; description?: string | null; isPublic?: boolean }
+  ) {
+    return this.patch<any>(`/api/teams/${teamId}`, payload)
+  }
+
+  async deleteTeam(teamId: string) {
+    return this.delete<{ message: string }>(`/api/teams/${teamId}`)
+  }
+
+  async removeTeamMember(teamId: string, userId: string) {
+    return this.delete<{ message: string }>(
+      `/api/teams/${teamId}/members/${userId}`
+    )
   }
 
   // 가입 신청 메서드들
@@ -2390,6 +3124,176 @@ class ApiClient {
     message: { type?: 'NORMAL' | 'WORK_PERFORMANCE'; content: string }
   ) {
     return this.post<any>(`/api/teams/${teamId}/messages`, message)
+  }
+
+  // 공지사항 메서드들
+
+  async getNotices(teamId: string) {
+    return this.get<{ notices: any[] }>(`/api/teams/${teamId}/notices`)
+  }
+
+  async createNotice(teamId: string, content: string) {
+    return this.post<any>(`/api/teams/${teamId}/notices`, { content })
+  }
+
+  async deleteNotice(teamId: string, noticeId: string) {
+    return this.delete<{ message: string }>(
+      `/api/teams/${teamId}/notices/${noticeId}`
+    )
+  }
+
+  // 포스트잇 메서드들
+
+  async getPostits(teamId: string, month: string) {
+    return this.get<{ postits: any[] }>(
+      `/api/teams/${teamId}/postits?month=${month}`
+    )
+  }
+
+  async createPostit(
+    teamId: string,
+    payload: { date: string; color: 'indigo' | 'blue' | 'emerald' | 'amber' | 'rose' }
+  ) {
+    return this.post<any>(`/api/teams/${teamId}/postits`, payload)
+  }
+
+  async updatePostit(teamId: string, postitId: string, content: string) {
+    return this.patch<any>(`/api/teams/${teamId}/postits/${postitId}`, {
+      content,
+    })
+  }
+
+  async deletePostit(teamId: string, postitId: string) {
+    return this.delete<{ message: string }>(
+      `/api/teams/${teamId}/postits/${postitId}`
+    )
+  }
+
+  // 업무보고 조회 권한 메서드들
+
+  async getWorkPermissions(teamId: string) {
+    return this.get<{ permittedUserIds: string[] }>(
+      `/api/teams/${teamId}/work-permissions`
+    )
+  }
+
+  async setWorkPermissions(teamId: string, userIds: string[]) {
+    return this.patch<{ permittedUserIds: string[] }>(
+      `/api/teams/${teamId}/work-permissions`,
+      { userIds }
+    )
+  }
+
+  // 프로젝트 메서드들
+
+  async getProjects(teamId: string) {
+    return this.get<{ projects: any[] }>(`/api/teams/${teamId}/projects`)
+  }
+
+  async createProject(teamId: string, payload: any) {
+    return this.post<any>(`/api/teams/${teamId}/projects`, payload)
+  }
+
+  async getProject(teamId: string, projectId: string) {
+    return this.get<any>(`/api/teams/${teamId}/projects/${projectId}`)
+  }
+
+  async updateProject(teamId: string, projectId: string, payload: any) {
+    return this.patch<any>(
+      `/api/teams/${teamId}/projects/${projectId}`,
+      payload
+    )
+  }
+
+  async deleteProject(teamId: string, projectId: string) {
+    return this.delete<{ message: string }>(
+      `/api/teams/${teamId}/projects/${projectId}`
+    )
+  }
+
+  // 프로젝트 일정 메서드들
+
+  async getProjectSchedules(teamId: string, projectId: string) {
+    return this.get<{ schedules: any[] }>(
+      `/api/teams/${teamId}/projects/${projectId}/schedules`
+    )
+  }
+
+  async createProjectSchedule(
+    teamId: string,
+    projectId: string,
+    payload: any
+  ) {
+    return this.post<any>(
+      `/api/teams/${teamId}/projects/${projectId}/schedules`,
+      payload
+    )
+  }
+
+  async updateProjectSchedule(
+    teamId: string,
+    projectId: string,
+    scheduleId: string,
+    payload: any
+  ) {
+    return this.patch<any>(
+      `/api/teams/${teamId}/projects/${projectId}/schedules/${scheduleId}`,
+      payload
+    )
+  }
+
+  async deleteProjectSchedule(
+    teamId: string,
+    projectId: string,
+    scheduleId: string
+  ) {
+    return this.delete<{ message: string }>(
+      `/api/teams/${teamId}/projects/${projectId}/schedules/${scheduleId}`
+    )
+  }
+
+  // 서브 일정 메서드들
+
+  async getSubSchedules(teamId: string, projectId: string, scheduleId: string) {
+    return this.get<{ subSchedules: any[] }>(
+      `/api/teams/${teamId}/projects/${projectId}/schedules/${scheduleId}/sub-schedules`
+    )
+  }
+
+  async createSubSchedule(
+    teamId: string,
+    projectId: string,
+    scheduleId: string,
+    payload: any
+  ) {
+    return this.post<any>(
+      `/api/teams/${teamId}/projects/${projectId}/schedules/${scheduleId}/sub-schedules`,
+      payload
+    )
+  }
+
+  async updateSubSchedule(
+    teamId: string,
+    projectId: string,
+    scheduleId: string,
+    subId: string,
+    payload: any
+  ) {
+    return this.patch<any>(
+      `/api/teams/${teamId}/projects/${projectId}/schedules/${scheduleId}/sub-schedules/${subId}`,
+      payload
+    )
+  }
+
+  async deleteSubSchedule(
+    teamId: string,
+    projectId: string,
+    scheduleId: string,
+    subId: string
+  ) {
+    return this.delete<{ message: string }>(
+      `/api/teams/${teamId}/projects/${projectId}/schedules/${scheduleId}/sub-schedules/${subId}`
+    )
   }
 
   // 내 정보 메서드들

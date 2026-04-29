@@ -1,8 +1,19 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { tokenize } from "./tokenizer.js";
 
 function roughTokenCount(text) {
   return Math.ceil(text.length / 2.2);
+}
+
+// 청크 객체에 parent_id, tokens, doc_len 부착 (BM25/Parent retrieval용)
+function enrich(chunks) {
+  for (const c of chunks) {
+    c.parent_id = c.source_file;       // 현재는 파일 단위 parent
+    c.tokens = tokenize(`${c.section_path} ${c.text}`);
+    c.doc_len = c.tokens.length;
+  }
+  return chunks;
 }
 
 function splitBySection(md, headingLevel) {
@@ -122,11 +133,10 @@ function typeForFile(relPath) {
 
 export async function chunkFile(absPath, relPath) {
   const md = await fs.readFile(absPath, "utf8");
-  if (relPath.endsWith("faq.md")) {
-    return chunkFaq(relPath, md);
-  }
-  const chunkType = typeForFile(relPath);
-  return chunkSectioned(relPath, md, { chunkType });
+  const raw = relPath.endsWith("faq.md")
+    ? chunkFaq(relPath, md)
+    : chunkSectioned(relPath, md, { chunkType: typeForFile(relPath) });
+  return enrich(raw);
 }
 
 export async function chunkDirectory(rootDir, include) {

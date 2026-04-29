@@ -7,7 +7,7 @@ export const ROOT = path.resolve(__dirname, '..');
 export const MCP_SERVER_ENTRY = path.join(ROOT, 'teamworks-mcp', 'index.js');
 
 export const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
-export const CHAT_MODEL = process.env.CHAT_MODEL || 'gemma2:9b';
+export const CHAT_MODEL = process.env.CHAT_MODEL || 'gemma4:26b';
 export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
 export const SERVER_PORT = Number(process.env.AGENT_PORT || 8788);
 

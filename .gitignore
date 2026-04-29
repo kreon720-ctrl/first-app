@@ -30,6 +30,9 @@ backend/.env.*.local
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local
+# 루트 .env — docker compose 용 시크릿 (OPEN_WEBUI_SECRET_KEY/API_KEY 등)
+/.env
+/.env.local
 
 # Build output
 dist/

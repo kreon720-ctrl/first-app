@@ -1,6 +1,6 @@
 -- =============================================
 -- Database Reset Script for TEAM WORKS
--- Run this with: psql -U postgres -d caltalk -f database/reset-and-reapply.sql
+-- Run this with: docker exec -i postgres-db psql -U teamworks-manager -d teamworks < database/reset-and-reapply.sql
 -- =============================================
 
 -- 1. Drop all existing tables (in reverse dependency order)

@@ -120,7 +120,17 @@ ${toolCatalog}
 teamId·date 의 "<...>" 부분은 컨텍스트·표의 실제 값으로 반드시 치환. 리터럴 "<...>" 를 남기면 안 됨.`;
 }
 
+// ReAct 루프가 매 스텝마다 observation 을 messages 에 누적하므로
+// 큰 결과(예: 다건 일정·메시지)가 num_ctx 32K 를 잠식하지 않도록 길이 캡.
+// 토큰≈문자/2.2 기준으로 약 6K 토큰(=13.2K 문자) 상한.
+const OBSERVATION_CHAR_LIMIT = 13200;
+
 export function buildObservationMessage(toolName, result) {
-  const text = typeof result === 'string' ? result : JSON.stringify(result);
+  let text = typeof result === 'string' ? result : JSON.stringify(result);
+  if (text.length > OBSERVATION_CHAR_LIMIT) {
+    text = `${text.slice(0, OBSERVATION_CHAR_LIMIT)}\n…(이하 ${
+      text.length - OBSERVATION_CHAR_LIMIT
+    }자 생략)`;
+  }
   return `이전 도구 "${toolName}" 의 결과입니다:\n${text}\n\n이 결과를 참고해 사용자에게 전달할 응답을 JSON {"kind":"answer","answer":"..."} 형태로 주세요.`;
 }

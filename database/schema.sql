@@ -1,6 +1,6 @@
 -- TEAM WORKS — Database Schema
 -- PostgreSQL 초기 마이그레이션 (schema v1)
--- 실행: psql -U postgres -d caltalk -f database/schema.sql
+-- 실행: docker exec -i postgres-db psql -U teamworks-manager -d teamworks < database/schema.sql
 
 -- =====================
 -- EXTENSIONS

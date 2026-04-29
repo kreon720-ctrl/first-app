@@ -8,6 +8,7 @@
 | 1.1 | 2026-04-08 | - | Semantic 컬러 설명에서 "초대" 표현 제거, 상태 배지 예시를 가입 신청 상태(PENDING/APPROVED/REJECTED)로 교체, 아이콘 매핑에서 "팀원 초대" → "가입 신청" 수정 |
 | 1.2 | 2026-04-18 | - | 앱명 Team CalTalk → TEAM WORKS 반영. SCHEDULE_REQUEST → WORK_PERFORMANCE 변경 |
 | 1.3 | 2026-04-23 | - | 다크 모드 일정바·프로젝트바·세부일정바·포스트잇 컬러 팔레트 정의 (Royal Amber / Electric Indigo / Deep Emerald / Crimson Red / Ice Silver) |
+| 1.4 | 2026-04-28 | - | 라이트 5색 팔레트(indigo/blue/emerald/amber/rose) 정식화 §2.5, NoticeBanner / PostItCard / GanttBar / SubBar / AIAssistantButton 컴포넌트 토큰 §5.11 추가 |
 
 ---
 
@@ -142,6 +143,23 @@ Google 검색 페이지의 순백 배경과 회색 계열 텍스트를 기반으
 | MEMBER 배지 | `#E0E7FF` | `#3730A3` | `bg-indigo-100 text-indigo-800` |
 | WORK_PERFORMANCE 메시지 배경 | `#FFF7ED` | `#9A3412` | `bg-orange-50 border-orange-300 text-orange-900` |
 | 오늘 날짜 셀 | `#6366F1` | `#FFFFFF` | `bg-primary-500 text-white` |
+
+### 2.5 5색 팔레트 (일정·포스트잇·간트차트 공통)
+
+팀 일정·포스트잇·프로젝트 일정·세부 일정·공지 배지 등에서 사용하는 라벨 색상은 5종으로 통일한다. DB 의 `color` 컬럼·`color` 검증 룰(`indigo|blue|emerald|amber|rose`)과 1:1 매핑.
+
+| 토큰 | 100 (배경) | 300 (border) | 500 (강조) | 700 (텍스트) | 주 용도 |
+|------|-----------|--------------|------------|--------------|---------|
+| indigo | `#E0E7FF` | `#A5B4FC` | `#6366F1` | `#4338CA` | 일정·일반 메모 (default) |
+| blue | `#DBEAFE` | `#93C5FD` | `#3B82F6` | `#1D4ED8` | 정보·참고 |
+| emerald | `#D1FAE5` | `#6EE7B7` | `#10B981` | `#047857` | 완료·정상 진행 |
+| amber | `#FEF3C7` | `#FCD34D` | `#F59E0B` | `#B45309` | 강조·공지 배너 |
+| rose | `#FFE4E6` | `#FDA4AF` | `#F43F5E` | `#BE123C` | 긴급·지연(`is_delayed`) |
+
+**적용 규칙**
+- 배경은 `*-100`, 카드 경계선은 `*-300`. 본문 텍스트는 흑(`gray-900`) 위주, 강조 텍스트는 `*-700`.
+- 다크모드(v1.3) 색상은 별도. 본 표는 라이트 기준.
+- DB 에 새 색을 추가할 때는 백엔드 `validColors` (`backend/app/api/.../postits/route.ts` 등) 와 본 표를 동시에 갱신.
 
 ---
 
@@ -652,6 +670,68 @@ REJECTED(거절):
   <p className="text-xs text-gray-400 text-right">{count} / {max}자</p>
 </div>
 ```
+
+### 5.11 도메인 컴포넌트 (Notices / Postits / Projects / AI 비서)
+
+§2.5 5색 팔레트와 §5.4 Card 베이스 위에 얹는 도메인 컴포넌트들. 색상 토큰은 항상 5색 중 하나로 제한.
+
+**NoticeBanner** — 채팅 영역 상단 sticky 공지
+
+| 속성 | 값 |
+|------|-----|
+| 배경 | `bg-amber-50` |
+| 경계선 | `border-l-4 border-amber-300` |
+| 본문 텍스트 | `text-amber-900 text-sm` |
+| 작성자/타임스탬프 | `text-xs text-amber-700` |
+| [✕ 삭제] 버튼 | 작성자 본인 또는 LEADER 만 노출. `text-amber-600 hover:text-amber-800` |
+| 위치 | `sticky top-0 z-10 px-4 py-2` |
+| 반응형 | 모바일은 `whitespace-pre-wrap`, 데스크탑은 1줄 클램프 + hover 시 펼침 |
+
+**PostItCard** — 캘린더 셀 또는 우측 패널의 메모 카드
+
+| 속성 | 값 |
+|------|-----|
+| 배경 | `bg-{color}-100` (5색 중 하나, 기본 amber) |
+| 경계선 | `border border-{color}-300` |
+| 그림자 | `shadow-sm` (호버 시 `shadow-md`) |
+| 회전 | `rotate-[-1deg]` (호버 시 `rotate-0`) |
+| 패딩 | `p-3` |
+| 본문 폰트 | `text-sm leading-relaxed` |
+| 작성자 | `text-xs text-gray-600 mt-2` |
+| [수정]/[삭제] | 작성자 본인만 노출 (`createdBy === currentUser.id`). 우상단 아이콘 |
+
+**GanttBar** — 프로젝트 일정 막대
+
+| 속성 | 값 |
+|------|-----|
+| 기본 색 | `bg-{color}-500` (`color` 컬럼 매핑) |
+| 진행률 채움 | 좌→우 그라데이션 또는 inner div 너비 = `progress`% |
+| 지연 강조 | `is_delayed === true` 시 `border-2 border-rose-500 ring-2 ring-rose-200` |
+| 높이 | `h-6` |
+| 라벨 | 막대 안 또는 좌측. `text-xs text-white font-medium` |
+| 호버 | 툴팁으로 `title`·`leader`·`startDate ~ endDate`·`progress%` |
+
+**SubBar** — 세부 일정(서브)
+
+| 속성 | 값 |
+|------|-----|
+| 배경 | GanttBar 동일 5색 |
+| 높이 | `h-3` (GanttBar 절반) |
+| 종속 표시 | `border-dashed border-l-2 border-{color}-400` 또는 좌측 끌림선 |
+| 위치 | 부모 GanttBar 바로 아래 들여쓰기 (`ml-6`) |
+
+**AIAssistantButton** — 헤더 우측 AI 비서 진입점
+
+| 속성 | 값 |
+|------|-----|
+| 색상 | `text-amber-500` (시그니처 #FFB800), 호버 `text-amber-600` |
+| 크기 | 아이콘 `w-6 h-6`, 터치 타겟 44×44 |
+| 호버 효과 | `hover:scale-110 transition-transform` |
+| 동작 | `window.open('/ai-assistant', 'teamworks-ai-assistant', 'width=480,height=720,...')` — 같은 창 이름으로 재사용 |
+| 라벨 (스크린리더) | `aria-label="AI 비서 찰떡 열기"` |
+| 위치 | 헤더 우측, 사용자 아바타 좌측 |
+
+> 위 컴포넌트들은 모두 `frontend/components/common/` 또는 도메인 디렉토리 하위에 구현되며, 이 가이드의 토큰 외에는 새 색을 도입하지 않는다. 추가 색이 필요하면 §2.5 의 5색 안에서 의미를 재배치하거나 본 가이드를 먼저 갱신.
 
 ---
 

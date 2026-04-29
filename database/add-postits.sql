@@ -1,6 +1,6 @@
 -- Migration: postits 테이블 추가
 -- 기존 DB에 포스트잇 기능을 추가할 때 실행합니다.
--- 실행: psql -U postgres -d caltalk -f database/add-postits.sql
+-- 실행: docker exec -i postgres-db psql -U teamworks-manager -d teamworks < database/add-postits.sql
 
 CREATE TABLE IF NOT EXISTS postits (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

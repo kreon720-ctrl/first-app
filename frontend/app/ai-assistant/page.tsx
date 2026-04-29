@@ -5,10 +5,16 @@ import { useSearchParams } from 'next/navigation';
 import { tokenManager } from '@/lib/tokenManager';
 
 interface Source {
-  source_file: string;
-  section_path: string;
-  score: number;
+  // RAG 결과 (TEAM WORKS 공식 문서)
+  source_file?: string;
+  section_path?: string;
+  score?: number;
+  // Open WebUI 웹 검색 결과
+  title?: string;
+  url?: string;
 }
+
+type AnswerSource = 'rag' | 'web';
 
 interface PendingAction {
   tool: string;
@@ -20,6 +26,8 @@ interface Message {
   role: 'user' | 'assistant' | 'error' | 'system';
   content: string;
   sources?: Source[];
+  // 답변 출처 — 'rag'(TEAM WORKS 공식 문서) 또는 'web'(Open WebUI 웹검색)
+  answerSource?: AnswerSource;
   pendingAction?: PendingAction;
   preview?: string;
   // Once the user confirms or cancels, we flip this so the card stops
@@ -33,7 +41,8 @@ const EXAMPLE_QUESTIONS_GUIDE = [
   '업무보고 어떻게 보내?',
   '팀에 어떻게 가입해?',
   '포스트잇 색깔 종류 알려줘',
-  '프로젝트 삭제하면 하위 일정 어떻게 돼?',
+  '오늘 서울 날씨 어때?',
+  '오늘 뉴스 검색해줘',
 ];
 
 const EXAMPLE_QUESTIONS_AGENT = [
@@ -45,6 +54,17 @@ const EXAMPLE_QUESTIONS_AGENT = [
 
 function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// 스트리밍 첫 토큰 도착 전까지 보일 placeholder. 실제 토큰이 들어오면 swap 됨.
+const THINKING_PLACEHOLDER = 'Thinking...';
+
+// content 가 placeholder 상태인지 판정. progress(🔎)·Thinking·완전 빈 문자열 모두 placeholder.
+function isPlaceholderContent(content: string): boolean {
+  if (!content) return true;
+  if (content === THINKING_PLACEHOLDER) return true;
+  if (content.startsWith('🔎')) return true;
+  return false;
 }
 
 export default function AIAssistantPage() {
@@ -62,7 +82,7 @@ export default function AIAssistantPage() {
       id: 'welcome',
       role: 'assistant',
       content:
-        '안녕하세요! AI 버틀러 찰떡입니다. 팀웍스 사용법에 대해 편하게 물어봐 주세요. (실행 모드로 바꾸면 팀·일정 조회·등록도 부탁할 수 있어요.)',
+        '안녕하세요! AI 버틀러 찰떡입니다. 팀웍스 사용법(📚 공식 문서)이든 일반 질문(🌐 웹 검색)이든 자유롭게 물어봐 주세요. 시스템이 자동으로 적절한 경로로 답변합니다. (실행 모드로 바꾸면 팀·일정 조회·등록도 부탁할 수 있어요.)',
     },
   ]);
   const [input, setInput] = useState('');
@@ -104,34 +124,135 @@ export default function AIAssistantPage() {
         headers['authorization'] = `Bearer ${token}`;
       }
 
+      // 안내 모드는 SSE 스트리밍으로 받아 첫 토큰부터 점진 표시.
+      // 실행 모드(agent)는 confirm 카드 메커니즘이 있어 stream 미사용 (기존 동작 유지).
+      const useStream = mode === 'guide';
+
       const res = await fetch('/api/ai-assistant/chat', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ question: trimmed, mode, userHint }),
+        body: JSON.stringify({ question: trimmed, mode, userHint, stream: useStream }),
       });
-      const data = await res.json();
+
       if (!res.ok) {
+        // 에러는 JSON 으로 옴 (stream 시작 전)
+        const data = await res.json().catch(() => ({}));
         throw new Error(data?.error || `요청 실패 (${res.status})`);
       }
 
-      if (data?.kind === 'confirm' && data.pendingAction) {
-        const assistantMsg: Message = {
-          id: newId(),
-          role: 'assistant',
-          content: data.answer || '아래 내용으로 실행할까요?',
-          pendingAction: data.pendingAction,
-          preview: data.preview,
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
+      if (!useStream) {
+        // === 실행 모드 — non-stream JSON ===
+        const data = await res.json();
+        if (data?.kind === 'confirm' && data.pendingAction) {
+          const assistantMsg: Message = {
+            id: newId(),
+            role: 'assistant',
+            content: data.answer || '아래 내용으로 실행할까요?',
+            pendingAction: data.pendingAction,
+            preview: data.preview,
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+        } else {
+          const assistantMsg: Message = {
+            id: newId(),
+            role: 'assistant',
+            content:
+              typeof data.answer === 'string' ? data.answer.trim() : '',
+            sources: Array.isArray(data.sources) ? data.sources : [],
+            answerSource: data?.source === 'web' ? 'web' : data?.source === 'rag' ? 'rag' : undefined,
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+        }
       } else {
-        const assistantMsg: Message = {
-          id: newId(),
-          role: 'assistant',
-          content:
-            typeof data.answer === 'string' ? data.answer.trim() : '',
-          sources: Array.isArray(data.sources) ? data.sources : [],
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
+        // === 안내 모드 — SSE stream ===
+        const msgId = newId();
+        // placeholder 메시지 추가 (토큰 들어올 때마다 content 점진 갱신).
+        // 첫 토큰 도착 전까지 "Thinking..." 을 띄워 사용자가 빈 카드 만나는 시간 제거.
+        // 첫 실제 토큰이 들어오면 isPlaceholder 가 true 인 동안 swap.
+        setMessages((prev) => [
+          ...prev,
+          { id: msgId, role: 'assistant', content: THINKING_PLACEHOLDER },
+        ]);
+
+        if (!res.body) throw new Error('스트림 응답을 받지 못했습니다.');
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        let streamError: string | null = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() || '';
+          for (const line of lines) {
+            const t = line.trim();
+            if (!t || !t.startsWith('data:')) continue;
+            const data = t.slice(5).trim();
+            if (!data || data === '[DONE]') continue;
+            try {
+              const evt = JSON.parse(data);
+              if (evt.type === 'meta') {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === msgId
+                      ? { ...m, answerSource: evt.source === 'web' ? 'web' : evt.source === 'rag' ? 'rag' : undefined }
+                      : m
+                  )
+                );
+              } else if (evt.type === 'progress' && typeof evt.text === 'string') {
+                // thinking-mode 모델의 reasoning 시작 시 한 번 표시.
+                // placeholder 상태일 때만 갱신 (실제 토큰 들어온 뒤엔 무시).
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === msgId && isPlaceholderContent(m.content)
+                      ? { ...m, content: evt.text }
+                      : m
+                  )
+                );
+              } else if (evt.type === 'token' && typeof evt.text === 'string') {
+                setMessages((prev) =>
+                  prev.map((m) => {
+                    if (m.id !== msgId) return m;
+                    // placeholder("Thinking..." 또는 progress 🔎) 가 떠 있으면 첫 실제 토큰 도착 시 지우고 새로 시작
+                    const swap = isPlaceholderContent(m.content);
+                    return {
+                      ...m,
+                      content: swap ? evt.text : m.content + evt.text,
+                    };
+                  })
+                );
+              } else if (evt.type === 'sources' && Array.isArray(evt.sources)) {
+                setMessages((prev) =>
+                  prev.map((m) => (m.id === msgId ? { ...m, sources: evt.sources } : m))
+                );
+              } else if (evt.type === 'error') {
+                streamError = String(evt.message || '스트림 오류');
+              }
+            } catch {
+              // JSON 파싱 실패 라인 무시
+            }
+          }
+        }
+
+        if (streamError) {
+          // placeholder 메시지를 에러로 변환
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId ? { ...m, role: 'error', content: streamError! } : m
+            )
+          );
+        } else {
+          // content 가 placeholder 인 채로 끝났으면(=실제 토큰 0개) 안내 문구로 교체
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId && (isPlaceholderContent(m.content) || !m.content.trim())
+                ? { ...m, content: '(빈 응답)' }
+                : m
+            )
+          );
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -290,7 +411,7 @@ export default function AIAssistantPage() {
             placeholder={
               mode === 'agent'
                 ? '팀·일정을 조회하거나 일정을 등록해 달라고 말씀해 주세요. (Enter 전송, Shift+Enter 줄바꿈)'
-                : 'TEAM WORKS 사용법을 물어보세요. (Enter 전송, Shift+Enter 줄바꿈)'
+                : 'TEAM WORKS 사용법 또는 일반 질문(날씨·뉴스·지식 등)을 자유롭게 물어보세요. (Enter 전송, Shift+Enter 줄바꿈)'
             }
             className="flex-1 resize-none max-h-56 min-h-[88px] rounded-xl border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-base px-4 py-2.5 text-sm font-normal text-gray-800 dark:text-dark-text leading-relaxed shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-dark-text-disabled transition-colors duration-150 disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
             disabled={isLoading}
@@ -311,11 +432,81 @@ export default function AIAssistantPage() {
         </div>
         <p className="mt-1.5 text-[11px] text-gray-400 dark:text-dark-text-disabled text-center">
           {mode === 'agent'
-            ? 'Powered by gemma2:9b + MCP · 등록·수정 전에 확인 카드로 알려드려요.'
-            : 'Answered by gemma2:9b · 기능 외 질문에는 답하지 않습니다.'}
+            ? 'Powered by gemma4:26b + MCP · 등록·수정 전에 확인 카드로 알려드려요.'
+            : 'Answered by gemma4:26b · 사용법 질문은 공식 문서, 그 외엔 웹 검색으로 답해요.'}
         </p>
       </div>
     </div>
+  );
+}
+
+// 답변 카드 하단의 출처 뱃지 — RAG(공식 문서) vs Web(웹검색) 색상·아이콘 분리
+function SourceBadge({ source, sources }: { source: AnswerSource; sources: Source[] }) {
+  if (source === 'rag') {
+    if (sources.length === 0) {
+      return (
+        <p className="text-[11px] text-amber-700 dark:text-[#FFB800] pl-1">
+          📚 TEAM WORKS 공식 문서 기반
+        </p>
+      );
+    }
+    return (
+      <details className="text-xs text-amber-800 dark:text-[#FFB800] pl-1">
+        <summary className="cursor-pointer hover:text-amber-900 dark:hover:text-amber-300 select-none">
+          📚 TEAM WORKS 공식 문서 {sources.length}건 참조
+        </summary>
+        <ul className="mt-1.5 space-y-0.5 pl-3">
+          {sources.map((s, i) => (
+            <li key={i} className="flex gap-2 text-gray-600 dark:text-dark-text-muted">
+              {typeof s.score === 'number' && (
+                <span className="tabular-nums text-gray-400 dark:text-dark-text-disabled">
+                  {s.score.toFixed(2)}
+                </span>
+              )}
+              <span className="truncate">
+                <span>{s.source_file}</span>
+                <span className="text-gray-400 dark:text-dark-text-disabled"> :: </span>
+                <span className="text-gray-700 dark:text-dark-text">{s.section_path}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </details>
+    );
+  }
+
+  // source === 'web'
+  if (sources.length === 0) {
+    return (
+      <p className="text-[11px] text-blue-700 dark:text-blue-400 pl-1">
+        🌐 웹 검색 기반
+      </p>
+    );
+  }
+  return (
+    <details className="text-xs text-blue-700 dark:text-blue-400 pl-1">
+      <summary className="cursor-pointer hover:text-blue-900 dark:hover:text-blue-300 select-none">
+        🌐 웹 검색 {sources.length}건 참조
+      </summary>
+      <ul className="mt-1.5 space-y-0.5 pl-3">
+        {sources.map((s, i) => (
+          <li key={i} className="truncate">
+            {s.url ? (
+              <a
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 dark:text-blue-400 hover:underline"
+              >
+                {s.title || s.url}
+              </a>
+            ) : (
+              <span className="text-gray-600 dark:text-dark-text-muted">{s.title || '(출처 미상)'}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -414,7 +605,14 @@ function MessageBubble({
           </p>
         )}
 
-        {message.sources && message.sources.length > 0 && (
+        {message.answerSource && (
+          <SourceBadge
+            source={message.answerSource}
+            sources={message.sources ?? []}
+          />
+        )}
+        {/* answerSource 가 없는 과거(혹은 agent 모드) 메시지에 대한 폴백 표시 */}
+        {!message.answerSource && message.sources && message.sources.length > 0 && (
           <details className="text-xs text-gray-500 dark:text-dark-text-muted pl-1">
             <summary className="cursor-pointer hover:text-gray-700 dark:hover:text-dark-text select-none">
               참고한 문서 {message.sources.length}건
@@ -422,9 +620,11 @@ function MessageBubble({
             <ul className="mt-1.5 space-y-0.5 pl-3">
               {message.sources.map((s, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="tabular-nums text-gray-400 dark:text-dark-text-disabled">
-                    {s.score.toFixed(2)}
-                  </span>
+                  {typeof s.score === 'number' && (
+                    <span className="tabular-nums text-gray-400 dark:text-dark-text-disabled">
+                      {s.score.toFixed(2)}
+                    </span>
+                  )}
                   <span className="truncate">
                     <span className="text-gray-600 dark:text-dark-text-muted">{s.source_file}</span>
                     <span className="text-gray-400 dark:text-dark-text-disabled"> :: </span>

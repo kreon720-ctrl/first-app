@@ -1,0 +1,140 @@
+services:
+  db:
+    image: postgres:18
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: teamworks-manager
+      POSTGRES_PASSWORD: 'Nts123!@#'
+      POSTGRES_DB: teamworks
+    volumes:
+      - ~/postgres_data:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+    networks:
+      - teamworks-net
+
+  backend:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    env_file:
+      - ./backend/.env.local
+    environment:
+      DATABASE_URL: postgresql://teamworks-manager:Nts123%21%40%23@postgres-db:5432/teamworks
+      FRONTEND_URL: http://localhost:8080
+      NODE_ENV: development
+    command: sh -c "npm install && npm run dev"
+    networks:
+      - teamworks-net
+    expose:
+      - "3000"
+    depends_on:
+      - db
+
+  frontend:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      RAG_SERVER_URL: http://host.docker.internal:8787
+      AGENT_SERVER_URL: http://host.docker.internal:8788
+      # 일반 질문 경로 — Open WebUI (컨테이너 네트워크 내부)
+      OPEN_WEBUI_BASE_URL: http://open-webui:8080
+      OPEN_WEBUI_API_KEY: ${OPEN_WEBUI_API_KEY:-}
+      OPEN_WEBUI_MODEL: ${OPEN_WEBUI_MODEL:-gemma4-web}
+      # Open WebUI 응답엔 URL 이 빠져 있어 SearxNG 를 직접 호출해 sources 보강
+      SEARXNG_BASE_URL: http://searxng:8080
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      NODE_ENV: development
+    command: sh -c "npm install && npm run dev"
+    networks:
+      - teamworks-net
+    expose:
+      - "3001"
+    depends_on:
+      - backend
+      - open-webui
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docker/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - teamworks-net
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: teamworks-searxng
+    volumes:
+      - ./docker/searxng-settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      BASE_URL: http://searxng:8080/
+      INSTANCE_NAME: teamworks-searxng
+    expose:
+      - "8080"
+    networks:
+      - teamworks-net
+    restart: unless-stopped
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: teamworks-open-webui
+    ports:
+      - "8081:8080"
+    volumes:
+      - open_webui_data:/app/backend/data
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      WEBUI_SECRET_KEY: ${OPEN_WEBUI_SECRET_KEY:-change-me-in-env}
+      WEBUI_AUTH: "true"
+      ENABLE_API_KEY: "true"   # 사용자 설정 → 계정 → API 키 섹션 노출
+      # 채팅 기본 모델 — 임베딩 모델(nomic-embed-text)이 알파벳 순서상 먼저 잡혀
+      # 신규 채팅 기본값으로 들어가는 것을 방지
+      DEFAULT_MODELS: "gemma4:26b"
+      ENABLE_RAG_WEB_SEARCH: "true"
+      RAG_WEB_SEARCH_ENGINE: searxng
+      RAG_WEB_SEARCH_RESULT_COUNT: "5"
+      RAG_WEB_SEARCH_CONCURRENT_REQUESTS: "3"
+      SEARXNG_QUERY_URL: "http://searxng:8080/search?q=<query>&format=json"
+      # v0.9 부터 web search 가 사용자 권한으로 분리됨 — 기본 user 에게도 허용
+      USER_PERMISSIONS_FEATURES_WEB_SEARCH: "true"
+      # 페이지 본문 fetch 우회 — SearxNG snippet 만 모델에 전달.
+      # JS 렌더링 사이트(AccuWeather/기상청/뉴스)는 정적 HTML 에 메뉴만 있어 fetch 노이즈 ↑.
+      # snippet(~120~200자) 에 실제 데이터가 있는 케이스가 많고 fetch 비용도 크므로 우회.
+      ENABLE_RAG_LOCAL_WEB_FETCH: "false"
+      BYPASS_WEB_SEARCH_WEB_LOADER: "true"
+      # 임베딩·청킹 우회 — snippet 자체가 짧아 청킹하면 정보 손실. snippet 전체를 모델 컨텍스트로 직접 주입.
+      BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: "true"
+      BYPASS_EMBEDDING_AND_RETRIEVAL: "true"
+      # 호스트 Ollama 의 nomic-embed-text 를 임베딩에 재사용 — HF 다운로드 회피
+      RAG_EMBEDDING_ENGINE: ollama
+      RAG_OLLAMA_BASE_URL: http://host.docker.internal:11434
+      RAG_EMBEDDING_MODEL: nomic-embed-text:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - searxng
+    networks:
+      - teamworks-net
+    restart: unless-stopped
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:
+  open_webui_data:
+
+networks:
+  teamworks-net:
+    name: teamworks-net
+    external: true

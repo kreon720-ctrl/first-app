@@ -1,0 +1,67 @@
+# TEAM WORKS — SearxNG settings
+# Open WebUI 의 RAG_WEB_SEARCH_ENGINE=searxng 백엔드용
+# 컨테이너 네트워크 내부(http://searxng:8080)에서만 호출됨
+
+use_default_settings: true
+
+general:
+  instance_name: "teamworks-searxng"
+  privacypolicy_url: false
+  donation_url: false
+  contact_url: false
+  enable_metrics: false
+
+server:
+  # 임의 키 (내부 네트워크 전용이라 노출 위험 낮음)
+  secret_key: "teamworks-searxng-internal-only-2026-04-28"
+  base_url: false
+  image_proxy: false
+  http_protocol_version: "1.1"
+  method: "GET"
+  default_http_headers:
+    X-Content-Type-Options: nosniff
+    X-Download-Options: noopen
+    X-Robots-Tag: noindex, nofollow
+  limiter: false   # 내부망이므로 rate limit 비활성
+
+ui:
+  default_locale: "ko"
+  query_in_title: false
+  infinite_scroll: false
+  center_alignment: false
+  default_theme: simple
+  theme_args:
+    simple_style: auto
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "ko"
+  formats:
+    - html
+    - json   # ← Open WebUI 가 JSON 으로 호출
+
+# 신뢰 가능한 검색 엔진만 활성. 나머지는 use_default_settings.engines 의 기본값 그대로.
+# 운영 중 응답 포맷 깨짐이 반복되는 엔진(startpage 등) 은 명시적으로 disabled.
+engines:
+  - name: google
+    disabled: false
+  - name: bing
+    disabled: false
+  - name: duckduckgo
+    disabled: false
+  - name: naver
+    disabled: false
+  - name: wikipedia
+    disabled: false
+  # JSON 파싱 에러 빈발 → 비활성
+  - name: startpage
+    disabled: true
+  # init 단계 실패 (KeyError 'name') → 비활성
+  - name: wikidata
+    disabled: true
+  # 다크웹/특수 검색 — 일반 사용자 질문엔 부적합
+  - name: ahmia
+    disabled: true
+  - name: torch
+    disabled: true

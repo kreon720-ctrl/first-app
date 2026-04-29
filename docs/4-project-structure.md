@@ -205,7 +205,8 @@ DELETE /api/teams/[teamId]/projects/[projectId]/schedules/[scheduleId]/sub-sched
 
 ```bash
 # backend/.env.local (로컬 개발 전용, .gitignore에 반드시 포함)
-DATABASE_URL=postgresql://...
+# 로컬: Docker 컨테이너 postgres-db (자세한 설정은 docs/30-docker-container-gen.md §10 실행 절차 참고)
+DATABASE_URL=postgresql://teamworks-manager:Nts123%21%40%23@localhost:5432/teamworks
 JWT_ACCESS_SECRET=...
 JWT_REFRESH_SECRET=...
 JWT_ACCESS_EXPIRES_IN=15m

@@ -13,16 +13,21 @@ async function answer(question) {
     sources: retrieved.map((r) => ({
       file: r.chunk.source_file,
       section: r.chunk.section_path,
+      parent: r.parent_id,
       score: r.score,
+      cos: r.cos ?? 0,
+      bm25: r.bm25 ?? 0,
     })),
   };
 }
 
 function printAnswer({ text, sources }) {
   console.log("\n" + text.trim() + "\n");
-  console.log("― 참고한 청크 ―");
+  console.log("― 참고한 청크 (RRF 점수, cos, bm25) ―");
   for (const s of sources) {
-    console.log(`  [${s.score.toFixed(3)}] ${s.file} :: ${s.section}`);
+    console.log(
+      `  [RRF ${s.score.toFixed(4)} | cos ${s.cos.toFixed(3)} | bm25 ${s.bm25.toFixed(2)}] ${s.file} :: ${s.section}`
+    );
   }
   console.log("");
 }

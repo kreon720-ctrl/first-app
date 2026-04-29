@@ -11,6 +11,7 @@
 | 1.4 | 2026-04-18 | 앱명 Team CalTalk → TEAM WORKS 반영. ChatMessage.type SCHEDULE_REQUEST → WORK_PERFORMANCE 변경 |
 | 1.5 | 2026-04-18 | Team에 description/isPublic 추가, BR-02/BR-04 실제 구현 반영, 앱명 통일 |
 | 1.6 | 2026-04-20 | Postit, WorkPerformancePermission, Project, ProjectSchedule, SubSchedule, Notice 엔티티 추가. 관련 역할/권한, 비즈니스 규칙, 유스케이스, CRUD 매핑 갱신 |
+| 1.7 | 2026-04-28 | 백엔드 구현 일치화: 팀 정보 수정/삭제, 팀원 강제 탈퇴, 내 프로필 수정 도메인화. BR-11·BR-12 추가, UC-14·UC-15·UC-16 추가, 역할/권한 표 및 CRUD 매핑 갱신 |
 
 ---
 
@@ -247,10 +248,14 @@
 
 | 기능 | 팀장 (LEADER) | 팀원 (MEMBER) | 관련 규칙 |
 |------|:---:|:---:|-----------|
+| 내 프로필(이름) 수정 | 본인만 | 본인만 | BR-01 |
 | 팀 공개 목록 조회 | O | O | BR-07 |
 | 팀 가입 신청 | O (타 팀에 대해) | O | BR-07 |
 | 가입 신청 승인/거절 | O (자기 팀에 대해) | X | BR-03 |
 | 나의 할 일 목록 조회 | O | X | BR-03 |
+| 팀 정보 수정 | O | X | BR-11 |
+| 팀 삭제 | O | X | BR-11 |
+| 팀원 강제 탈퇴 | O (본인 제외) | X | BR-12 |
 | 팀 일정 조회 | O | O | BR-01 |
 | 팀 일정 생성 | O | O | BR-02 |
 | 팀 일정 수정/삭제 | 생성자 본인만 | 생성자 본인만 | BR-02 |
@@ -281,6 +286,8 @@
 | BR-08 | 포스트잇 생성은 팀 구성원(LEADER/MEMBER) 모두 가능. 수정·삭제는 생성자 본인만 가능 |
 | BR-09 | 프로젝트·프로젝트 일정·세부 일정 생성은 팀 구성원(LEADER/MEMBER) 모두 가능. 수정·삭제는 생성자 본인만 가능 |
 | BR-10 | 공지사항 작성은 팀 구성원(LEADER/MEMBER) 모두 가능. 삭제는 작성자 본인 또는 팀장(LEADER)만 가능 |
+| BR-11 | 팀 정보 수정·삭제는 팀장(LEADER)만 가능. 팀 삭제 시 종속 데이터(TeamMember, TeamJoinRequest, Schedule, ChatMessage, Notice, Postit, Project, ProjectSchedule, SubSchedule, WorkPerformancePermission)는 CASCADE로 함께 정리 |
+| BR-12 | 팀원 강제 탈퇴는 팀장(LEADER)만 가능. 팀장 본인은 강제 탈퇴 대상이 될 수 없음(요청 시 400 반환) |
 
 ---
 
@@ -303,6 +310,9 @@
 | UC-11 | 세부 일정 생성·수정·삭제 | 팀장, 팀원 | BR-01, BR-09 |
 | UC-12 | 공지사항 작성·삭제 | 팀장, 팀원 | BR-01, BR-10 |
 | UC-13 | 업무보고 조회 권한 설정 | 팀장 | BR-01, BR-04 |
+| UC-14 | 팀 정보 수정·삭제 | 팀장 | BR-01, BR-11 |
+| UC-15 | 팀원 강제 탈퇴 | 팀장 | BR-01, BR-12 |
+| UC-16 | 내 프로필(이름) 수정 | 로그인 사용자 | BR-01 |
 
 ### 수락 조건 (Acceptance Criteria)
 
@@ -459,15 +469,48 @@
 - When: 권한 설정 시도
 - Then: 403 Forbidden
 
+**UC-14 팀 정보 수정·삭제**
+- Given: 팀장(LEADER)이 name(최대 100자)·description·isPublic 중 1개 이상 전달
+- When: 팀 정보 수정 요청
+- Then: 200 OK, 전달된 필드만 갱신
+- Given: 팀장(LEADER)이 자신의 팀 삭제 요청
+- When: 팀 삭제 요청
+- Then: 200 OK, Team 레코드 및 종속 데이터 CASCADE 삭제
+- Given: MEMBER 권한의 사용자
+- When: 팀 정보 수정 또는 삭제 시도
+- Then: 403 Forbidden
+
+**UC-15 팀원 강제 탈퇴**
+- Given: 팀장(LEADER)이 자신의 팀에 속한 MEMBER의 userId 지정
+- When: DELETE /teams/:teamId/members/:userId 요청
+- Then: 200 OK, 해당 TeamMember 레코드 제거
+- Given: 팀장(LEADER)이 자기 자신(leaderId)의 userId 지정
+- When: 강제 탈퇴 요청
+- Then: 400 Bad Request — "팀장은 탈퇴시킬 수 없습니다."
+- Given: MEMBER 권한의 사용자
+- When: 강제 탈퇴 시도
+- Then: 403 Forbidden
+- Given: 해당 팀의 멤버가 아닌 userId 지정
+- When: 강제 탈퇴 요청
+- Then: 404 Not Found
+
+**UC-16 내 프로필(이름) 수정**
+- Given: 로그인 사용자가 trim 후 1~50자 범위의 name 전달
+- When: PATCH /api/me 요청
+- Then: 200 OK, User.name 갱신
+- Given: name이 빈 문자열·공백뿐이거나 50자 초과
+- When: 프로필 수정 요청
+- Then: 400 Bad Request
+
 ---
 
 ## 8. 엔티티 CRUD 매핑
 
 | 엔티티 | 생성 | 조회 | 수정 | 삭제 |
 |--------|------|------|------|------|
-| User | UC-01 | UC-01 | - | - |
-| Team | UC-02 | UC-02B, UC-03, UC-07 | - | - |
-| TeamMember | UC-02, UC-02C | UC-03 | - | - |
+| User | UC-01 | UC-01 | UC-16 | - |
+| Team | UC-02 | UC-02B, UC-03, UC-07 | UC-14 | UC-14 |
+| TeamMember | UC-02, UC-02C | UC-03 | - | UC-15 |
 | TeamJoinRequest | UC-02B | UC-02C | UC-02C | - |
 | Schedule | UC-04 | UC-03, UC-07 | UC-04 | UC-04 |
 | ChatMessage | UC-05, UC-06 | UC-05, UC-07 | - | - |
