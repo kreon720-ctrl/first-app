@@ -398,15 +398,34 @@ const KEYWORD_STOPWORDS = new Set([
   '정리', '알려', '보여', '확인', '조회', '찾아', '있어', '있나', '어떤', '뭐', '무엇',
 ]);
 
+// 합성 keyword 의 stopword 토큰 제거.
+// 예: "주 회의" → "주" / "디자인 리뷰" → "디자인 리뷰"
+// "주" 같은 view 표지자가 붙은 합성어를 의미 있는 부분만 남기고 정리.
 function sanitizeKeyword(raw: string): string {
-  const t = raw.trim();
+  let t = raw.trim();
+  if (!t) return '';
+  if (KEYWORD_STOPWORDS.has(t)) return '';
+  // 공백 단위로 토큰 나눠 stopword 토큰 + view 표지자 ("주") 제거
+  const VIEW_MARKERS = new Set(['주', '주간', '오늘', '내일', '어제', '이번', '다음', '지난']);
+  const tokens = t.split(/\s+/).filter((tok) => {
+    if (KEYWORD_STOPWORDS.has(tok)) return false;
+    if (VIEW_MARKERS.has(tok)) return false;
+    return true;
+  });
+  t = tokens.join(' ').trim();
   if (!t) return '';
   if (KEYWORD_STOPWORDS.has(t)) return '';
   return t;
 }
 
+// "X월 Y일 주" / "X일 주" — 특정 날짜를 포함하는 주(week) 표현.
+// (?!간) 으로 "주간" 은 제외 (주간 = 별도 단어).
+const WEEK_OF_DATE_RE = /(?:\d+월\s*)?\d+일\s*주(?!간)/;
+
 // schedule 조회 자연어 → view+date+keyword 파싱 — RAG 서버의 /parse-schedule-query.
 // keyword 는 일정 제목 부분 매치용 (예: "디자인 리뷰"). 실패 시 default(month/오늘/no-keyword) fallback.
+//
+// 후처리: 작은 모델이 "X일 주" 를 view=day 로 잘못 떨어뜨리는 케이스를 정규식으로 강제 보정.
 async function parseScheduleQuery(question: string): Promise<{
   view: 'day' | 'week' | 'month';
   date: string;
@@ -419,9 +438,15 @@ async function parseScheduleQuery(question: string): Promise<{
       body: JSON.stringify({ question, nowIso: new Date().toISOString() }),
     });
     const data = await res.json();
+    let view = (data?.view ?? 'month') as 'day' | 'week' | 'month';
+    const date = (data?.date ?? new Date().toISOString().slice(0, 10)) as string;
+    // "X일 주" 패턴이면 view=week 강제 (LLM 이 day 로 떨어뜨려도 정정)
+    if (WEEK_OF_DATE_RE.test(question)) {
+      view = 'week';
+    }
     return {
-      view: (data?.view ?? 'month') as 'day' | 'week' | 'month',
-      date: (data?.date ?? new Date().toISOString().slice(0, 10)) as string,
+      view,
+      date,
       keyword: typeof data?.keyword === 'string' ? sanitizeKeyword(data.keyword) : '',
     };
   } catch {
