@@ -240,7 +240,35 @@ app.post("/parse-schedule-args", async (req, res) => {
     return `  - 지난주 ${wd}: ${d.toISOString().slice(0, 10)}`;
   }).join("\n");
 
-  const sysPrompt = `당신은 한국어 일정 등록 요청을 JSON 으로 변환합니다.\n현재 KST 날짜: ${kstDateStr} (${kstWeekday})\n현재 UTC 시각: ${now}\n사용자는 한국 시간대(KST=UTC+9)로 말한다고 가정.\n\n반드시 다음 둘 중 하나의 JSON 만 출력 (마크다운 금지):\n\n[A. 정보 충분 — 인자 반환]\n{"ok":true,"title":"...","startAt":"YYYY-MM-DDTHH:MM:SS.000Z","endAt":"YYYY-MM-DDTHH:MM:SS.000Z","description":""}\n\n[B. 정보 부족 — 후속 질문]\n{"ok":false,"needs":"time"|"date"|"title","hint":"한국어 한 문장 후속 질문"}\n\n날짜 추론 규칙 (오늘=${kstDateStr}(${kstWeekday}) 기준):\n- "오늘" → ${kstDateStr}\n- "내일" → 오늘 + 1일\n- "어제" → 오늘 - 1일\n- "X월 Y일" 연도 미명시 → 가장 가까운 미래\n\n요일 매핑 — 사용자가 "이번 주/다음 주/지난주 X요일" 이라고 말하면 **아래 표를 그대로 사용**. 추론·계산 금지.\n\n[이번 주 (일~토)]\n${weekMapping}\n\n[다음 주]\n${nextWeekMapping}\n\n[지난주]\n${lastWeekMapping}\n\n시간 변환 규칙 (매우 중요):\n- 사용자는 KST 로 말함. ISO 8601 UTC ('Z' 끝) 로 반환할 때 **KST 시각에서 9시간을 뺀** 값을 출력.\n- 예: 사용자 "내일 오후 3시" + 오늘=2026-04-30 → 내일=2026-05-01 KST 15:00 → "2026-05-01T06:00:00.000Z".\n- 예: 사용자 "오전 9시" → KST 09:00 → "T00:00:00.000Z".\n- 예: 사용자 "자정" → KST 00:00 → 전날 "T15:00:00.000Z".\n- KST 0~8시 시각은 UTC 로 전날이 됨. 주의해서 날짜도 보정.\n\nA(완성) vs B(부족) 결정 규칙:\n- 시작 시각이 명시되지 않거나 모호("오전?", "오후?", "회의 잡아줘")하면 → B, needs="time", hint="몇 시에 잡을까요?"\n- 날짜가 모호("회의 잡아줘", "다음에"...)하면 → B, needs="date", hint="언제로 잡을까요?"\n- 제목이 전혀 없으면 → B, needs="title", hint="회의 제목은 무엇으로 할까요?"\n- 위 모두 갖춰지면 → A. 종료 시각 미명시면 시작+1시간 가정 OK.\n- 제목은 사용자 표현 짧게(10자 내외). description 는 명시 안 하면 빈 문자열.\n\n절대 JSON 외 다른 문자 출력 금지.`;
+  // 오늘 = ${kstDateStr}. 월·연 단독 보간 시 LLM 이 정확한 정수 산술을 하기 어려우므로
+  // 흔히 쓰이는 "Y일" → 가장 가까운 미래 매핑을 미리 계산해 표로 제공.
+  const todayDay = kstNow.getUTCDate();
+  const todayMonth = kstNow.getUTCMonth(); // 0~11
+  const todayYear = kstNow.getUTCFullYear();
+  // 1~31 일자에 대해 "Y일" 단독 입력 시 어떤 (year-month-day) 가 가장 가까운 미래인지 미리 산출.
+  // 규칙: 오늘 이후의 Y일이 이번 달에 있으면 이번 달, 아니면 다음 달 (다음 달에 Y일 없으면 그 다음 달).
+  const lastDayOfMonth = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const dayMapping = [];
+  for (let d = 1; d <= 31; d++) {
+    let y = todayYear, m = todayMonth;
+    // 이번 달에 d 일이 존재하고 오늘 이후 (오늘 포함) 면 이번 달
+    if (d >= todayDay && d <= lastDayOfMonth(y, m)) {
+      // 이번 달 사용
+    } else {
+      // 다음 달부터 d 일이 존재하는 첫 달 찾기 (최대 3번 진행 — 실제로는 1~2번 안에 결정)
+      m += 1;
+      if (m > 11) { m = 0; y += 1; }
+      while (d > lastDayOfMonth(y, m)) {
+        m += 1;
+        if (m > 11) { m = 0; y += 1; }
+      }
+    }
+    const ymd = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    dayMapping.push(`  - "${d}일" → ${ymd}`);
+  }
+  const dayMappingTable = dayMapping.join("\n");
+
+  const sysPrompt = `당신은 한국어 일정 등록 요청을 JSON 으로 변환합니다.\n현재 KST 날짜: ${kstDateStr} (${kstWeekday})\n현재 UTC 시각: ${now}\n사용자는 한국 시간대(KST=UTC+9)로 말한다고 가정.\n\n반드시 다음 둘 중 하나의 JSON 만 출력 (마크다운 금지):\n\n[A. 정보 충분 — 인자 반환]\n{"ok":true,"title":"...","startAt":"YYYY-MM-DDTHH:MM:SS.000Z","endAt":"YYYY-MM-DDTHH:MM:SS.000Z","description":""}\n\n[B. 정보 부족 — 후속 질문]\n{"ok":false,"needs":"time"|"date"|"title","hint":"한국어 한 문장 후속 질문"}\n\n날짜 추론 규칙 (오늘=${kstDateStr}(${kstWeekday}) 기준):\n- "오늘" → ${kstDateStr}\n- "내일" → 오늘 + 1일\n- "어제" → 오늘 - 1일\n- "X월 Y일" 연도 미명시 → 가장 가까운 미래 (오늘 이후의 X월 Y일).\n- "Y일" (월 미명시, 단독 일자) → **아래 매핑 표 그대로 사용**. 절대 추론·계산 금지. 과거 날짜 출력 금지.\n- 해당 월에 그 일자가 존재하지 않으면 (예: 4월 31일) 매핑 표대로 다음 달로 점프.\n\n[Y일 단독 매핑 표 — 가장 가까운 미래]\n${dayMappingTable}\n\n요일 매핑 — 사용자가 "이번 주/다음 주/지난주 X요일" 이라고 말하면 **아래 표를 그대로 사용**. 추론·계산 금지.\n\n[이번 주 (일~토)]\n${weekMapping}\n\n[다음 주]\n${nextWeekMapping}\n\n[지난주]\n${lastWeekMapping}\n\n시간 변환 규칙 (매우 중요):\n- 사용자는 KST 로 말함. ISO 8601 UTC ('Z' 끝) 로 반환할 때 **KST 시각에서 9시간을 뺀** 값을 출력.\n- 예: 사용자 "내일 오후 3시" + 오늘=2026-04-30 → 내일=2026-05-01 KST 15:00 → "2026-05-01T06:00:00.000Z".\n- 예: 사용자 "오전 9시" → KST 09:00 → "T00:00:00.000Z".\n- 예: 사용자 "자정" → KST 00:00 → 전날 "T15:00:00.000Z".\n- KST 0~8시 시각은 UTC 로 전날이 됨. 주의해서 날짜도 보정.\n\nA(완성) vs B(부족) 결정 규칙 (이 순서대로 검사):\n- 날짜가 명시 안 됨 또는 모호("회의 잡아줘", "다음에", "곧"...) → B, needs="date", hint="언제로 잡을까요?"\n- 시각이 명시 안 됨 또는 모호("오전?", "오후?", "조만간") → B, needs="time", hint="몇 시에 잡을까요?"\n- 제목이 전혀 없으면 → B, needs="title", hint="회의 제목은 무엇으로 할까요?"\n- 위 모두 갖춰지면 → A. 종료 시각 미명시면 시작+1시간 가정 OK.\n- 제목은 사용자 표현 짧게(10자 내외). description 는 명시 안 하면 빈 문자열.\n- "Y일 일정 등록해줘" 처럼 일자만 있고 시각이 없으면 → B, needs="time" (날짜는 매핑 표로 결정 가능하나 시각이 없으므로 후속 질문).\n\n절대 JSON 외 다른 문자 출력 금지.`;
 
   try {
     const model = await resolveChatModel();
