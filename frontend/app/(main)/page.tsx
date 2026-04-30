@@ -76,21 +76,22 @@ export default function HomePage() {
       {/* Header */}
       <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
         <div className="flex items-center gap-2">
-          <svg className="w-6 h-6 text-gray-500 dark:text-[#FFB800] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="2.2" />
-            <circle cx="12" cy="3.5" r="1.3" />
-            <line x1="12" y1="4.8" x2="12" y2="9.8" />
-            <circle cx="19.5" cy="6.5" r="1.3" />
-            <line x1="18.5" y1="7.5" x2="13.8" y2="10.8" />
-            <circle cx="19.5" cy="17.5" r="1.3" />
-            <line x1="18.5" y1="16.5" x2="13.8" y2="13.2" />
-            <circle cx="12" cy="20.5" r="1.3" />
-            <line x1="12" y1="19.2" x2="12" y2="14.2" />
-            <circle cx="4.5" cy="17.5" r="1.3" />
-            <line x1="5.5" y1="16.5" x2="10.2" y2="13.2" />
-            <circle cx="4.5" cy="6.5" r="1.3" />
-            <line x1="5.5" y1="7.5" x2="10.2" y2="10.8" />
-          </svg>
+          {/* TEAM WORKS 로고 — 라이트:블랙 / 다크:앰버골드(#FFB800) */}
+          <span
+            role="img"
+            aria-label="TEAM WORKS 로고"
+            className="block w-6 h-6 shrink-0 bg-black dark:bg-[#FFB800]"
+            style={{
+              WebkitMaskImage: 'url(/imgs/logo_v.svg)',
+              maskImage: 'url(/imgs/logo_v.svg)',
+              WebkitMaskSize: 'contain',
+              maskSize: 'contain',
+              WebkitMaskRepeat: 'no-repeat',
+              maskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              maskPosition: 'center',
+            }}
+          />
           <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">TEAM WORKS</h1>
         </div>
         <div className="flex items-center gap-2">

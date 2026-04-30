@@ -9,7 +9,22 @@ export default function SignupPage() {
       {/* Logo / Title */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2">
-          <img src="/logo.png" alt="TEAM WORKS 로고" className="w-9 h-9" />
+          {/* logo_v.svg를 CSS mask로 사용해 앰버골드 채색 */}
+          <span
+            role="img"
+            aria-label="TEAM WORKS 로고"
+            className="block w-9 h-9 bg-amber-400"
+            style={{
+              WebkitMaskImage: 'url(/imgs/logo_v.svg)',
+              maskImage: 'url(/imgs/logo_v.svg)',
+              WebkitMaskSize: 'contain',
+              maskSize: 'contain',
+              WebkitMaskRepeat: 'no-repeat',
+              maskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              maskPosition: 'center',
+            }}
+          />
           <h1 className="text-2xl font-bold text-white leading-tight tracking-tight">
             TEAM WORKS
           </h1>
