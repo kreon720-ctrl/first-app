@@ -294,7 +294,7 @@ export function CalendarDayView({
                   >
                     <div
                       onClick={() => onScheduleClick?.(schedule)}
-                      className={`w-full h-full overflow-hidden ${COLOR_CLASSES[schedule.color ?? 'indigo'].bg} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text} text-xs px-1.5 py-0.5 rounded cursor-pointer ${COLOR_CLASSES[schedule.color ?? 'indigo'].hover} transition-colors duration-150 break-words border-l-2 ${COLOR_CLASSES[schedule.color ?? 'indigo'].border}`}
+                      className={`w-full h-full overflow-hidden ${COLOR_CLASSES[schedule.color ?? 'indigo'].bg} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text} text-[11px] md:text-xs px-1.5 py-0.5 rounded cursor-pointer ${COLOR_CLASSES[schedule.color ?? 'indigo'].hover} transition-colors duration-150 break-words border-l-2 ${COLOR_CLASSES[schedule.color ?? 'indigo'].border}`}
                       title={schedule.title}
                     >
                       <div className="font-semibold break-words leading-tight">{schedule.title}</div>

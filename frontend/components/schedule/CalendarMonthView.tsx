@@ -314,7 +314,7 @@ export function CalendarMonthView({
                       {sameDaySchedules.map(schedule => (
                         <div
                           key={schedule.id}
-                          className={`text-xs px-1 py-0.5 break-words overflow-hidden rounded mb-0.5 cursor-pointer hover:opacity-75 transition-opacity flex-shrink-0 ${COLOR_CLASSES[schedule.color ?? 'indigo'].bg} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text}`}
+                          className={`text-[11px] md:text-xs px-1 py-0.5 break-words overflow-hidden rounded mb-0.5 cursor-pointer hover:opacity-75 transition-opacity flex-shrink-0 ${COLOR_CLASSES[schedule.color ?? 'indigo'].bg} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text}`}
                           onClick={e => { e.stopPropagation(); onScheduleClick?.(schedule); }}
                           onMouseEnter={e => setTooltip({ schedule, x: e.clientX, y: e.clientY })}
                           onMouseMove={e => setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null)}
@@ -358,7 +358,7 @@ export function CalendarMonthView({
                         style={{ left: leftPct, width: widthPct, top: `${topPx}px`, height: `${barH}px`, pointerEvents: 'auto' }}
                       >
                         <div
-                          className={`text-xs px-1 py-0.5 break-words overflow-hidden cursor-pointer hover:opacity-75 transition-opacity rounded h-full text-center ${COLOR_CLASSES[schedule.color ?? 'indigo'].bg} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text}`}
+                          className={`text-[11px] md:text-xs px-1 py-0.5 break-words overflow-hidden cursor-pointer hover:opacity-75 transition-opacity rounded h-full text-center ${COLOR_CLASSES[schedule.color ?? 'indigo'].bg} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text}`}
                           onClick={e => { e.stopPropagation(); onScheduleClick?.(schedule); }}
                           onMouseEnter={e => setTooltip({ schedule, x: e.clientX, y: e.clientY })}
                           onMouseMove={e => setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null)}

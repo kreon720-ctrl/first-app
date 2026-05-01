@@ -78,25 +78,32 @@ export function MobileLayout({
   return (
     <>
       {/* Tab navigation */}
-      <div className="flex border-b border-gray-200 bg-white">
+      <div className="flex border-b border-gray-200 bg-white dark:border-dark-border dark:bg-dark-surface">
         <button
           type="button"
           onClick={() => onTabChange('calendar')}
-          className={`flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors duration-150 ${
+          className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 text-sm font-medium border-b-2 transition-colors duration-150 ${
             activeTab === 'calendar'
-              ? 'text-primary-600 border-primary-500'
-              : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+              ? 'text-primary-600 border-primary-500 dark:text-dark-accent dark:border-dark-accent'
+              : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300 dark:text-dark-text-muted dark:hover:text-dark-text'
           }`}
         >
+          {/* 캘린더 아이콘 */}
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M3 9h18" />
+            <path d="M8 3v4" />
+            <path d="M16 3v4" />
+          </svg>
           캘린더
         </button>
         <button
           type="button"
           onClick={() => onTabChange('chat')}
-          className={`flex-1 inline-flex items-center justify-center gap-1.5 py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-150 ${
+          className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 text-sm font-medium border-b-2 transition-colors duration-150 ${
             activeTab === 'chat'
-              ? 'text-primary-600 border-primary-500'
-              : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+              ? 'text-primary-600 border-primary-500 dark:text-dark-accent dark:border-dark-accent'
+              : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300 dark:text-dark-text-muted dark:hover:text-dark-text'
           }`}
         >
           {/* 채팅 말풍선 아이콘 */}
@@ -111,10 +118,10 @@ export function MobileLayout({
         <button
           type="button"
           onClick={() => onTabChange('ai-assistant')}
-          className={`flex-1 inline-flex items-center justify-center gap-1.5 py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-150 ${
+          className={`flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 text-sm font-medium border-b-2 transition-colors duration-150 ${
             activeTab === 'ai-assistant'
-              ? 'text-primary-600 border-primary-500'
-              : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+              ? 'text-primary-600 border-primary-500 dark:text-dark-accent dark:border-dark-accent'
+              : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300 dark:text-dark-text-muted dark:hover:text-dark-text'
           }`}
         >
           {/* AI sparkle 아이콘 */}
@@ -123,7 +130,7 @@ export function MobileLayout({
             <path d="M18 14 18.7 16 21 16.7 18.7 17.3 18 19.3 17.3 17.3 15.3 16.7 17.3 16z" />
             <path d="M5 4 5.5 5.5 7 6 5.5 6.5 5 8 4.5 6.5 3 6 4.5 5.5z" />
           </svg>
-          찰떡이
+          AI 찰떡이
         </button>
       </div>
 
@@ -174,7 +181,7 @@ export function MobileLayout({
 
         {/* Chat tab */}
         <div
-          className={`h-[calc(100vh-8rem)] ${activeTab === 'chat' ? 'flex' : 'hidden'} flex-col`}
+          className={`h-[calc(100vh-6rem)] ${activeTab === 'chat' ? 'flex' : 'hidden'} flex-col`}
         >
           <ChatPanel
             teamId={teamId}
@@ -185,7 +192,7 @@ export function MobileLayout({
 
         {/* AI 버틀러 tab */}
         <div
-          className={`h-[calc(100vh-8rem)] ${activeTab === 'ai-assistant' ? 'flex' : 'hidden'} flex-col`}
+          className={`h-[calc(100vh-6rem)] ${activeTab === 'ai-assistant' ? 'flex' : 'hidden'} flex-col`}
         >
           <AIAssistantPanel teamId={teamId} teamName={teamName} />
         </div>

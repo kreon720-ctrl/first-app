@@ -32,16 +32,29 @@ export function TeamPageHeader({
     return (
       <header className="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onNavigateHome}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
-            aria-label="홈"
-          >
-            <svg className="w-6 h-6 text-gray-700 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </button>
+          <div className="relative group">
+            <button
+              type="button"
+              onClick={onNavigateHome}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
+              aria-label="팀목록 보기"
+            >
+              {/* 팀 목록(리스트) 아이콘 — 좌측 점 + 우측 라인 3줄 */}
+              <svg className="w-6 h-6 text-gray-700 dark:text-dark-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="5" cy="6" r="1" fill="currentColor" stroke="none" />
+                <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" />
+                <circle cx="5" cy="18" r="1" fill="currentColor" stroke="none" />
+                <line x1="9" y1="6" x2="20" y2="6" />
+                <line x1="9" y1="12" x2="20" y2="12" />
+                <line x1="9" y1="18" x2="20" y2="18" />
+              </svg>
+            </button>
+            {/* 빠른 hover 툴팁 — native title 의 1~2초 지연 회피 */}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
+              팀목록 보기
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-800 dark:border-b-gray-700" />
+            </div>
+          </div>
           <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">{teamName}</h1>
         </div>
         <Link href="/" className="absolute left-1/2 -translate-x-1/2 select-none flex items-center gap-2 cursor-pointer">
@@ -101,28 +114,41 @@ export function TeamPageHeader({
 
   // Mobile header
   return (
-    <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onNavigateHome}
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
-          aria-label="홈"
-        >
-          <svg className="w-6 h-6 text-gray-700 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h1 className="text-lg font-semibold text-gray-900 truncate dark:text-dark-text">{teamName}</h1>
+    <header className="flex items-center justify-between h-10 px-3 bg-white border-b border-gray-200 sticky top-0 z-30 dark:bg-dark-surface dark:border-dark-border">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <div className="relative group">
+          <button
+            type="button"
+            onClick={onNavigateHome}
+            className="p-1 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
+            aria-label="팀목록 보기"
+          >
+            {/* 팀 목록(리스트) 아이콘 — 좌측 점 + 우측 라인 3줄 */}
+            <svg className="w-5 h-5 text-gray-700 dark:text-dark-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="5" cy="6" r="1" fill="currentColor" stroke="none" />
+              <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" />
+              <circle cx="5" cy="18" r="1" fill="currentColor" stroke="none" />
+              <line x1="9" y1="6" x2="20" y2="6" />
+              <line x1="9" y1="12" x2="20" y2="12" />
+              <line x1="9" y1="18" x2="20" y2="18" />
+            </svg>
+          </button>
+          {/* 빠른 hover 툴팁 — native title 의 1~2초 지연 회피 */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
+            팀목록 보기
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-800 dark:border-b-gray-700" />
+          </div>
+        </div>
+        <h1 className="text-base font-semibold text-gray-900 truncate dark:text-dark-text">{teamName}</h1>
       </div>
       <div className="flex items-center gap-1">
         <ThemeToggle />
         <button
           type="button"
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
+          className="p-1 rounded-lg hover:bg-gray-100 transition-colors duration-150 dark:hover:bg-dark-elevated"
           aria-label="메뉴"
         >
-          <svg className="w-6 h-6 text-gray-700 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-700 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
           </svg>
         </button>

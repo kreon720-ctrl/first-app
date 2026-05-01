@@ -242,7 +242,7 @@ export default function TeamMainPage({ params }: TeamMainPageProps) {
                     <path d="M18 14 18.7 16 21 16.7 18.7 17.3 18 19.3 17.3 17.3 15.3 16.7 17.3 16z" />
                     <path d="M5 4 5.5 5.5 7 6 5.5 6.5 5 8 4.5 6.5 3 6 4.5 5.5z" />
                   </svg>
-                  찰떡이
+                  AI 찰떡이
                 </button>
               </div>
 

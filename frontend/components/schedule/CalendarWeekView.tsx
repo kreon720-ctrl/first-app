@@ -146,7 +146,7 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
                   <div className="px-1 py-0.5" style={{ gridColumn: `${colStart} / ${colEnd}` }}>
                     <div
                       onClick={() => onScheduleClick?.(schedule)}
-                      className={`text-xs ${COLOR_CLASSES[schedule.color ?? 'indigo'].bgDarker} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text} px-1 py-0.5 rounded truncate cursor-pointer ${COLOR_CLASSES[schedule.color ?? 'indigo'].hover} transition-colors`}
+                      className={`text-[11px] md:text-xs ${COLOR_CLASSES[schedule.color ?? 'indigo'].bgDarker} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text} px-1 py-0.5 rounded truncate cursor-pointer ${COLOR_CLASSES[schedule.color ?? 'indigo'].hover} transition-colors`}
                       title={schedule.title}
                     >
                       {schedule.title}
@@ -244,7 +244,7 @@ export function CalendarWeekView({ currentDate, schedules = [], selectedDate, on
                           onMouseLeave={() => setTooltip(null)}
                           className={`w-full h-full overflow-hidden ${COLOR_CLASSES[schedule.color ?? 'indigo'].bg} ${COLOR_CLASSES[schedule.color ?? 'indigo'].text} px-1.5 py-0.5 rounded cursor-pointer ${COLOR_CLASSES[schedule.color ?? 'indigo'].hover} transition-colors duration-150`}
                         >
-                          <div className="font-medium text-xs break-words leading-tight">{schedule.title}</div>
+                          <div className="font-medium text-[11px] md:text-xs break-words leading-tight">{schedule.title}</div>
                           <div className="opacity-75 text-[10px] truncate">
                             {formatTime(start)} ~ {formatTime(end)}
                           </div>
