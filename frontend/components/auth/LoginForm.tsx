@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 import { useLogin } from '@/hooks/query/useAuth';
 import { ApiError } from '@/lib/apiClient';
 import { Input } from '@/components/common/Input';
@@ -17,6 +18,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
   const isFormValid = email.trim() !== '' && password.trim() !== '';
@@ -109,17 +111,31 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         autoComplete="email"
       />
 
-      <Input
-        type="password"
-        label="비밀번호"
-        placeholder="••••••••"
-        value={password}
-        onChange={(e) => { setPassword(e.target.value); clearGeneralError(); }}
-        onBlur={() => validatePassword(password)}
-        error={errors.password}
-        disabled={login.isPending}
-        autoComplete="current-password"
-      />
+      <div className="relative">
+        <Input
+          type={showPassword ? 'text' : 'password'}
+          label="비밀번호"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); clearGeneralError(); }}
+          onBlur={() => validatePassword(password)}
+          error={errors.password}
+          disabled={login.isPending}
+          autoComplete="current-password"
+          className="pr-10"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword((v) => !v)}
+          aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+          aria-pressed={showPassword}
+          tabIndex={-1}
+          className="absolute right-3 top-[34px] flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600 dark:text-dark-text-muted dark:hover:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-dark-accent disabled:opacity-50"
+          disabled={login.isPending}
+        >
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
 
       {errors.general && (
         <div

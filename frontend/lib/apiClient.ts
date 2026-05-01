@@ -5,7 +5,9 @@
 import { tokenManager } from './tokenManager';
 import { handleUnauthorized } from './authInterceptor';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// 기본값은 빈 문자열(same-origin) — Docker(nginx) 환경에서는 /api/* 가 nginx 를 통해
+// backend 로 프록시되므로 CORS 가 발생하지 않음. 별도 도메인으로 띄울 때만 env 명시.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 interface FetchOptions extends Omit<RequestInit, 'headers'> {
   headers?: Record<string, string>;
