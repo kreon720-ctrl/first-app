@@ -133,7 +133,8 @@ function buildOpenWebUiSystemPrompt(): string {
    출처:
    - https://example.com/...
    - https://example.com/...
-5. 출처 URL 은 인라인 마크다운 링크가 아닌 위 목록 형태로 1~3개 명시. 본문에서 인용한 출처만 표기.`;
+5. 출처 URL 은 인라인 마크다운 링크가 아닌 위 목록 형태로 1~3개 명시. 본문에서 인용한 출처만 표기.
+6. 단위는 한국 표준으로 통일: 온도는 °C, 거리는 km/m, 통화는 원(KRW). 검색 결과가 °F·mile·USD 등 다른 단위로 되어 있어도 한국 표준으로 변환해서 답하고, 원본 단위는 표기하지 않음.`;
 }
 
 async function callOpenWebUi(question: string) {
@@ -441,6 +442,31 @@ function sanitizeKeyword(raw: string): string {
 // (?!간) 으로 "주간" 은 제외 (주간 = 별도 단어).
 const WEEK_OF_DATE_RE = /(?:\d+월\s*)?\d+일\s*주(?!간)/;
 
+// "(다음|이번|지난)주 + 요일" — 단일 요일 표현. LLM 이 "주" 만 보고 view=week 로
+// 잘못 떨어뜨리는 케이스를 정규식으로 잡아 view=day + 정확한 날짜로 강제 보정.
+const WEEKDAY_RELATIVE_RE = /(다음|이번|지난)\s*주\s*(월|화|수|목|금|토|일)요일/;
+const WEEKDAY_OFFSET: Record<string, number> = {
+  월: 0, 화: 1, 수: 2, 목: 3, 금: 4, 토: 5, 일: 6,
+};
+
+// "(다음|이번|지난)주 X요일" 매치 시 KST 기준 정확한 날짜를 YYYY-MM-DD 로 계산.
+// 매치 안되면 null. 주의 시작은 월요일(한국 관습).
+function resolveRelativeWeekday(question: string): string | null {
+  const m = question.match(WEEKDAY_RELATIVE_RE);
+  if (!m) return null;
+  const [, rel, dayChar] = m;
+  // KST 기준 오늘 (Date 를 +9h offset 한 가상 UTC 프레임에서 계산)
+  const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const todayDow = nowKst.getUTCDay(); // 0(일)~6(토)
+  const daysToMonday = (todayDow + 6) % 7; // 이번주 월요일까지의 일수
+  const thisMon = new Date(nowKst);
+  thisMon.setUTCDate(nowKst.getUTCDate() - daysToMonday);
+  const weekOffset = rel === '다음' ? 7 : rel === '지난' ? -7 : 0;
+  const target = new Date(thisMon);
+  target.setUTCDate(thisMon.getUTCDate() + weekOffset + WEEKDAY_OFFSET[dayChar]);
+  return target.toISOString().slice(0, 10);
+}
+
 // schedule 조회 자연어 → view+date+keyword 파싱 — RAG 서버의 /parse-schedule-query.
 // keyword 는 일정 제목 부분 매치용 (예: "디자인 리뷰"). 실패 시 default(month/오늘/no-keyword) fallback.
 //
@@ -458,9 +484,14 @@ async function parseScheduleQuery(question: string): Promise<{
     });
     const data = await res.json();
     let view = (data?.view ?? 'month') as 'day' | 'week' | 'month';
-    const date = (data?.date ?? new Date().toISOString().slice(0, 10)) as string;
-    // "X일 주" 패턴이면 view=week 강제 (LLM 이 day 로 떨어뜨려도 정정)
-    if (WEEK_OF_DATE_RE.test(question)) {
+    let date = (data?.date ?? new Date().toISOString().slice(0, 10)) as string;
+    // "(다음|이번|지난)주 X요일" 이면 view=day + 정확한 요일 날짜로 강제 (가장 구체적)
+    const weekdayDate = resolveRelativeWeekday(question);
+    if (weekdayDate) {
+      view = 'day';
+      date = weekdayDate;
+    } else if (WEEK_OF_DATE_RE.test(question)) {
+      // "X일 주" 패턴이면 view=week 강제 (LLM 이 day 로 떨어뜨려도 정정)
       view = 'week';
     }
     return {
