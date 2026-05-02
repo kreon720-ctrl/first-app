@@ -10,6 +10,9 @@
 | 버전 | 날짜 | 내용 |
 |------|------|------|
 | 1.0 | 2026-05-01 | 최초 작성 — Windows 11 + RTX 3070 8GB + 16GB RAM 게이밍 노트북 기준 비전문가용 배포 절차 |
+| 1.1 | 2026-05-02 | Open WebUI API 키 발급·등록 절차 추가 (STEP 4.3, 5.7). 일반 질문 경로에서 `OPEN_WEBUI_API_KEY` 에러로 막히던 문제 해결. 루트 `.env` 작성·frontend 재기동 절차 명시. |
+| 1.2 | 2026-05-02 | STEP 5.7 간소화 — 모델 프리셋(`gemma4-web`) 생성·Web Search 권한 부여 단계 제거. frontend(`route.ts`) 가 system prompt 와 SearxNG 검색 결과를 매 요청마다 직접 보내므로 Open WebUI 의 프리셋·검색 권한은 미사용. `OPEN_WEBUI_MODEL` 기본값을 `gemma4-web` → `gemma3:4b` (실제 Ollama 모델명) 로 변경. FAQ 도 동기화. |
+| 1.3 | 2026-05-02 | API 키 복사 시 `sk-` 접두사 제외 안내 추가 (STEP 5.7.3, 5.7.5, FAQ). |
 
 ---
 
@@ -309,7 +312,34 @@ dir
 
 > URL 인코딩: 비밀번호에 `!@#$%` 같은 특수문자가 있으면 URL 에 그대로 못 씀. https://www.urlencoder.org 에서 변환.
 
-### 4.3. AI 모델 자동 감지 — 별도 설정 불필요
+### 4.3. 루트 `.env` 파일 만들기 (Open WebUI 용)
+
+찰떡이가 일반 질문(날씨·뉴스·시사 등) 답변에 사용하는 **Open WebUI** 컨테이너가 환경변수 4개를 요구합니다. 비워두면 일반 질문 호출 시 "**OPEN_WEBUI_API_KEY 가 설정되어 있지 않습니다**" 에러가 뜹니다.
+
+이 단계에서는 **빈 값으로 일단 파일만 만들어 두고**, 실제 API 키는 STEP 5.7 (Open WebUI 첫 접속 후) 에서 발급받아 채웁니다.
+
+1. 메모장 실행.
+2. 다음 내용 그대로 입력 (`OPEN_WEBUI_MODEL` 은 본인이 STEP 2 에서 받아둔 모델 이름과 정확히 일치):
+   ```
+   OPEN_WEBUI_SECRET_KEY=
+   OPEN_WEBUI_API_KEY=
+   OPEN_WEBUI_BASE_URL=http://open-webui:8080
+   OPEN_WEBUI_MODEL=gemma3:4b
+   ```
+3. `OPEN_WEBUI_SECRET_KEY` 값 채우기 — PowerShell 에서:
+   ```powershell
+   -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
+   ```
+   결과를 `=` 뒤에 붙여넣기. (예: `OPEN_WEBUI_SECRET_KEY=aB3xY9zKp...`)
+4. `OPEN_WEBUI_API_KEY` 는 **STEP 5.7 까지 비워둠**.
+5. `다른 이름으로 저장`:
+   - 위치: `C:\TeamWorks\team-works` (프로젝트 루트, docker-compose.yml 과 같은 폴더)
+   - 파일 형식: 모든 파일
+   - 파일 이름: `.env` (앞에 점 있고 확장자 없음)
+
+> 이 `.env` 는 docker-compose 가 자동으로 읽어서 컨테이너에 주입합니다. **`backend\.env.local` 과 다른 파일** 이니 헷갈리지 마세요.
+
+### 4.4. AI 모델 자동 감지 — 별도 설정 불필요
 
 코드는 실행 시점에 Ollama 에 떠 있는 모델을 자동으로 사용합니다. `gemma3:4b` 만 띄워두면 그 모델로 동작합니다.
 
@@ -385,7 +415,87 @@ npm run server
 
 웹 브라우저에서 `http://localhost:8080` 접속. 로그인 화면이 보이면 성공.
 
-회원 가입 → 팀 만들기 → 일정 등록 → AI 찰떡이에게 말 걸어보기 — 모두 동작하면 STEP 5 완료.
+회원 가입 → 팀 만들기 → 일정 등록 → 캘린더·채팅 — 모두 동작하면 OK.
+
+> ⚠️ 이 시점에 AI 찰떡이에게 **"오늘 뉴스"** 같은 일반 질문을 하면 "**OPEN_WEBUI_API_KEY 가 설정되어 있지 않습니다**" 에러가 정상입니다. 다음 5.7 단계에서 해결합니다. **사용법 질문**(예: "포스트잇 등록법") 과 **일정 조회·등록**은 이미 동작합니다.
+
+### 5.7. Open WebUI 초기 설정 (일반 질문 활성화)
+
+찰떡이의 **일반 질문 답변** (날씨·뉴스·시사·일반 지식) 은 별도 컨테이너인 Open WebUI 가 처리합니다. 4단계만 거치면 됩니다.
+
+> **간소화 배경**: frontend (`route.ts`) 가 매 요청마다 system prompt 와 사용자 메시지를 직접 보내고, 웹 검색도 SearxNG 를 직접 호출(`features.web_search: false`) 합니다. Open WebUI 의 **모델 프리셋·시스템 프롬프트·Web Search 권한** 은 사용되지 않으니 만들지 않아도 됩니다. Open WebUI 는 자동으로 Ollama 의 모델을 인식하므로 모델 이름만 정확히 알려주면 끝.
+>
+> Open WebUI 버전: `ghcr.io/open-webui/open-webui:main` (v0.9.x 기준).
+
+#### 5.7.1. Open WebUI 첫 접속 + admin 계정 생성
+
+1. 브라우저에서 `http://localhost:8081` 접속 (8080 아님 — 한 자리 다름).
+2. **Sign Up** 화면. 첫 가입자가 자동으로 admin 권한을 받습니다:
+   - 이름: 본인 이름 (예: `admin`)
+   - 이메일: 본인 이메일 (식별용, 외부 노출 X)
+   - 비밀번호: 강력하게 (잊지 마세요 — 분실 시 STEP 9 FAQ 참고)
+3. **Sign Up** → 자동 로그인됨.
+
+#### 5.7.2. 새 가입 차단 (보안)
+
+admin 1명만 쓰는 패턴이라 외부에서 가입 못 하도록 즉시 막습니다.
+
+1. 좌측 사이드바 **하단의 본인 아바타** (이름 옆 동그라미) 클릭.
+2. 드롭다운 → **Admin Panel** (관리자 패널).
+3. 좌측 메뉴 **Settings** → 상단 탭 **General**.
+4. **Enable New Sign Ups** 토글 **OFF** → 하단 **Save**.
+
+#### 5.7.3. API 키 발급
+
+1. 좌측 사이드바 **하단의 본인 아바타** 클릭.
+2. 드롭다운에서 **Settings** (설정) 선택.
+3. 좌측 카테고리 **Account** (계정) 클릭.
+4. 하단으로 스크롤 → **API Keys** 섹션.
+5. **Create new secret key** (또는 **+ Create API Key**) 클릭.
+6. 표시된 키를 **즉시 복사**. **다시 못 봅니다 — 창 닫으면 끝**.
+
+> ⚠️ **`sk-` 접두사는 빼고 그 뒤의 본문만 복사하세요.** Open WebUI 가 보여주는 키는 `sk-` 가 시각적 prefix 로 붙어있지만, 실제 토큰 값은 그 뒤의 문자열입니다. `sk-` 까지 같이 `.env` 에 넣으면 Authorization 헤더 검증이 실패해 401 에러가 납니다.
+>
+> 예: 화면에 `sk-1234567890abcdef...` 표시 → `.env` 에는 `OPEN_WEBUI_API_KEY=1234567890abcdef...` (sk- 제외).
+
+#### 5.7.4. 사용할 모델 이름 확인
+
+Open WebUI 좌상단 모델 선택 드롭다운을 클릭. STEP 2 에서 받아둔 Ollama 모델 (예: `gemma3:4b`, `gemma4:e4b` 등) 이 자동으로 등록되어 있습니다. 사용할 모델의 정확한 이름(콜론 포함) 을 메모해 둡니다.
+
+> 별도의 모델 프리셋(예: `gemma4-web`) 을 만들 필요 없습니다 — frontend 가 system prompt·웹검색 결과를 매 요청마다 직접 보내기 때문에 베이스 모델 이름만 알면 충분합니다.
+
+#### 5.7.5. 루트 `.env` 채우기
+
+1. 메모장으로 `C:\TeamWorks\team-works\.env` 열기.
+2. 4개 항목을 모두 채웁니다:
+   ```
+   OPEN_WEBUI_SECRET_KEY=aB3xY9zKp...           ← 4.3 에서 만든 32자, 그대로
+   OPEN_WEBUI_API_KEY=1234567890abcdef...       ← 5.7.3 에서 복사한 키 (sk- 접두사 제외)
+   OPEN_WEBUI_BASE_URL=http://open-webui:8080   ← 그대로
+   OPEN_WEBUI_MODEL=gemma3:4b                   ← 5.7.4 에서 확인한 정확한 모델 이름
+   ```
+3. 저장 (`Ctrl+S`).
+
+> **`.env` 파일은 절대 git 에 올리지 마세요**. 프로젝트의 `.gitignore` 에 이미 등록되어 있지만 혹시 다른 사람과 폴더 공유 시 주의.
+
+#### 5.7.6. frontend 컨테이너 재기동 + 동작 확인
+
+`.env` 변경은 컨테이너 재기동 시점에만 반영됩니다.
+
+```powershell
+cd C:\TeamWorks\team-works
+docker compose restart frontend
+```
+
+10~20초 대기 후:
+
+1. `http://localhost:8080` → 찰떡이 탭.
+2. 입력: **"오늘 서울 날씨 어때?"** 또는 **"오늘 뉴스 검색해줘"**.
+3. 30초~1분 (게이밍 노트북) 안에 다음이 나와야 성공:
+   - 한국어 답변
+   - 답변 끝에 **출처 URL 1~3개** (frontend 가 SearxNG 를 직접 호출해 결과를 모델에 주입)
+
+답변에 출처 URL 이 0건이거나 모델 이름 못 찾는 에러가 나면 STEP 9 FAQ 참고.
 
 ---
 
@@ -628,6 +738,54 @@ docker logs team-works-backend-1
 - Ollama 가 안 떠있거나 모델이 unload 됨.
 - 시스템 트레이의 라마 아이콘 확인. 없으면 시작 메뉴에서 `Ollama` 실행.
 - `ollama run gemma3:4b ""` 로 모델 메모리에 올림.
+
+### Q. AI 일반 질문 시 "OPEN_WEBUI_API_KEY 가 설정되어 있지 않습니다" 에러
+**원인**: 루트 `.env` 의 `OPEN_WEBUI_API_KEY` 가 비어있거나 frontend 컨테이너에 반영 안 됨.
+
+**해결**:
+1. **STEP 5.7 을 안 했으면** 5.7 전체 진행 — admin 계정 + API 키 발급 + `.env` 채우기.
+2. **이미 했는데도 에러** 면:
+   - `C:\TeamWorks\team-works\.env` 메모장으로 열어 `OPEN_WEBUI_API_KEY=` 뒤 값이 비어있지 않은지 확인.
+   - 값 앞에 `sk-` 가 붙어 있으면 제거 (5.7.3 의 ⚠️ 참고).
+   - frontend 재기동: `docker compose restart frontend`
+   - 컨테이너 환경변수 확인:
+     ```powershell
+     docker exec team-works-frontend-1 sh -c "echo $OPEN_WEBUI_API_KEY"
+     ```
+     키 값이 출력되면 정상. 빈 줄이면 `.env` 파일 위치(`team-works\` 루트) 또는 파일명 확인.
+
+### Q. AI 일반 질문 시 "모델을 찾을 수 없습니다" / 404 에러
+**원인**: `.env` 의 `OPEN_WEBUI_MODEL` 값이 Open WebUI 가 인식하는 Ollama 모델 이름과 다름.
+
+**해결**:
+1. `http://localhost:8081` 좌상단 모델 드롭다운에서 정확한 이름 (예: `gemma3:4b`, `gemma4:e4b`) 확인.
+   - 또는 PowerShell:
+     ```powershell
+     ollama list
+     ```
+2. `.env` 의 `OPEN_WEBUI_MODEL=` 을 그 이름과 정확히 일치 (콜론·대소문자 포함) 시킴.
+3. `docker compose restart frontend`.
+
+### Q. AI 일반 질문 답변에 출처 URL 이 없거나 거짓 정보 (할루시네이션)
+**원인**: SearxNG 가 호출 안 되거나 검색 결과 0건. (Open WebUI 의 Web Search 권한과 무관 — frontend 가 SearxNG 를 직접 호출하므로.)
+
+**해결**: 아래 "SearxNG 가 호출 안 되는 듯" 항목 참고.
+
+판별 시그널:
+- 답변에 `"인터넷에 접속할 수 없어"`, `"검색을 할 수 없어"` 같은 문구 → SearxNG 호출 실패
+- 출처 URL 이 0개 → 위와 동일
+
+### Q. SearxNG 가 호출 안 되는 듯 / 검색 결과가 0 건
+**원인**: 컨테이너 네트워크 또는 SearxNG 자체 문제.
+
+**해결**:
+1. SearxNG 컨테이너 살아있는지: `docker compose ps` → `teamworks-searxng` 가 `running` 인지.
+2. 직접 호출 테스트 (호스트에서):
+   ```powershell
+   docker exec teamworks-searxng wget -qO- "http://localhost:8080/search?q=hello&format=json" | head -c 200
+   ```
+   JSON 결과가 나오면 SearxNG 정상.
+3. SearxNG 설정 파일은 `C:\TeamWorks\team-works\docker\searxng-settings.yml` — 변경 후 `docker compose restart searxng`.
 
 ### Q. 외부에서 접속이 안 된다
 1. 노트북에서 `http://localhost:8080` 으로 먼저 접속 — 안 되면 Docker 문제, 됩니다 → Cloudflare 문제.
