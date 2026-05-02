@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSchedules, createSchedule, type Schedule } from '@/lib/mcp/scheduleQueries';
 import { BackendError } from '@/lib/mcp/pgClient';
+import { resolveOpenWebUiModel } from '@/lib/openWebUiModel';
 
 // Next.js 16 의 API route default maxDuration 이 300초(5분) 라서
 // gemma4:26b + 검색 결과 컨텍스트의 답변 생성이 그 이상 걸리면 강제 종료된다.
@@ -11,7 +12,8 @@ const RAG_SERVER_URL = process.env.RAG_SERVER_URL || 'http://127.0.0.1:8787';
 const OPEN_WEBUI_BASE_URL =
   process.env.OPEN_WEBUI_BASE_URL || 'http://127.0.0.1:8081';
 const OPEN_WEBUI_API_KEY = process.env.OPEN_WEBUI_API_KEY || '';
-const OPEN_WEBUI_MODEL = process.env.OPEN_WEBUI_MODEL || 'gemma4-web';
+// Open WebUI 모델 이름은 런타임에 Ollama /api/ps 로 자동 해석 (lib/openWebUiModel.ts).
+// `OPEN_WEBUI_MODEL` env 가 명시되면 그 값 우선 사용.
 // Open WebUI 의 OpenAI-compatible 응답은 URL 메타데이터를 노출하지 않음.
 // sources 보강용으로 SearxNG 를 같은 쿼리로 한 번 더 호출해 URL/title 을 직접 채운다.
 const SEARXNG_BASE_URL = process.env.SEARXNG_BASE_URL || '';
@@ -146,6 +148,7 @@ async function callOpenWebUi(question: string) {
   // 1) SearxNG 직접 검색 (~2초). web_search 를 Open WebUI 에 맡기면 5분+ 직렬 대기.
   const hits = await searxngFetch(question, 5);
   const systemContent = buildOpenWebUiSystemPrompt() + hitsToContextBlock(hits);
+  const model = await resolveOpenWebUiModel();
 
   // Node.js undici(fetch 구현) 의 기본 receive timeout 이 5분(300초)이라
   // Open WebUI + gemma4:26b 답변이 그 이상 걸리면 끊긴다. 9분으로 명시 확장.
@@ -159,7 +162,7 @@ async function callOpenWebUi(question: string) {
       authorization: `Bearer ${OPEN_WEBUI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: OPEN_WEBUI_MODEL,
+      model,
       messages: [
         { role: 'system', content: systemContent },
         { role: 'user', content: question },
@@ -329,6 +332,7 @@ async function streamOpenWebUi(question: string, send: SendFn) {
   if (hits.length) send({ type: 'sources', sources: hitsToSources(hits) });
   // 3) 검색 결과를 system prompt 에 inline 주입
   const systemContent = buildOpenWebUiSystemPrompt() + hitsToContextBlock(hits);
+  const model = await resolveOpenWebUiModel();
 
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 540000);
@@ -340,7 +344,7 @@ async function streamOpenWebUi(question: string, send: SendFn) {
       authorization: `Bearer ${OPEN_WEBUI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: OPEN_WEBUI_MODEL,
+      model,
       messages: [
         { role: 'system', content: systemContent },
         { role: 'user', content: question },
@@ -788,9 +792,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const isStream = body?.stream === true;
     // RAG 서버가 런타임에 해석한 채팅 모델명 — UI 푸터 표시용. 미응답 시 undefined.
     const ragModel = await fetchRagModel();
-    // 답변 출처에 따라 다른 모델이 쓰임. RAG/일정 경로는 Ollama 모델, 웹 경로는 Open WebUI 프리셋.
+    // 답변 출처에 따라 다른 모델이 쓰임. RAG/일정·일반 경로 모두 Ollama 모델
+    // (일반 경로는 Open WebUI 가 우회 호출). 메타용 모델명도 자동 해석.
     const ragMeta = ragModel ? { model: ragModel } : {};
-    const webMeta = { model: OPEN_WEBUI_MODEL };
+    const webModel = await resolveOpenWebUiModel().catch(() => undefined);
+    const webMeta = webModel ? { model: webModel } : {};
 
     // schedule_* / blocked-other_domain(create 시) 는 로그인 + teamId 필수.
     const needsAuth =

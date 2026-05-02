@@ -52,7 +52,10 @@ services:
       # 일반 질문 경로 — Open WebUI (컨테이너 네트워크 내부)
       OPEN_WEBUI_BASE_URL: http://open-webui:8080
       OPEN_WEBUI_API_KEY: ${OPEN_WEBUI_API_KEY:-}
-      OPEN_WEBUI_MODEL: ${OPEN_WEBUI_MODEL:-gemma4-web}
+      # OPEN_WEBUI_MODEL: 미설정 시 frontend 가 Open WebUI /api/models 로
+      # 등록된 모델 중 chat 가능한 첫 번째를 자동 선택 (lib/openWebUiModel.ts).
+      # 강제 override 가 필요할 때만 .env 에 OPEN_WEBUI_MODEL=... 명시.
+      OPEN_WEBUI_MODEL: ${OPEN_WEBUI_MODEL:-}
       # Open WebUI 응답엔 URL 이 빠져 있어 SearxNG 를 직접 호출해 sources 보강
       SEARXNG_BASE_URL: http://searxng:8080
       WATCHPACK_POLLING: "true"
