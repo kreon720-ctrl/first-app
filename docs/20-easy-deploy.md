@@ -15,6 +15,7 @@
 | 1.3 | 2026-05-02 | API 키 복사 시 `sk-` 접두사 제외 안내 추가 (STEP 5.7.3, 5.7.5, FAQ). |
 | 1.4 | 2026-05-02 | Open WebUI 모델 이름 자동 해석 도입 (`frontend/lib/openWebUiModel.ts`). frontend 가 Open WebUI `/api/models` 를 조회해 등록된 모델 중 chat 가능한 첫 번째 (arena-model·nomic-embed 제외) 를 자동 선택. `.env` 의 `OPEN_WEBUI_MODEL` 명시 불필요. STEP 4.3 의 `.env` 항목 4개 → 2개로 축소, STEP 5.7 단계 6개 → 5개로 축소 (모델 이름 확인 단계 제거), FAQ "모델 못 찾음" 항목을 "AI 모델에 연결할 수 없습니다" 로 재작성. |
 | 1.5 | 2026-05-02 | STEP 5.7 에 실제 운영 환경설정 walkthrough 추가 — 5.7.3 웹 검색 활성화(SearxNG 연결 + 결과 수·동시 요청 수·임베딩 우회·SSL 등 토글 표), 5.7.4 연결·모델은 별도 설정 불필요. 기존 5.7.3~5.7.5 → 5.7.5~5.7.7 로 번호 재정렬. |
+| 1.6 | 2026-05-02 | STEP 6.5 추가 — 새 기능 운영 반영 (Update) 절차. `git pull origin main` + `docker compose restart frontend backend` 두 줄 표준. 추가 작업 매트릭스(DB·RAG·compose) + `update.bat` 자동화 스크립트 + 롤백. 기존 6.5 (영구 터널) → 6.6 으로 재번호. |
 
 ---
 
@@ -614,7 +615,58 @@ cloudflared tunnel --url http://localhost:8080
 
 > 한국어 가족·동료에게 외울 수 있는 주소를 주려면 본인 도메인 단계로.
 
-### 6.5. 본인 도메인으로 영구 터널 만들기
+### 6.5. 새 기능 운영 반영 (Update)
+
+GitHub 저장소에 새 코드가 push 됐을 때 운영 PC 에 반영하려면 PowerShell 에서 다음 두 줄:
+
+```powershell
+cd C:\TeamWorks\team-works
+git pull origin main
+docker compose restart frontend backend
+```
+
+frontend·backend 컨테이너가 재기동되면서:
+- `npm install` 자동 재실행 → `package.json` 의존성 변경 흡수
+- Next.js dev 서버 fresh 시작 → hot-reload 가 놓쳤을 수 있는 **신규 라우트·신규 파일** 도 모두 인덱싱
+
+일반적인 코드 수정은 이 두 줄로 충분합니다.
+
+> **추가 작업이 필요한 경우** (PR 설명에 따라 판별):
+>
+> | 변경 종류 | 추가 명령 |
+> |---|---|
+> | DB 스키마 변경 (`database/add-*.sql` 새로 추가됨) | `docker exec -i postgres-db psql -U teamworks-manager -d teamworks < database\add-*.sql` |
+> | RAG 문서 변경 (`ollama/*.md`) | `cd rag && npm run index` 후 RAG 서버 재기동 |
+> | `docker-compose.yml` 또는 루트 `.env` 변경 | `docker compose restart` 가 아니라 `docker compose up -d` (compose 파일·env 재평가) |
+
+#### (선택) 자동화 스크립트
+
+매번 두 줄 입력하기 번거로우면 `C:\TeamWorks\update.bat` 으로 만들어 두기:
+
+```bat
+@echo off
+echo TEAM WORKS 업데이트 시작...
+cd /d C:\TeamWorks\team-works
+git pull origin main
+docker compose restart frontend backend
+echo 업데이트 완료. 브라우저에서 동작 확인하세요.
+pause
+```
+
+바탕화면에 바로가기로 빼두면 더블클릭 한 번으로 끝.
+
+#### 롤백 (문제 생겼을 때)
+
+```powershell
+cd C:\TeamWorks\team-works
+git log --oneline -10                       # 이전 커밋 해시 확인
+git reset --hard <이전커밋해시>             # 코드 되돌리기
+docker compose restart frontend backend     # 적용
+```
+
+DB 까지 되돌리려면 STEP 9 FAQ 의 "백업 파일 복원은 어떻게 하나?" 참고.
+
+### 6.6. 본인 도메인으로 영구 터널 만들기
 
 1. Cloudflare 로그인.
 2. 좌측 메뉴 → **Zero Trust** → **Networks** → **Tunnels**.
