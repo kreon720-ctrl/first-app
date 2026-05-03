@@ -25,7 +25,10 @@ services:
       - ./backend/.env.local
     environment:
       DATABASE_URL: postgresql://teamworks-manager:Nts123%21%40%23@postgres-db:5432/teamworks
-      FRONTEND_URL: http://localhost:8080
+      # 브라우저가 보는 외부 base URL — .env 의 PUBLIC_BASE_URL 로 override.
+      # CORS Allow-Origin 에 사용되므로 스킴·포트까지 정확히 일치해야 함.
+      # (예: 로컬 http://localhost:8080 / Cloudflare 터널 https://teamworks.my)
+      FRONTEND_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
       NODE_ENV: development
       # 자료실 storage 어댑터 — 1단계 local, 운영 전환 시 's3' 로 변경.
       STORAGE_BACKEND: local
@@ -45,7 +48,9 @@ services:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080
+      # 브라우저가 보는 API base URL — Next.js 빌드 시 client bundle 에 인라인됨.
+      # .env 의 PUBLIC_BASE_URL 로 override (스킴·포트 포함 전체 URL).
+      NEXT_PUBLIC_API_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
       # AI 어시스턴트 schedule_query/schedule_create 가 백엔드 schedule API 를 직접 호출
       BACKEND_URL: http://backend:3000
       RAG_SERVER_URL: http://host.docker.internal:8787

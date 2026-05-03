@@ -1,7 +1,7 @@
 # 게이밍 노트북으로 TEAM WORKS 운영하기 (쉬운 배포 가이드)
 
 > **누가 읽나요**: IT 전문가가 아닌 분이 본인 게이밍 노트북에 TEAM WORKS 를 띄워 가족·동호회·소규모 팀(~10명) 에게 서비스하려는 경우.
-> **무엇을 만드나요**: 노트북에서 24/7 켜져 돌아가는 TEAM WORKS 웹서비스. `https://내도메인.com` 으로 어디서나 접속 가능. AI 찰떡이도 함께.
+> **무엇을 만드나요**: 노트북에서 24/7 켜져 돌아가는 TEAM WORKS 웹서비스. `https://teamworks.my` 로 어디서나 접속 가능 (랜딩 페이지는 `/landing`). AI 찰떡이도 함께.
 > **예상 소요 시간**: 처음이면 **3~5시간** (다운로드 시간 포함). 두 번째부터는 1시간.
 > **준비물**: 관리자 계정 윈도우 노트북, 인터넷, 이메일 1개, 본인 의지.
 
@@ -60,7 +60,7 @@
 
 ```
 [인터넷의 사용자]
-       ↓ https://내도메인.com
+       ↓ https://teamworks.my  (랜딩: /landing)
 [Cloudflare 무료 터널]   ← 외부 접속, HTTPS 자동, 공유기 설정 불필요
        ↓ 암호화된 통로
 [내 노트북]
@@ -293,6 +293,35 @@ ollama run gemma4:4bit "안녕"
 
 > AI 모델 다운로드는 **딱 한 번** 하면 영구히 남습니다.
 
+### 2.5. 모델 자동 언로드 끄기 (영구 상주 설정)
+
+Ollama 는 기본적으로 **5 분 idle** 이면 메모리에서 모델을 내립니다. 그러면 다음 질문 때 모델을 다시 GPU/RAM 에 로드하느라 첫 답변이 수십 초~1 분 가까이 느려집니다 (특히 큰 모델). 사내 상시 운영용이면 항상 메모리에 띄워두는 게 사용감이 훨씬 낫습니다.
+
+**Windows 시스템 환경변수로 영구 설정:**
+
+1. PowerShell **관리자 권한** 으로 실행 (`Win + X` → **Windows Terminal (관리자)** 또는 **PowerShell (관리자)**).
+2. 다음 명령 실행:
+   ```powershell
+   [Environment]::SetEnvironmentVariable("OLLAMA_KEEP_ALIVE", "-1", "Machine")
+   ```
+   - `-1` = 무제한 (Ollama 가 종료되기 전까지 모델 메모리 유지).
+   - 시간으로 제한하고 싶으면 `"24h"`, `"60m"` 등으로 지정 가능.
+
+3. **Ollama 재시작** (환경변수는 프로세스 시작 시점에만 읽힘):
+   - 시스템 트레이의 Ollama 아이콘 → 우클릭 → **Quit Ollama**.
+   - 시작 메뉴에서 **Ollama** 다시 실행.
+
+4. 적용 확인:
+   ```powershell
+   ollama run gemma4:4bit "한 단어로 답해: hello"
+   ollama ps
+   ```
+   `ollama ps` 출력의 **UNTIL** 컬럼이 `Forever` 로 표시되면 OK. (시간 지정 시엔 `24 hours from now` 같은 표시)
+
+> ⚠️ VRAM/RAM 이 항상 점유됩니다. gemma4:4bit (~16GB) + nomic-embed-text (~0.3GB) 가 상주하므로 GPU 메모리가 빠듯한 환경이면 시간 제한(`"4h"` 등)을 검토.
+>
+> 이 설정은 **Open WebUI 일반 질문 경로 / RAG 답변 / 임베딩** 모두에 적용됩니다 — 별도 설정 불필요.
+
 ---
 
 ## STEP 3. TEAM WORKS 코드 받기
@@ -375,6 +404,24 @@ dir
    ```
    OPEN_WEBUI_SECRET_KEY=
    OPEN_WEBUI_API_KEY=
+
+   # 브라우저가 보는 외부 base URL (스킴·포트 포함).
+   # CORS Allow-Origin 과 NEXT_PUBLIC_API_URL 양쪽에 같은 값이 들어가므로
+   # 실제 접근 URL 과 정확히 일치해야 함.
+   #
+   # 아래 3 줄 중 본인 환경에 맞는 1 줄만 주석 해제하고 나머지는 # 처리.
+   # 변경 후엔 backend/frontend 컨테이너 재기동 필요:
+   #   docker compose up -d --force-recreate backend frontend
+
+   # (1) 로컬 — 호스트 머신 자체 브라우저로만 접근
+   PUBLIC_BASE_URL=http://localhost:8080
+
+   # (2) 동일 서브넷 — 같은 LAN 의 다른 PC/모바일에서 접근 (호스트 머신의 LAN IP 로)
+   #PUBLIC_BASE_URL=http://192.168.1.42:8080
+
+   # (3) 도메인 — Cloudflare Tunnel 등으로 외부 공개 (HTTPS, 포트 없음)
+   # 앱은 apex 도메인 (teamworks.my) 에서, 랜딩은 teamworks.my/landing 에서 서빙.
+   #PUBLIC_BASE_URL=https://teamworks.my
    ```
    > 모델 이름은 frontend 가 Open WebUI `/api/models` 로 자동 감지합니다 — `OPEN_WEBUI_MODEL` 명시 불필요. 운영자가 Open WebUI 에 chat 모델 1개만 노출시키면 그 모델로 자동 동작.
 3. `OPEN_WEBUI_SECRET_KEY` 값 채우기 — PowerShell 에서:
@@ -383,7 +430,13 @@ dir
    ```
    결과를 `=` 뒤에 붙여넣기. (예: `OPEN_WEBUI_SECRET_KEY=aB3xY9zKp...`)
 4. `OPEN_WEBUI_API_KEY` 는 **STEP 5.7 까지 비워둠**.
-5. `다른 이름으로 저장`:
+5. `PUBLIC_BASE_URL` 은 본인 접근 환경에 맞춰 선택:
+   - 호스트 머신 자체 브라우저로만 접근 → `(1) http://localhost:8080` 그대로.
+   - 사내 LAN 의 다른 PC/모바일에서 접근 → `(1)` 을 주석 처리하고 `(2)` 의 `#` 를 떼고 호스트 머신의 LAN IP 로 변경.
+     - LAN IP 확인: Windows `ipconfig` → "IPv4 주소" / macOS `ipconfig getifaddr en0`
+   - 외부에서 도메인으로 접근 (Cloudflare Tunnel) → `(1)` 을 주석 처리하고 `(3)` 의 `#` 를 떼고 본인 apex 도메인으로 변경 (예: `https://teamworks.my`). **반드시 `https://` + 포트 없음** (Cloudflare 가 443 으로 받아서 내부 8080 으로 포워딩).
+   > 이 값은 docker-compose 가 `FRONTEND_URL` (백엔드 CORS Allow-Origin) 와 `NEXT_PUBLIC_API_URL` (프론트 빌드 시 client bundle 에 인라인) 에 그대로 주입합니다. 실제 브라우저 주소창의 origin (스킴+호스트+포트) 과 정확히 같지 않으면 CORS 차단으로 API 호출이 깨집니다.
+6. `다른 이름으로 저장`:
    - 위치: `C:\TeamWorks\team-works` (프로젝트 루트, docker-compose.yml 과 같은 폴더)
    - 파일 형식: 모든 파일
    - 파일 이름: `.env` (앞에 점 있고 확장자 없음)
@@ -431,6 +484,25 @@ docker exec -i postgres-db psql -U teamworks-manager -d teamworks < database\sch
 ```
 
 `CREATE TABLE`, `CREATE INDEX` 같은 메시지가 쭉 흘러가면 OK.
+
+#### (선택) 시연·개발용 테스트 데이터 넣기
+
+빈 DB 로 시작하면 회원가입부터 직접 해야 합니다. 데모/시연용으로 **사용자 8명, 팀 4개, 일정·게시판·포스트잇** 등이 미리 채워진 상태로 시작하려면 아래를 추가 실행:
+
+```powershell
+docker exec -i postgres-db psql -U teamworks-manager -d teamworks < database\seed-dev.sql
+```
+
+`INSERT 0 8`, `INSERT 0 4` 같은 메시지가 흘러가면 OK.
+
+로그인 정보:
+- **메인 운영자**: `dev0@naver.com` (기획팀 LEADER)
+- 그 외 계정: `dev1@naver.com` ~ `dev4@naver.com`, `demo1@naver.com` ~ `demo3@naver.com`
+- **모든 계정 비밀번호 공통**: `Abc123!@#`
+
+> ⚠️ 운영 배포에는 사용 금지 — 알려진 비밀번호로 계정이 미리 만들어집니다. 시연·개발 환경에서만 실행하세요.
+>
+> 데이터를 다시 깨끗하게 지우려면: `database\reset-and-reapply.sql` 실행 후 다시 5.3 부터.
 
 ### 5.4. RAG 인덱스 빌드 (사용법 문서 검색용)
 
@@ -587,36 +659,142 @@ docker compose restart frontend
 
 ### 6.2. (선택) 본인 도메인 연결
 
-본인 도메인이 없어도 다음 단계의 무료 임시 도메인을 쓸 수 있어요. 본인 도메인을 쓰고 싶다면:
+본인 도메인이 없어도 다음 단계의 무료 임시 도메인을 쓸 수 있어요. 본인 도메인을 쓰고 싶다면 아래 3 단계 — **A) 가비아 도메인 구입 → B) Cloudflare 에 사이트 등록 후 네임서버 확인 → C) 가비아의 네임서버를 Cloudflare 것으로 교체** — 를 진행합니다.
 
-1. 가비아·네임칩 등에서 도메인 구입 (1년 1만원 내외).
-2. Cloudflare 좌측 메뉴 → **Add a Site** → 도메인 입력.
-3. Cloudflare 가 안내하는 네임서버 2개를 도메인 등록기관 페이지에서 입력 → 1~24시간 대기.
+#### A. 가비아에서 도메인 구입
 
-### 6.3. cloudflared 설치
+1. https://www.gabia.com 접속 → 상단 검색창에 원하는 도메인 입력 (이 가이드 예시: `teamworks.my`).
+2. 결과 화면에서 사용 가능한 TLD 선택 → **신청하기** → 결제 (1년 1~2 만원 내외, TLD 별 상이).
+3. 결제 완료까지 대기 — 도메인이 본인 가비아 계정에 등록됩니다.
 
-PowerShell 관리자 권한으로:
+#### B. Cloudflare 에 사이트 등록 → 할당된 네임서버 확인
+
+1. https://dash.cloudflare.com 로그인.
+2. 대시보드 상단 **Add a Site** (또는 **+ Add** → **Existing domain**) 클릭.
+3. 구입한 도메인 입력 (예: `teamworks.my`) → **Continue**.
+4. 요금제 선택 화면에서 **Free** 플랜 선택 → **Continue**.
+5. (DNS 레코드 자동 스캔 화면이 뜨면) 그대로 **Continue**.
+6. **Change your nameservers** 화면에 표시되는 **네임서버 2 개** (예: `xxx.ns.cloudflare.com`, `yyy.ns.cloudflare.com`) 를 메모장에 복사 — 다음 단계에서 사용합니다.
+   > 네임서버를 까먹었으면: 대시보드 → 해당 도메인 클릭 → 좌측 메뉴 **DNS** → **Records** → 페이지 하단 **Cloudflare Nameservers** 영역에서 다시 확인 가능.
+
+#### C. 가비아 네임서버를 Cloudflare 것으로 교체
+
+1. https://www.gabia.com 로그인 → 우측 상단 **My가비아** 클릭.
+2. My가비아 화면 우측 하단 **도메인 통합 관리툴** 클릭.
+3. 좌측 메뉴 패널 **도메인 정보 변경** 클릭.
+4. 도메인 목록에서 변경할 도메인의 **체크박스** 체크.
+5. 상단 가로 메뉴 중 **첫 번째 항목 "네임서버"** 선택.
+6. 1차/2차 네임서버 입력란에 위 B-6 에서 복사한 Cloudflare 네임서버 2 개를 각각 붙여넣기.
+   - **1차** → `xxx.ns.cloudflare.com`
+   - **2차** → `yyy.ns.cloudflare.com`
+7. **3차/4차/5차 네임서버 칸은 비우기** (기존 가비아 기본값이 들어 있으면 모두 삭제). Cloudflare 는 2 개만 사용합니다.
+8. 하단 **소유자 인증** (휴대폰/이메일 인증) 후 **저장**.
+
+#### D. 전파 대기 및 확인
+
+- 보통 **5 분 ~ 1 시간** 내에 Cloudflare 가 네임서버 변경을 감지합니다 (최대 24~48 시간).
+- 감지되면 Cloudflare 대시보드의 해당 도메인 상태가 **Active** (초록색) 로 바뀌고, 등록한 이메일로 *"Your domain is now active on Cloudflare"* 안내 메일이 옵니다.
+- 직접 확인하려면 PowerShell 에서:
+  ```powershell
+  nslookup -type=NS teamworks.my
+  ```
+  결과의 nameserver 가 `*.ns.cloudflare.com` 으로 나오면 전파 완료.
+
+> **Active** 가 되기 전엔 다음 단계 (6.3 영구 터널의 도메인 라우팅) 가 동작하지 않습니다. 기다리는 동안엔 STEP 5.6 까지 진행해서 호스트 머신 자체에서 `http://localhost:8080` 접속 테스트로 동작 확인 가능.
+
+### 6.3. cloudflared 로 본인 도메인 영구 연결
+
+**전제:** 6.2 가 모두 끝나서 Cloudflare 대시보드의 도메인 상태가 **Active** (초록).
+
+총 4 단계 — **A. 설치 → B. 터널 만들고 토큰 받기 → C. 토큰을 서비스로 등록 → D. 도메인 연결** — 으로 끝납니다. 끝나면 PC 재부팅 후에도 자동 시작.
+
+---
+
+#### A. cloudflared 설치
+
+PowerShell **관리자 권한** 으로:
 ```powershell
 winget install --id Cloudflare.cloudflared
 ```
 
-설치 확인:
+새 PowerShell 창을 열어서 설치 확인:
 ```powershell
 cloudflared --version
 ```
+버전 번호가 보이면 OK.
 
-### 6.4. 빠른 시작 — 무료 임시 도메인
+---
 
-본인 도메인 없이 곧장 테스트:
+#### B. Cloudflare 대시보드에서 터널 만들고 토큰 복사
+
+1. https://one.dash.cloudflare.com 로그인 (또는 https://dash.cloudflare.com → 좌측 **Zero Trust**).
+2. 좌측 메뉴 → **Networks** → **Connectors** → **Add a tunnel** (구버전 대시보드에서는 **Networks → Tunnels → Create a tunnel**).
+3. **터널 타입 선택** — 두 가지 중 **a. Cloudflared** 를 선택 → **Next**.
+   - **a. Cloudflared** ← 우리가 쓸 것. 노트북에서 인터넷으로 서비스(`teamworks.my`)를 공개하는 표준 터널.
+   - **b. WARP Connector (Mesh)** — 사설망끼리 site-to-site 로 연결할 때 쓰는 VPN 형태. 이 가이드 용도와 무관.
+4. 커넥터 종류 화면에서 **Cloudflared** 한 번 더 확인 → **Next** (UI 버전에 따라 3 번 단계와 합쳐져 있을 수 있음 — 그땐 건너뛰기).
+5. 터널 이름 입력 (예: `teamworks-laptop`) → **Save tunnel**.
+6. 다음 화면 **Install and run a connector** 에서 환경 **Windows** 선택.
+7. 화면에 표시된 명령어 중 **`<긴토큰>` 부분만** 복사 (다음 단계에서 사용).
+
+---
+
+#### C. 토큰을 Windows 서비스로 등록 (자동 시작 포함)
+
+PowerShell **관리자 권한** 으로:
 ```powershell
-cloudflared tunnel --url http://localhost:8080
+cloudflared service install <B에서_복사한_긴토큰>
 ```
 
-화면에 표시되는 `https://random-words.trycloudflare.com` 주소를 그대로 가족·동료에게 공유하면 접속 가능. **단, 이 주소는 명령 종료 시 사라집니다.**
+설치되면 Windows 서비스로 등록되어 **PC 재부팅 후 자동 시작**.
 
-> 한국어 가족·동료에게 외울 수 있는 주소를 주려면 본인 도메인 단계로.
+확인:
+```powershell
+Get-Service cloudflared
+```
+`Status` 가 `Running` 이면 OK.
 
-### 6.5. 새 기능 운영 반영 (Update)
+Cloudflare 대시보드의 같은 터널 화면에서 **Connector status: Healthy** (초록) 로 바뀌면 성공 → **Next** 클릭.
+
+---
+
+#### D. 도메인을 localhost:8080 에 연결 (Public Hostname)
+
+이어지는 **Public Hostnames** 단계에서 **Add a public hostname** — 다음 표대로 입력:
+
+| 항목 | 입력값 |
+|---|---|
+| Subdomain | **(비워둠)** ← apex 도메인 (`teamworks.my`) 자체로 서빙 |
+| Domain | 6.2 에서 등록한 본인 도메인 선택 (드롭다운, 예: `teamworks.my`) |
+| Path | (비워둠) |
+| Type | `HTTP` |
+| URL | `localhost:8080` |
+
+**Save hostname** 클릭.
+
+> 💡 Cloudflare 는 **CNAME flattening** 으로 apex 도메인 라우팅을 자동 처리합니다 — 별도 DNS 레코드 추가 불필요.
+>
+> `www.teamworks.my` 로 들어오는 사용자도 받고 싶다면 같은 화면에서 **Add a public hostname** 을 한 번 더: Subdomain `www`, 나머지 동일. 또는 Cloudflare 대시보드 → **Rules → Redirect Rules** 로 `www.teamworks.my → teamworks.my` 영구 리다이렉트.
+
+> 마법사를 이미 닫았다면: **Networks → Connectors → 터널 이름 클릭 → Configure → Public Hostname 탭 → Add a public hostname** 으로 들어가서 위 표대로 입력해도 동일합니다 (구버전: **Networks → Tunnels → ...**).
+
+---
+
+#### E. 접속 확인
+
+1~2 분 후 브라우저에서 `https://teamworks.my` 접속 → TEAM WORKS 로그인 화면이 보이면 성공. HTTPS 인증서는 Cloudflare 가 자동 발급·갱신.
+
+랜딩 페이지는 `https://teamworks.my/landing` 에서 같은 도메인의 **하위 경로**로 서빙됩니다 (Next.js 라우트 `frontend/app/landing/page.tsx`).
+- 도메인 1 개로 앱 + 랜딩을 모두 커버 → 추가 Public Hostname 불필요.
+- 마케팅 헤더/푸터 등은 Next.js 라우트 그룹 외부 (`(auth)`/`(main)` 와 별개) 라서 앱 글로벌 레이아웃과 자연스럽게 분리됨.
+
+> ⚠️ 로그인은 되는데 일정/팀 등 데이터 호출이 CORS 에러로 막힌다면 → STEP 4.3 의 `PUBLIC_BASE_URL` 을 `https://teamworks.my` 로 바꾸고 `docker compose up -d --force-recreate backend frontend` 로 재기동.
+
+> 별도 도메인이 필요한 다른 서비스 (예: 8081 의 Open WebUI 관리 콘솔) 는 **D** 와 동일한 방식으로 **Public Hostname** 을 추가 (Subdomain `webui`, URL `localhost:8081` → `https://webui.teamworks.my`).
+
+---
+
+### 6.4. 새 기능 운영 반영 (Update)
 
 GitHub 저장소에 새 코드가 push 됐을 때 운영 PC 에 반영하려면 PowerShell 에서 다음 두 줄:
 
@@ -666,23 +844,6 @@ docker compose restart frontend backend     # 적용
 ```
 
 DB 까지 되돌리려면 STEP 9 FAQ 의 "백업 파일 복원은 어떻게 하나?" 참고.
-
-### 6.6. 본인 도메인으로 영구 터널 만들기
-
-1. Cloudflare 로그인.
-2. 좌측 메뉴 → **Zero Trust** → **Networks** → **Tunnels**.
-3. **Create a tunnel** → 이름 입력 (예: `teamworks-laptop`) → **Save**.
-4. 토큰 명령어가 표시됩니다. 그대로 복사해서 PowerShell 에 붙여넣어 실행:
-   ```powershell
-   cloudflared service install <긴토큰>
-   ```
-5. 같은 화면 아래쪽 **Public Hostname** 탭 → **Add a public hostname**:
-   - Subdomain: `team` (또는 본인 원하는 것)
-   - Domain: 본인 도메인 선택
-   - Type: `HTTP`
-   - URL: `localhost:8080`
-6. **Save Hostname**.
-7. 1~2분 후 `https://team.내도메인.com` 으로 접속 — 자동 HTTPS 적용됨.
 
 ---
 
@@ -937,7 +1098,7 @@ docker logs team-works-backend-1
 2. Cloudflare Tunnel 상태 확인:
    - 윈도우 서비스(`services.msc`) → `Cloudflared` 서비스 실행 중?
    - 안 됨 → 우클릭 → 시작.
-3. Cloudflare 대시보드 → **Tunnels** → 본인 터널의 상태가 `HEALTHY` 인지 확인.
+3. Cloudflare 대시보드 → **Networks → Connectors** (구버전: **Tunnels**) → 본인 터널의 상태가 `HEALTHY` 인지 확인.
 
 ### Q. 디스크가 가득 찼다
 1. `docker system df` 로 점유 공간 확인.
