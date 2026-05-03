@@ -851,6 +851,22 @@ docker logs team-works-backend-1
 - 답변에 `"인터넷에 접속할 수 없어"`, `"검색을 할 수 없어"` 같은 문구 → SearxNG 호출 실패
 - 출처 URL 이 0개 → 위와 동일
 
+### Q. 코드베이스 디렉토리 이름을 바꾸려는데 "사용 중" 또는 "권한 거부" 로 안 된다
+**원인**: Docker Desktop·WSL2·Node.js 프로세스 중 하나가 `team-works` 폴더 안의 파일을 잠그고 있어 Windows 가 폴더 이름을 못 바꿈.
+
+**해결 — 잠금 해제 후 이름 변경**:
+
+1. **Docker Desktop 종료** — 윈도우 우측 하단 시스템 트레이의 **고래(Docker) 아이콘** 우클릭 → **Quit Docker Desktop**.
+2. **WSL2 종료** — PowerShell 에서:
+   ```powershell
+   wsl --shutdown
+   ```
+3. **Node.js 프로세스 종료** — 작업 관리자(`Ctrl+Shift+Esc`) → 상단 검색창에 **`node`** 입력 → 검색된 모든 `Node.js: ...` 또는 `node.exe` 항목 우클릭 → **작업 끝내기**.
+4. 이제 탐색기에서 `C:\TeamWorks\team-works` 폴더를 우클릭 → **이름 바꾸기** 가능.
+5. 이름 바꾼 뒤 Docker Desktop 다시 시작 → `docker compose up -d` 로 컨테이너 재기동.
+
+> 폴더 경로가 바뀌면 본 가이드의 모든 `C:\TeamWorks\team-works\...` 경로도 새 경로로 함께 읽어 주세요. `.env`·`backend\.env.local`·작업 스케줄러의 `start-all.bat` 안의 절대 경로도 업데이트 필요.
+
 ### Q. SearxNG 가 호출 안 되는 듯 / 검색 결과가 0 건
 **원인**: 컨테이너 네트워크 또는 SearxNG 자체 문제.
 
